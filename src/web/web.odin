@@ -15,13 +15,24 @@ state: struct {
 }
 
 main :: proc() {
-	game.init_game(&state.rules)
+	game.init_game(&state.rules, 1)
+	state.dirty = true
+}
+
+// A new character from a seed the page makes (two 32-bit halves; wasm ints are 32 bits).
+@(export)
+platform_start :: proc "c" (seed_hi, seed_lo: i32) {
+	context = runtime.default_context()
+	game.init_game(&state.rules, u64(u32(seed_hi)) << 32 | u64(u32(seed_lo)))
 	state.dirty = true
 }
 
 @(export)
 step :: proc(dt: f64, c: runtime.Context) -> bool {
 	context = c
+	if game.tick(&state.rules) {
+		state.dirty = true
+	}
 	if state.dirty {
 		state.dirty = false
 		game.draw_game(&state.screen, &state.rules)
@@ -42,11 +53,14 @@ platform_command :: proc "c" (command: i32) {
 	state.dirty = true
 }
 
-// A click or tap at framebuffer pixel (x, y); button 0 is primary, 2 secondary.
+// A click or tap at framebuffer pixel (x, y); kind is a game.Pointer (0 mouse, 1 right mouse, 2 touch).
 @(export)
-platform_pointer :: proc "c" (x, y, button: i32) {
+platform_pointer :: proc "c" (x, y, kind: i32) {
 	context = runtime.default_context()
-	game.pointer(&state.rules, int(x), int(y), int(button))
+	if kind < 0 || kind > i32(max(game.Pointer)) {
+		return
+	}
+	game.pointer(&state.rules, int(x), int(y), game.Pointer(kind))
 	state.dirty = true
 }
 

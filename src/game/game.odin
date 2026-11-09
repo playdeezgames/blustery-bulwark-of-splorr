@@ -1,7 +1,8 @@
 package game
 
-// The rules, independent of the platform. Step 0 of slice 1 (PLAN.md): a placeholder room to prove
-// the layout and every input path. Floors, wind, inventory and the rest arrive in later steps.
+// The rules, independent of the platform. Slice 1 step 1 (PLAN.md): three generated floors that
+// persist for the character, stairs, fog of war, an automap, and walking by keys, gamepad, touch
+// d-pad and mouse. Wind, light, inventory and the rest arrive in later steps.
 
 // Commands the page sends for keys, gamepad buttons and the touch d-pad (keep in step with
 // web/index.html). Directions are the eight compass moves.
@@ -17,6 +18,7 @@ Command :: enum i32 {
 	Wait,
 	Confirm,
 	Cancel,
+	Map,
 }
 
 DIRECTION := [Command][2]int {
@@ -31,17 +33,15 @@ DIRECTION := [Command][2]int {
 	.Wait       = {0, 0},
 	.Confirm    = {0, 0},
 	.Cancel     = {0, 0},
+	.Map        = {0, 0},
 }
 
-Cell :: enum u8 {
-	Floor,
-	Wall,
-	Stairs_Up,
-	Stairs_Down,
-}
+FLOOR_COUNT :: 3 // generated floors in slice 1; floor 4 (the first boss) is hand-built in step 8
 
-ROOM_W :: 40
-ROOM_H :: 28
+Mode :: enum u8 {
+	Play,
+	Automap,
+}
 
 LOG_CAP :: 64 // characters per remembered message
 
@@ -50,76 +50,163 @@ Message :: struct {
 	n:    int,
 }
 
+TRAVEL_FRAMES :: 4 // frames between steps when walking a mouse route
+
 Game :: struct {
-	cells: [ROOM_H][ROOM_W]Cell,
-	x, y:  int,
-	turn:  int,
-	log:   [LOG_LINES]Message, // oldest first
+	seed:        u64,
+	floors:      [FLOOR_COUNT]Floor,
+	current:     int, // index into floors (floor number - 1)
+	x, y:        int,
+	turn:        int,
+	mode:        Mode,
+	vis:         Visible,
+	log:         [LOG_LINES]Message, // oldest first
+	path:        [MAX_PATH][2]int,
+	path_len:    int,
+	path_i:      int,
+	travel_wait: int,
 }
 
-init_game :: proc(g: ^Game) {
+floor_of :: proc(g: ^Game) -> ^Floor {
+	return &g.floors[g.current]
+}
+
+init_game :: proc(g: ^Game, seed: u64) {
 	g^ = {}
-	// A walled room with a few pillars, so the view can be seen to scroll.
-	for y in 0 ..< ROOM_H {
-		for x in 0 ..< ROOM_W {
-			edge := x == 0 || y == 0 || x == ROOM_W - 1 || y == ROOM_H - 1
-			pillar := x % 6 == 3 && y % 5 == 2
-			g.cells[y][x] = edge || pillar ? .Wall : .Floor
-		}
-	}
-	g.cells[3][ROOM_W - 4] = .Stairs_Up
-	g.cells[ROOM_H - 4][3] = .Stairs_Down
-	g.x, g.y = ROOM_W / 2, ROOM_H / 2
+	g.seed = seed
+	enter_floor(g, 0, .Stairs_Down)
 	say(g, "The wind howls round the bulwark.")
-	say(g, "(Step 0: a placeholder room.)")
+	say(g, "You climb in from the town gate.")
+}
+
+// Moves to floor index `i`, standing on its stairs of kind `arrive`. A floor is generated the first
+// time it is entered and kept after that.
+enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
+	g.current = i
+	f := floor_of(g)
+	if !f.made {
+		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
+	}
+	at := arrive == .Stairs_Up ? f.up : f.down
+	g.x, g.y = at.x, at.y
+	stop_travel(g)
+	compute_fov(f, g.x, g.y, &g.vis)
 }
 
 // Adds a line to the message log, cut to the log's width.
-say :: proc(g: ^Game, text: string) {
+say :: proc(g: ^Game, parts: ..string) {
 	for i in 0 ..< LOG_LINES - 1 {
 		g.log[i] = g.log[i + 1]
 	}
 	m := &g.log[LOG_LINES - 1]
 	m^ = {}
-	m.n = min(len(text), LOG_CAP, (VIEW_W * TILE - LOG_X) / GLYPH_W)
-	copy(m.text[:m.n], text[:m.n])
+	width := min(LOG_CAP, (VIEW_W * TILE - LOG_X) / GLYPH_W)
+	for s in parts {
+		for i in 0 ..< len(s) {
+			if m.n < width {
+				m.text[m.n] = s[i]
+				m.n += 1
+			}
+		}
+	}
 }
 
 message :: proc(m: ^Message) -> string {
 	return string(m.text[:m.n])
 }
 
-cell_at :: proc(g: ^Game, x, y: int) -> Cell {
-	if x < 0 || y < 0 || x >= ROOM_W || y >= ROOM_H {
-		return .Wall
+// Decimal text of a whole number, in a caller's buffer.
+itoa :: proc(buf: []u8, v: int) -> string {
+	n := v < 0 ? -v : v
+	i := len(buf)
+	for {
+		i -= 1
+		buf[i] = u8('0' + n % 10)
+		n /= 10
+		if n == 0 || i == 0 {
+			break
+		}
 	}
-	return g.cells[y][x]
+	if v < 0 && i > 0 {
+		i -= 1
+		buf[i] = '-'
+	}
+	return string(buf[i:])
+}
+
+cell_at :: proc(g: ^Game, x, y: int) -> Cell {
+	return floor_cell(floor_of(g), x, y)
+}
+
+stop_travel :: proc(g: ^Game) {
+	g.path_len, g.path_i, g.travel_wait = 0, 0, 0
+}
+
+// One step of the player; false when a wall is in the way (no turn passes).
+step_player :: proc(g: ^Game, d: [2]int) -> bool {
+	if !passable(cell_at(g, g.x + d.x, g.y + d.y)) {
+		return false
+	}
+	g.x += d.x
+	g.y += d.y
+	g.turn += 1
+	compute_fov(floor_of(g), g.x, g.y, &g.vis)
+	return true
+}
+
+describe_arrival :: proc(g: ^Game) {
+	#partial switch cell_at(g, g.x, g.y) {
+	case .Stairs_Up:
+		say(g, "Stairs up. Confirm to climb.")
+	case .Stairs_Down:
+		say(g, "Stairs down. Confirm to descend.")
+	}
 }
 
 command :: proc(g: ^Game, c: Command) {
+	stop_travel(g)
+	if g.mode == .Automap {
+		g.mode = .Play // any command closes the map
+		return
+	}
 	switch c {
 	case .North, .South, .West, .East, .North_West, .North_East, .South_West, .South_East:
-		d := DIRECTION[c]
-		if cell_at(g, g.x + d.x, g.y + d.y) == .Wall {
+		if step_player(g, DIRECTION[c]) {
+			describe_arrival(g)
+		} else {
 			say(g, "A wall.")
-			return
-		}
-		g.x += d.x
-		g.y += d.y
-		g.turn += 1
-		#partial switch cell_at(g, g.x, g.y) {
-		case .Stairs_Up:
-			say(g, "Stairs up. (Not yet.)")
-		case .Stairs_Down:
-			say(g, "Stairs down. (Not yet.)")
 		}
 	case .Wait:
 		g.turn += 1
 		say(g, "You wait. The wind does not.")
 	case .Confirm:
-		say(g, "Confirm.")
+		use_here(g)
 	case .Cancel:
-		say(g, "Cancel.")
+	case .Map:
+		g.mode = .Automap
+	}
+}
+
+// Confirm on the spot: take the stairs, or nothing.
+use_here :: proc(g: ^Game) {
+	buf: [8]u8
+	#partial switch cell_at(g, g.x, g.y) {
+	case .Stairs_Up:
+		if g.current + 1 < FLOOR_COUNT {
+			enter_floor(g, g.current + 1, .Stairs_Down)
+			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")
+		} else {
+			say(g, "The stairs above are not built yet.")
+		}
+	case .Stairs_Down:
+		if g.current > 0 {
+			enter_floor(g, g.current - 1, .Stairs_Up)
+			say(g, "You go down to floor ", itoa(buf[:], g.current + 1), ".")
+		} else {
+			say(g, "Below is the town. It is not built yet.")
+		}
+	case:
+		say(g, "Nothing here to use.")
 	}
 }
 
@@ -137,33 +224,88 @@ view_origin :: proc(g: ^Game) -> (x, y: int) {
 	return g.x - VIEW_W / 2, g.y - VIEW_H / 2
 }
 
-// A click or tap at a screen pixel (button 0 primary, 2 secondary). Step 0 only reports it; walking
-// by mouse and inspecting arrive with the map in step 1.
-pointer :: proc(g: ^Game, sx, sy: int, button: int) {
+Pointer :: enum i32 {
+	Mouse_Primary,
+	Mouse_Secondary,
+	Touch,
+}
+
+// A click or tap at a screen pixel. A mouse click walks there (one step, or a route over seen
+// cells); a right click or a tap inspects (touch moves with the d-pad; DESIGN.md).
+pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
+	stop_travel(g)
+	if g.mode == .Automap {
+		g.mode = .Play
+		return
+	}
 	x, y, ok := screen_to_cell(g, sx, sy)
 	if !ok {
 		return
 	}
-	names := [Cell]string {
-		.Floor       = "floor",
-		.Wall        = "a wall",
-		.Stairs_Up   = "stairs up",
-		.Stairs_Down = "stairs down",
+	f := floor_of(g)
+	if kind != .Mouse_Primary {
+		inspect(g, x, y)
+		return
 	}
-	name := names[cell_at(g, x, y)]
 	if x == g.x && y == g.y {
-		name = "you"
+		use_here(g)
+		return
 	}
-	buf: [LOG_CAP]u8
-	n := 0
-	prefix := button == 2 ? "Inspect: " : "Click: "
-	for s in ([2]string{prefix, name}) {
-		for i in 0 ..< len(s) {
-			if n < LOG_CAP {
-				buf[n] = s[i]
-				n += 1
-			}
+	if abs(x - g.x) <= 1 && abs(y - g.y) <= 1 {
+		if step_player(g, {x - g.x, y - g.y}) {
+			describe_arrival(g)
+		} else {
+			say(g, "A wall.")
 		}
+		return
 	}
-	say(g, string(buf[:n]))
+	g.path_len = find_path(f, {g.x, g.y}, {x, y}, &g.path)
+	if g.path_len == 0 {
+		say(g, "You know no way there.")
+	}
+}
+
+inspect :: proc(g: ^Game, x, y: int) {
+	f := floor_of(g)
+	if x < 0 || y < 0 || x >= FLOOR_W || y >= FLOOR_H || !f.seen[y][x] {
+		say(g, "You have not seen that.")
+		return
+	}
+	if x == g.x && y == g.y {
+		say(g, "You. Windswept.")
+		return
+	}
+	switch f.cells[y][x] {
+	case .Wall:
+		say(g, "A wall of the bulwark.")
+	case .Floor:
+		say(g, "Floor.")
+	case .Stairs_Up:
+		say(g, "Stairs up.")
+	case .Stairs_Down:
+		say(g, "Stairs down.")
+	}
+}
+
+// Called once per frame by the platform; walks a mouse route. True when something changed.
+tick :: proc(g: ^Game) -> bool {
+	if g.path_i >= g.path_len {
+		return false
+	}
+	g.travel_wait += 1
+	if g.travel_wait < TRAVEL_FRAMES {
+		return false
+	}
+	g.travel_wait = 0
+	next := g.path[g.path_i]
+	g.path_i += 1
+	if !step_player(g, next - [2]int{g.x, g.y}) {
+		stop_travel(g)
+		return true
+	}
+	if g.path_i >= g.path_len {
+		stop_travel(g)
+		describe_arrival(g)
+	}
+	return true
 }

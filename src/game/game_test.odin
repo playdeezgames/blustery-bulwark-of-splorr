@@ -3,84 +3,243 @@ package game
 
 import "core:testing"
 
-@(test)
-test_start_in_the_middle :: proc(t: ^testing.T) {
+new_game :: proc(seed: u64 = 12345) -> ^Game {
 	g := new(Game)
-	defer free(g)
-	init_game(g)
-	testing.expect_value(t, g.x, ROOM_W / 2)
-	testing.expect_value(t, g.y, ROOM_H / 2)
-	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Floor)
+	init_game(g, seed)
+	return g
 }
 
 @(test)
-test_moves_in_eight_directions :: proc(t: ^testing.T) {
-	g := new(Game)
+test_start_on_floor_one_stairs_down :: proc(t: ^testing.T) {
+	g := new_game()
 	defer free(g)
-	init_game(g)
-	x, y := g.x, g.y
-	command(g, .North_East)
-	testing.expect_value(t, g.x, x + 1)
-	testing.expect_value(t, g.y, y - 1)
-	command(g, .South_West)
-	testing.expect_value(t, g.x, x)
-	testing.expect_value(t, g.y, y)
-	testing.expect_value(t, g.turn, 2)
+	testing.expect_value(t, floor_of(g).number, 1)
+	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
+	testing.expect(t, g.vis[g.y][g.x])
 }
 
 @(test)
-test_walls_block :: proc(t: ^testing.T) {
-	g := new(Game)
-	defer free(g)
-	init_game(g)
-	g.x, g.y = 1, 1
-	command(g, .North)
-	command(g, .West)
-	command(g, .North_West)
-	testing.expect_value(t, g.x, 1)
-	testing.expect_value(t, g.y, 1)
-	testing.expect_value(t, g.turn, 0)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "A wall.")
-}
-
-@(test)
-test_log_keeps_the_newest :: proc(t: ^testing.T) {
-	g := new(Game)
-	defer free(g)
-	init_game(g)
-	for _ in 0 ..< LOG_LINES + 2 {
-		command(g, .Wait)
+test_floors_are_connected_over_many_seeds :: proc(t: ^testing.T) {
+	f := new(Floor)
+	defer free(f)
+	path: ^[MAX_PATH][2]int = new([MAX_PATH][2]int)
+	defer free(path)
+	for seed in u64(1) ..= 300 {
+		for number in 1 ..= FLOOR_COUNT {
+			generate_floor(f, floor_seed(seed, number), number)
+			testing.expect(t, f.room_count >= 6)
+			testing.expect_value(t, f.cells[f.up.y][f.up.x], Cell.Stairs_Up)
+			testing.expect_value(t, f.cells[f.down.y][f.down.x], Cell.Stairs_Down)
+			// Pretend everything is seen, then ask for a route between the stairs.
+			for y in 0 ..< FLOOR_H {
+				for x in 0 ..< FLOOR_W {
+					f.seen[y][x] = true
+				}
+			}
+			testing.expectf(t, reachable(f, f.down, f.up), "seed %v floor %v: stairs not connected", seed, number)
+			// The border is always wall.
+			for x in 0 ..< FLOOR_W {
+				testing.expect_value(t, f.cells[0][x], Cell.Wall)
+				testing.expect_value(t, f.cells[FLOOR_H - 1][x], Cell.Wall)
+			}
+			for y in 0 ..< FLOOR_H {
+				testing.expect_value(t, f.cells[y][0], Cell.Wall)
+				testing.expect_value(t, f.cells[y][FLOOR_W - 1], Cell.Wall)
+			}
+		}
 	}
-	say(g, "last")
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "last")
+}
+
+// Flood fill without the route-length limit of find_path.
+reachable :: proc(f: ^Floor, from, to: [2]int) -> bool {
+	done := new([FLOOR_H][FLOOR_W]bool)
+	defer free(done)
+	stack := make([dynamic][2]int, 0, 64)
+	defer delete(stack)
+	append(&stack, from)
+	done[from.y][from.x] = true
+	for len(stack) > 0 {
+		c := pop(&stack)
+		if c == to {
+			return true
+		}
+		for d in DIRECTIONS {
+			n := c + d
+			if n.x >= 0 && n.y >= 0 && n.x < FLOOR_W && n.y < FLOOR_H && !done[n.y][n.x] && passable(f.cells[n.y][n.x]) {
+				done[n.y][n.x] = true
+				append(&stack, n)
+			}
+		}
+	}
+	return false
+}
+
+@(test)
+test_same_seed_same_floor :: proc(t: ^testing.T) {
+	a, b := new(Floor), new(Floor)
+	defer free(a)
+	defer free(b)
+	generate_floor(a, floor_seed(99, 2), 2)
+	generate_floor(b, floor_seed(99, 2), 2)
+	testing.expect(t, a.cells == b.cells)
+	generate_floor(b, floor_seed(99, 3), 3)
+	testing.expect(t, a.cells != b.cells)
+}
+
+@(test)
+test_walls_block_and_cost_no_turn :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	// Find a wall next to the player's room and walk into it.
+	for d, i in DIRECTIONS {
+		if cell_at(g, g.x + d.x, g.y + d.y) == .Wall {
+			x, y := g.x, g.y
+			command(g, Command(i))
+			testing.expect_value(t, g.x, x)
+			testing.expect_value(t, g.y, y)
+			testing.expect_value(t, g.turn, 0)
+			testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "A wall.")
+			return
+		}
+	}
+}
+
+// Walks the player to (x, y) on the current floor by the stairs route, as a test helper.
+teleport :: proc(g: ^Game, at: [2]int) {
+	g.x, g.y = at.x, at.y
+	compute_fov(floor_of(g), g.x, g.y, &g.vis)
+}
+
+@(test)
+test_stairs_climb_and_floors_persist :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	f1 := floor_of(g)
+	teleport(g, f1.up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 2)
+	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
+	// Mark something seen on floor 2, go down and back up: it is still remembered.
+	floor_of(g).seen[0][0] = true
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 1)
+	testing.expect_value(t, [2]int{g.x, g.y}, f1.up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 2)
+	testing.expect(t, floor_of(g).seen[0][0])
+	// The top of slice 1 and the bottom (the town) are not built yet.
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 3)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "The stairs above are not built yet.")
+}
+
+@(test)
+test_town_not_built :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 1)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "Below is the town. It is not built yet.")
+}
+
+@(test)
+test_fov_stops_at_walls :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	f := floor_of(g)
+	for y in 0 ..< FLOOR_H {
+		for x in 0 ..< FLOOR_W {
+			if g.vis[y][x] {
+				testing.expect(t, f.seen[y][x])
+				testing.expect(t, abs(x - g.x) <= SIGHT + 1 && abs(y - g.y) <= SIGHT + 1) // walls beside sight count
+			}
+		}
+	}
+	// A cell of the far stairs room is not visible from the start.
+	testing.expect(t, !g.vis[f.up.y][f.up.x])
+}
+
+@(test)
+test_mouse_route_walks_over_seen_cells :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	f := floor_of(g)
+	// Pick the farthest visible floor cell and click it.
+	target := [2]int{g.x, g.y}
+	best := 0
+	for y in 0 ..< FLOOR_H {
+		for x in 0 ..< FLOOR_W {
+			d := abs(x - g.x) + abs(y - g.y)
+			if g.vis[y][x] && passable(f.cells[y][x]) && d > best && abs(x - g.x) <= VIEW_W / 2 && abs(y - g.y) <= VIEW_H / 2 {
+				target, best = {x, y}, d
+			}
+		}
+	}
+	testing.expect(t, best >= 2)
+	ox, oy := view_origin(g)
+	pointer(g, MAP_X + (target.x - ox) * TILE + 6, MAP_Y + (target.y - oy) * TILE + 6, .Mouse_Primary)
+	testing.expect(t, g.path_len > 0)
+	for _ in 0 ..< 2000 {
+		if !(g.path_i < g.path_len) {
+			break
+		}
+		tick(g)
+	}
+	testing.expect_value(t, [2]int{g.x, g.y}, target)
+	// A key press stops a route.
+	pointer(g, MAP_X + 6, MAP_Y + 6, .Mouse_Primary) // top-left cell: unseen or far, either way no crash
+	command(g, .Wait)
+	testing.expect_value(t, g.path_len, 0)
+}
+
+@(test)
+test_unseen_cells_cannot_be_inspected :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	f := floor_of(g)
+	inspect(g, f.up.x, f.up.y)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "You have not seen that.")
+	inspect(g, g.x, g.y)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "You. Windswept.")
+}
+
+@(test)
+test_automap_opens_and_any_input_closes :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	command(g, .Map)
+	testing.expect_value(t, g.mode, Mode.Automap)
+	x := g.x
+	command(g, .East)
+	testing.expect_value(t, g.mode, Mode.Play)
+	testing.expect_value(t, g.x, x) // the closing key does not also move
+	command(g, .Map)
+	pointer(g, 10, 10, .Touch)
+	testing.expect_value(t, g.mode, Mode.Play)
+}
+
+@(test)
+test_log_and_itoa :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	buf: [8]u8
+	testing.expect_value(t, itoa(buf[:], 0), "0")
+	testing.expect_value(t, itoa(buf[:], 407), "407")
+	testing.expect_value(t, itoa(buf[:], -12), "-12")
 	long := "0123456789012345678901234567890123456789012345678901234567890123456789"
 	say(g, long)
 	testing.expect(t, message(&g.log[LOG_LINES - 1]) == long[:(VIEW_W * TILE - LOG_X) / GLYPH_W])
 }
 
 @(test)
-test_pointer_maps_to_cells :: proc(t: ^testing.T) {
-	g := new(Game)
-	defer free(g)
-	init_game(g)
-	// The player is drawn in the middle cell of the view.
-	x, y, ok := screen_to_cell(g, MAP_X + (VIEW_W / 2) * TILE + 5, MAP_Y + (VIEW_H / 2) * TILE + 5)
-	testing.expect(t, ok)
-	testing.expect_value(t, x, g.x)
-	testing.expect_value(t, y, g.y)
-	_, _, ok = screen_to_cell(g, PANEL_X + 10, 10)
-	testing.expect(t, !ok)
-	pointer(g, MAP_X + (VIEW_W / 2) * TILE + 5, MAP_Y + (VIEW_H / 2) * TILE + 5, 2)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "Inspect: you")
-}
-
-@(test)
-test_frame_draws_player_in_the_middle :: proc(t: ^testing.T) {
-	g := new(Game)
+test_frames_draw :: proc(t: ^testing.T) {
+	g := new_game()
 	defer free(g)
 	f := new(Frame)
 	defer free(f)
-	init_game(g)
 	draw_game(f, g)
 	lit := 0
 	cx, cy := MAP_X + (VIEW_W / 2) * TILE, MAP_Y + (VIEW_H / 2) * TILE
@@ -92,6 +251,7 @@ test_frame_draws_player_in_the_middle :: proc(t: ^testing.T) {
 		}
 	}
 	testing.expect(t, lit > 10)
-	resolve(f)
-	testing.expect_value(t, f.rgba[0] >> 24, 0xFF)
+	command(g, .Map)
+	draw_game(f, g)
+	testing.expect_value(t, get_px(f, AUTOMAP_X + g.x * AUTOMAP_CELL + 1, AUTOMAP_Y + g.y * AUTOMAP_CELL + 1), COLOR_WHITE)
 }
