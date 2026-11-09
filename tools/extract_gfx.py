@@ -35,6 +35,19 @@ PICKS = [
     ('Sack',        64, 30),  # a tied bag (the money bag; painted brown)
     ('Belt',         0, 29),
     ('Purse',        1, 23),  # leather pouch
+    # Tenants and trophies (slice 1 step 4).
+    ('Rat',          3, 14),
+    ('Bat',          8, 14),
+    ('Beetle',       0, 15),
+    ('Spider',       2, 15),
+    ('Kobold',     114, 40),  # big-eared imp
+    ('Slime',      105, 42),
+    ('Carny',      111, 43),  # a figure in a hat, for the sideshow barker
+    ('Rat_Tail',     2, 25),  # a thin curve (from the blood row; painted pale)
+    ('Bat_Wing',     5, 23),  # a feather shape
+    ('Spider_Leg',   0, 25),
+    ('Beetle_Shell', 5, 18),  # a round shell (from the food rows)
+    ('Kobold_Ear',  14, 18),  # an ear-like curl (from the food rows)
 ]
 
 def tile(col, row):

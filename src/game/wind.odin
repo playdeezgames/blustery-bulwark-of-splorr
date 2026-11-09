@@ -46,6 +46,9 @@ gust_warning :: proc(g: ^Game) -> bool {
 
 // Everything that happens when a turn passes, after the player's action.
 end_turn :: proc(g: ^Game) {
+	if g.mode == .Dead {
+		return
+	}
 	g.turn += 1
 	f := floor_of(g)
 	if g.lit {
@@ -65,6 +68,13 @@ end_turn :: proc(g: ^Game) {
 			}
 		}
 	}
+	tenants_act(g)
+	if g.mode == .Dead {
+		return
+	}
+	if g.turn % heal_period(g) == 0 && g.health < max_health(g) {
+		g.health += 1
+	}
 	g.gust_in -= 1
 	if g.gust_in == GUST_WARNING {
 		say(g, "The wind picks up from the ", COMPASS[f.wind_from], ".")
@@ -81,6 +91,7 @@ gust :: proc(g: ^Game) {
 	stop_travel(g)
 	d := wind_blow(f)
 	blow_items(g)
+	blow_tenants(g)
 	if anchored(g) {
 		say(g, "A gust tugs at you. Yer load holds you down.")
 	} else if passable(floor_cell(f, g.x + d.x, g.y + d.y)) {
@@ -88,8 +99,12 @@ gust :: proc(g: ^Game) {
 		g.y += d.y
 		say(g, "A gust shoves you ", COMPASS[direction_index(d)], ".")
 	} else {
-		// "Costs a little" (DESIGN.md): health arrives in step 4; for now it is only said.
+		// "Costs a little" (DESIGN.md).
 		say(g, "A gust slams you into the wall.")
+		hurt(g, 1, "the wind")
+		if g.mode == .Dead {
+			return
+		}
 	}
 	if g.lit && rng_int(&g.rng, 100) < snuff_chance(f.number) {
 		g.lit = false

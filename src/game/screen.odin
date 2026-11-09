@@ -66,6 +66,18 @@ Gfx :: enum {
 	Sack,
 	Belt,
 	Purse,
+	Rat,
+	Bat,
+	Beetle,
+	Spider,
+	Kobold,
+	Slime,
+	Carny,
+	Rat_Tail,
+	Bat_Wing,
+	Spider_Leg,
+	Beetle_Shell,
+	Kobold_Ear,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

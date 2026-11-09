@@ -6,6 +6,11 @@ import "core:testing"
 new_game :: proc(seed: u64 = 12345) -> ^Game {
 	g := new(Game)
 	init_game(g, seed)
+	// Most tests check one rule alone: past creation, with no tenants about. tenants_test.odin
+	// brings them back.
+	g.mode = .Play
+	g.tenants = {}
+	g.no_tenants = true
 	return g
 }
 

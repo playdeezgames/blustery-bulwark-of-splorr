@@ -290,7 +290,7 @@ draw_inventory :: proc(f: ^Frame, g: ^Game) {
 	x := print(f, "Worn ", INV_LEFT_X, 2, COLOR_CYAN)
 	x += print(f, kg(b1[:], load), INV_LEFT_X + x, 2, load_color)
 	x += print(f, "/", INV_LEFT_X + x, 2, COLOR_MID)
-	x += print(f, kg(b2[:], CARRY_LIMIT), INV_LEFT_X + x, 2, COLOR_MID)
+	x += print(f, kg(b2[:], carry_limit(g)), INV_LEFT_X + x, 2, COLOR_MID)
 	print(f, "kg", INV_LEFT_X + x, 2, COLOR_MID)
 	for s, i in LEFT_SLOTS {
 		draw_inv_row(f, g, 0, i, SLOT_LABEL[s], worn(g, s))
@@ -370,6 +370,14 @@ draw_inv_row :: proc(f: ^Frame, g: ^Game, pane, row: int, label: string, id: int
 	color: u8 = id == v.held ? COLOR_YELLOW : COLOR_WHITE
 	if id == worn(g, .Light) && g.lit {
 		color = id == v.held ? COLOR_YELLOW : COLOR_ORANGE
+	}
+	if full := KIND[g.items[id].kind].durability; full > 0 && id != v.held {
+		dur := int(g.items[id].dur)
+		if dur * 5 <= full {
+			color = COLOR_RED
+		} else if dur * 2 <= full {
+			color = COLOR_ORANGE
+		}
 	}
 	name := item_name(g, id)
 	room := (x0 + INV_PANE_W - (is_container(g.items[id].kind) ? 10 : 0) - x) / GLYPH_W

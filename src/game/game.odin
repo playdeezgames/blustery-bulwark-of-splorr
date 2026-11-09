@@ -44,6 +44,8 @@ Mode :: enum u8 {
 	Play,
 	Automap,
 	Inventory,
+	Create, // character creation, before the climb
+	Dead, // fallen; the next Confirm or click wakes you
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -73,6 +75,14 @@ Game :: struct {
 	lit:         bool, // the torch in the light slot is burning
 	items:       [MAX_ITEMS]Item,
 	inv:         Inventory_View,
+	attr:        [Attr]int,
+	health:      int,
+	xp:          int,
+	create_row:  int,
+	tenants:     [MAX_TENANTS]Tenant,
+	deaths:      int,
+	killed_by:   string,
+	no_tenants:  bool, // tests set this to check other rules without tenants about
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
@@ -83,10 +93,16 @@ init_game :: proc(g: ^Game, seed: u64) {
 	g^ = {}
 	g.seed = seed
 	g.rng = Rng{seed ~ 0x5EED_B1A5_7E2F_0001}
+	for &v in g.attr {
+		v = ATTR_BASE
+	}
+	g.health = max_health(g)
 	give_starting_kit(g)
 	enter_floor(g, 0, .Stairs_Down)
+	g.mode = .Create
+	say(g, "A gale flattened yer farm.")
+	say(g, "The herald says the lord did it.")
 	say(g, "The wind howls round the bulwark.")
-	say(g, "You climb in from the town gate.")
 }
 
 // Moves to floor index `i`, standing on its stairs of kind `arrive`. A floor is generated the first
@@ -97,6 +113,10 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
+		if !g.no_tenants {
+			r := Rng{floor_seed(g.seed, f.number) ~ 0x7E4A_47_5EED}
+			populate_tenants(g, i, &r)
+		}
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
 	g.x, g.y = at.x, at.y
@@ -196,6 +216,10 @@ stop_travel :: proc(g: ^Game) {
 // enough to anchor you also slows you to a step every two turns. False, with the reason said, when
 // a wall is in the way or the load is too heavy to move (no turn passes).
 step_player :: proc(g: ^Game, d: [2]int) -> bool {
+	if id := tenant_at(g, g.x + d.x, g.y + d.y); id != 0 {
+		player_attack(g, id)
+		return false
+	}
 	if !passable(cell_at(g, g.x + d.x, g.y + d.y)) {
 		say(g, "A wall.")
 		return false
@@ -232,9 +256,19 @@ command :: proc(g: ^Game, c: Command) {
 		g.mode = .Play // any command closes the map
 		return
 	}
-	if g.mode == .Inventory {
+	switch g.mode {
+	case .Inventory:
 		inventory_command(g, c)
 		return
+	case .Create:
+		create_command(g, c)
+		return
+	case .Dead:
+		if c == .Confirm {
+			wake(g)
+		}
+		return
+	case .Play, .Automap:
 	}
 	switch c {
 	case .North, .South, .West, .East, .North_West, .North_East, .South_West, .South_East:
@@ -307,9 +341,17 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 		g.mode = .Play
 		return
 	}
-	if g.mode == .Inventory {
+	switch g.mode {
+	case .Inventory:
 		inventory_pointer(g, sx, sy, kind)
 		return
+	case .Create:
+		create_pointer(g, sx, sy)
+		return
+	case .Dead:
+		wake(g)
+		return
+	case .Play, .Automap:
 	}
 	x, y, ok := screen_to_cell(g, sx, sy)
 	if !ok {
@@ -333,6 +375,8 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 	g.path_len = find_path(f, {g.x, g.y}, {x, y}, &g.path)
 	if g.path_len == 0 {
 		say(g, "You know no way there.")
+	} else if hostile_in_view(g) {
+		g.path_len = 1 // with a tenant after you, one step at a time
 	}
 }
 
@@ -344,6 +388,10 @@ inspect :: proc(g: ^Game, x, y: int) {
 	}
 	if x == g.x && y == g.y {
 		say(g, "You. Windswept.")
+		return
+	}
+	if id := tenant_at(g, x, y); id != 0 && g.vis[y][x] {
+		inspect_tenant(g, id)
 		return
 	}
 	if id := ground_item_at(g, x, y); id != 0 && g.vis[y][x] {
@@ -372,6 +420,10 @@ tick :: proc(g: ^Game) -> bool {
 		return false
 	}
 	g.travel_wait = 0
+	if g.path_i > 0 && hostile_in_view(g) {
+		stop_travel(g)
+		return true
+	}
 	next := g.path[g.path_i]
 	g.path_i += 1
 	d := next - [2]int{g.x, g.y}

@@ -21,6 +21,12 @@ Item_Kind :: enum u8 {
 	Sack,
 	Belt,
 	Purse,
+	// Trophies (step 4): sold in town.
+	Rat_Tail,
+	Bat_Wing,
+	Spider_Leg,
+	Beetle_Shell,
+	Kobold_Ear,
 }
 
 Slot :: enum u8 {
@@ -74,10 +80,14 @@ Kind_Info :: struct {
 	belt_slots: int, // a belt holds this many small things
 	coins_only: bool,
 	fuel:       int, // turns of light in a fresh one
+	dmin, dmax: int, // a weapon's damage
+	armour:     int, // how much a worn piece turns blows aside
+	durability: int, // uses before it breaks (0: never wears out)
+	trophy:     bool, // a monster's leavings, picked up into the pack before the belt
 }
 
 BELT_SLOT_BULK :: 1000 // the biggest thing a belt slot holds
-CARRY_LIMIT :: 20000 // grams; Strength will change it when attributes arrive
+CARRY_PER_STRENGTH :: 2000 // grams of load limit per point of Strength (10 Strength carries 20 kg)
 ANCHOR_PERCENT :: 60 // a load this heavy keeps a gust from moving you, and slows you
 LIGHT_ITEM :: 300 // grams; things this light on the ground are blown along by gusts
 
@@ -85,18 +95,23 @@ KIND := [Item_Kind]Kind_Info {
 	.None          = {},
 	.Jools         = {name = "Jools", gfx = .Jools, color = COLOR_YELLOW, weight = 10, bulk = 2},
 	.Torch         = {name = "Torch", gfx = .Torch, color = COLOR_ORANGE, weight = 500, bulk = 600, slot = .Light, fuel = TORCH_TURNS},
-	.Dagger        = {name = "Dagger", gfx = .Dagger, color = COLOR_LIGHT, weight = 400, bulk = 300, slot = .Weapon},
-	.Short_Sword   = {name = "Short sword", gfx = .Short_Sword, color = COLOR_LIGHT, weight = 1200, bulk = 1500, slot = .Weapon},
-	.Club          = {name = "Club", gfx = .Club, color = COLOR_BROWN, weight = 1500, bulk = 1800, slot = .Weapon},
-	.Padded_Armour = {name = "Padded armour", gfx = .Padded_Armour, color = COLOR_BROWN, weight = 4000, bulk = 8000, slot = .Armour},
-	.Leather_Cap   = {name = "Leather cap", gfx = .Leather_Cap, color = COLOR_BROWN, weight = 500, bulk = 1500, slot = .Helmet},
-	.Buckler       = {name = "Buckler", gfx = .Buckler, color = COLOR_BROWN, weight = 1500, bulk = 3000, slot = .Shield},
-	.Boots         = {name = "Boots", gfx = .Boots, color = COLOR_BROWN, weight = 1000, bulk = 2500, slot = .Boots},
+	.Dagger        = {name = "Dagger", gfx = .Dagger, color = COLOR_LIGHT, weight = 400, bulk = 300, slot = .Weapon, dmin = 1, dmax = 4, durability = 30},
+	.Short_Sword   = {name = "Short sword", gfx = .Short_Sword, color = COLOR_LIGHT, weight = 1200, bulk = 1500, slot = .Weapon, dmin = 2, dmax = 6, durability = 50},
+	.Club          = {name = "Club", gfx = .Club, color = COLOR_BROWN, weight = 1500, bulk = 1800, slot = .Weapon, dmin = 2, dmax = 7, durability = 40},
+	.Padded_Armour = {name = "Padded armour", gfx = .Padded_Armour, color = COLOR_BROWN, weight = 4000, bulk = 8000, slot = .Armour, armour = 2, durability = 40},
+	.Leather_Cap   = {name = "Leather cap", gfx = .Leather_Cap, color = COLOR_BROWN, weight = 500, bulk = 1500, slot = .Helmet, armour = 1, durability = 30},
+	.Buckler       = {name = "Buckler", gfx = .Buckler, color = COLOR_BROWN, weight = 1500, bulk = 3000, slot = .Shield, armour = 1, durability = 40},
+	.Boots         = {name = "Boots", gfx = .Boots, color = COLOR_BROWN, weight = 1000, bulk = 2500, slot = .Boots, armour = 1, durability = 50},
 	.Bread         = {name = "Bread", gfx = .Bread, color = COLOR_BROWN, weight = 300, bulk = 800},
 	.Pack          = {name = "Pack", gfx = .Pack, color = COLOR_BROWN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 12000, cap_bulk = 25000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
+	.Rat_Tail      = {name = "Rat tail", gfx = .Rat_Tail, color = COLOR_LIGHT, weight = 20, bulk = 30, trophy = true},
+	.Bat_Wing      = {name = "Bat wing", gfx = .Bat_Wing, color = COLOR_MID, weight = 15, bulk = 40, trophy = true},
+	.Spider_Leg    = {name = "Spider leg", gfx = .Spider_Leg, color = COLOR_RED, weight = 10, bulk = 20, trophy = true},
+	.Beetle_Shell  = {name = "Beetle shell", gfx = .Beetle_Shell, color = COLOR_ORANGE, weight = 150, bulk = 200, trophy = true},
+	.Kobold_Ear    = {name = "Kobold ear", gfx = .Kobold_Ear, color = 5, weight = 10, bulk = 15, trophy = true},
 }
 
 Place :: enum u8 {
@@ -115,6 +130,8 @@ Item :: struct {
 	parent: i16, // Inside: the container's item id
 	count:  i32, // Jools: how many; 1 for anything else
 	fuel:   i32, // Torch: turns of light left
+	dur:    i16, // Weapons and armour: uses left before it breaks
+	pile:   bool, // dropped when you died; lost if you die again before picking it up
 }
 
 MAX_ITEMS :: 256 // id 0 is never used, so 0 means "no item"
@@ -126,7 +143,7 @@ is_container :: proc(k: Item_Kind) -> bool {
 new_item :: proc(g: ^Game, kind: Item_Kind, count := 1) -> int {
 	for i in 1 ..< MAX_ITEMS {
 		if g.items[i].place == .Nowhere {
-			g.items[i] = Item{kind = kind, count = i32(count), fuel = i32(KIND[kind].fuel)}
+			g.items[i] = Item{kind = kind, count = i32(count), fuel = i32(KIND[kind].fuel), dur = i16(KIND[kind].durability)}
 			return i
 		}
 	}
@@ -134,7 +151,12 @@ new_item :: proc(g: ^Game, kind: Item_Kind, count := 1) -> int {
 }
 
 free_item :: proc(g: ^Game, id: int) {
-	// Anything inside goes with it (only called for burnt torches and merged coins, which hold nothing).
+	// Anything inside goes with it.
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Inside && int(g.items[i].parent) == id {
+			free_item(g, i)
+		}
+	}
 	g.items[id] = {}
 }
 
@@ -206,12 +228,16 @@ carried_weight :: proc(g: ^Game) -> int {
 	return w
 }
 
+carry_limit :: proc(g: ^Game) -> int {
+	return CARRY_PER_STRENGTH * g.attr[.Strength]
+}
+
 anchored :: proc(g: ^Game) -> bool {
-	return carried_weight(g) * 100 >= CARRY_LIMIT * ANCHOR_PERCENT
+	return carried_weight(g) * 100 >= carry_limit(g) * ANCHOR_PERCENT
 }
 
 overloaded :: proc(g: ^Game) -> bool {
-	return carried_weight(g) > CARRY_LIMIT
+	return carried_weight(g) > carry_limit(g)
 }
 
 // True when `id` is `container` or holds it somewhere inside (a bag cannot go into itself).
@@ -282,6 +308,7 @@ unplace :: proc(g: ^Game, id: int) {
 	if it.place == .Worn && it.slot == .Light {
 		g.lit = false
 	}
+	it.pile = false // handled again: no longer part of a death pile
 }
 
 put_in :: proc(g: ^Game, id, container: int) -> bool {
@@ -401,6 +428,9 @@ get_here :: proc(g: ^Game) -> bool {
 	n := copy(name_buf[:], item_name(g, id))
 	name := string(name_buf[:n])
 	order := [?]Slot{.Purse, .Belt, .Pack}
+	if KIND[g.items[id].kind].trophy {
+		order = {.Purse, .Pack, .Belt} // keep belt slots for things you reach for
+	}
 	for s in order {
 		c := worn(g, s)
 		if c == 0 {

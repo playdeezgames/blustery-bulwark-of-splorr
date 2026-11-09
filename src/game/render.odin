@@ -11,6 +11,11 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 		draw_inventory(f, g)
 	case .Play:
 		draw_map(f, g)
+	case .Create:
+		draw_create(f, g)
+	case .Dead:
+		draw_map(f, g)
+		draw_dead(f, g)
 	}
 	draw_log(f, g)
 	draw_panel(f, g)
@@ -62,6 +67,7 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 			}
 		}
 	}
+	draw_tenants(f, g)
 	// A mouse route still to walk, as dots.
 	for i in g.path_i ..< g.path_len {
 		p := g.path[i]
@@ -149,11 +155,18 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	draw_gfx(f, .Torch, x, 26, COLOR_ORANGE)
 	w := print(f, "Floor ", x + 16, 28, COLOR_LIGHT)
 	print(f, itoa(buf[:], floor_of(g).number), x + 16 + w, 28, COLOR_LIGHT)
-	rows := [?]string{"Health  --", "Mana    --", "Food    --"}
-	for r, i in rows {
-		print(f, r, x, 46 + i * 10, COLOR_MID)
+	y := 46
+	hp, top := g.health, max_health(g)
+	w = print(f, "Health  ", x, y, COLOR_MID)
+	w += print(f, itoa(buf[:], hp), x + w, y, hp * 3 <= top ? COLOR_RED : hp * 3 <= top * 2 ? COLOR_ORANGE : COLOR_WHITE)
+	w += print(f, "/", x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], top), x + w, y, COLOR_DARK)
+	y += 10
+	rows := [?]string{"Mana    --", "Food    --"}
+	for r in rows {
+		print(f, r, x, y, COLOR_MID)
+		y += 10
 	}
-	y := 46 + len(rows) * 10
 	// Light: turns left in the torch in hand, and spare torches carried.
 	w = print(f, "Light   ", x, y, COLOR_MID)
 	fuel, spares := torch_fuel(g), spare_torches(g)
@@ -178,13 +191,24 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	w = print(f, "Load    ", x, y, COLOR_MID)
 	w += print(f, kg(kb1[:], load), x + w, y, overloaded(g) ? COLOR_RED : anchored(g) ? COLOR_ORANGE : COLOR_LIGHT)
 	print(f, "/" , x + w, y, COLOR_DARK)
-	print(f, kg(kb2[:], CARRY_LIMIT), x + w + GLYPH_W, y, COLOR_DARK)
+	print(f, kg(kb2[:], carry_limit(g)), x + w + GLYPH_W, y, COLOR_DARK)
 	y += 10
 	w = print(f, "Jools   ", x, y, COLOR_MID)
 	print(f, itoa(buf[:], carried_jools(g)), x + w, y, COLOR_YELLOW)
 	y += 10
+	w = print(f, "XP      ", x, y, COLOR_MID)
+	print(f, itoa(buf[:], g.xp), x + w, y, COLOR_LIGHT)
+	y += 10
 	w = print(f, "Turn    ", x, y, COLOR_MID)
 	print(f, itoa(buf[:], g.turn), x + w, y, COLOR_MID)
+	y += 12
+	// The four attributes, short.
+	short := [Attr]string{.Strength = "St", .Dexterity = "Dx", .Intelligence = "In", .Constitution = "Co"}
+	ax := x
+	for a in Attr {
+		ax += print(f, short[a], ax, y, COLOR_DARK)
+		ax += print(f, itoa(buf[:], g.attr[a]), ax, y, COLOR_LIGHT) + 4
+	}
 	if g.mode == .Inventory {
 		hints := [?]string{"Enter: take/put", "Right: open", "Left: back", "Esc/I: close"}
 		for h, i in hints {
@@ -193,5 +217,5 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	} else {
 		print(f, "M map  I inventory", x, SCREEN_H - 30, COLOR_DARK)
 	}
-	print(f, "Slice 1, step 3", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 1, step 4", x, SCREEN_H - 12, COLOR_DARK)
 }
