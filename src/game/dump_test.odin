@@ -25,7 +25,7 @@ test_dump_play :: proc(t: ^testing.T) {
 		}
 		n := find_path(f, {g.x, g.y}, f.up, &g.path)
 		f.seen = {}
-		compute_fov(f, g.x, g.y, &g.vis)
+		refresh_view(g)
 		for i in 0 ..< min(n, 3) {
 			step_player(g, g.path[i] - [2]int{g.x, g.y})
 		}

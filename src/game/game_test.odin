@@ -107,7 +107,7 @@ test_walls_block_and_cost_no_turn :: proc(t: ^testing.T) {
 // Walks the player to (x, y) on the current floor by the stairs route, as a test helper.
 teleport :: proc(g: ^Game, at: [2]int) {
 	g.x, g.y = at.x, at.y
-	compute_fov(floor_of(g), g.x, g.y, &g.vis)
+	refresh_view(g)
 }
 
 @(test)
@@ -179,6 +179,7 @@ test_mouse_route_walks_over_seen_cells :: proc(t: ^testing.T) {
 		}
 	}
 	testing.expect(t, best >= 2)
+	g.gust_in = 1000 // no gust may push the walker off the route in this test
 	ox, oy := view_origin(g)
 	pointer(g, MAP_X + (target.x - ox) * TILE + 6, MAP_Y + (target.y - oy) * TILE + 6, .Mouse_Primary)
 	testing.expect(t, g.path_len > 0)

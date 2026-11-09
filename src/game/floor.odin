@@ -27,6 +27,7 @@ Floor :: struct {
 	rooms:      [MAX_ROOMS]Room,
 	room_count: int,
 	up, down:   [2]int, // stairs
+	wind_from:  int, // index into DIRECTIONS and COMPASS: where this floor's wind comes from
 }
 
 passable :: proc(c: Cell) -> bool {
@@ -99,6 +100,7 @@ generate_floor :: proc(f: ^Floor, seed: u64, number: int) {
 	f.up = room_centre(f.rooms[far])
 	f.cells[f.down.y][f.down.x] = .Stairs_Down
 	f.cells[f.up.y][f.up.x] = .Stairs_Up
+	f.wind_from = rng_int(&r, len(DIRECTIONS))
 	f.made = true
 }
 
@@ -127,16 +129,16 @@ sign :: proc(v: int) -> int {
 }
 
 // Field of view: a cell is visible when the straight line to it from (px, py) meets no wall before it.
-SIGHT :: 7
+SIGHT :: 7 // with a lit torch
 
 Visible :: [FLOOR_H][FLOOR_W]bool
 
-compute_fov :: proc(f: ^Floor, px, py: int, vis: ^Visible) {
+compute_fov :: proc(f: ^Floor, px, py, sight: int, vis: ^Visible) {
 	vis^ = {}
-	for y in max(0, py - SIGHT) ..= min(FLOOR_H - 1, py + SIGHT) {
-		for x in max(0, px - SIGHT) ..= min(FLOOR_W - 1, px + SIGHT) {
+	for y in max(0, py - sight) ..= min(FLOOR_H - 1, py + sight) {
+		for x in max(0, px - sight) ..= min(FLOOR_W - 1, px + sight) {
 			dx, dy := x - px, y - py
-			if dx * dx + dy * dy > SIGHT * SIGHT + SIGHT {
+			if dx * dx + dy * dy > sight * sight + sight {
 				continue
 			}
 			if line_clear(f, px, py, x, y) {
@@ -146,8 +148,8 @@ compute_fov :: proc(f: ^Floor, px, py: int, vis: ^Visible) {
 		}
 	}
 	// Walls touching a visible open cell are visible too, so room corners are not left out.
-	for y in max(1, py - SIGHT) ..= min(FLOOR_H - 2, py + SIGHT) {
-		for x in max(1, px - SIGHT) ..= min(FLOOR_W - 2, px + SIGHT) {
+	for y in max(1, py - sight) ..= min(FLOOR_H - 2, py + sight) {
+		for x in max(1, px - sight) ..= min(FLOOR_W - 2, px + sight) {
 			if !vis[y][x] || !passable(f.cells[y][x]) {
 				continue
 			}

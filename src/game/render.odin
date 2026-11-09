@@ -55,6 +55,30 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 	px, py := MAP_X + (g.x - ox) * TILE, MAP_Y + (g.y - oy) * TILE
 	fill_rect(f, px, py, TILE, TILE, COLOR_BLACK)
 	draw_gfx(f, .Player, px, py, COLOR_WHITE)
+	if gust_warning(g) {
+		draw_streaks(f, g)
+	}
+}
+
+// Wind streaks across the map view while a gust is coming: short lines along the wind, in new
+// places every turn, brighter on the last turn of warning.
+STREAKS :: 16
+
+draw_streaks :: proc(f: ^Frame, g: ^Game) {
+	d := wind_blow(floor_of(g))
+	color: u8 = g.gust_in == 1 ? COLOR_WHITE : COLOR_MID
+	r := Rng{u64(g.turn) * 0x9E3779B97F4A7C15 ~ g.seed}
+	for _ in 0 ..< STREAKS {
+		x := rng_int(&r, VIEW_W * TILE)
+		y := rng_int(&r, VIEW_H * TILE)
+		length := rng_range(&r, 5, 11)
+		for i in 0 ..< length {
+			sx, sy := MAP_X + x + d.x * i, MAP_Y + y + d.y * i
+			if sx >= MAP_X && sy >= MAP_Y && sx < MAP_X + VIEW_W * TILE && sy < MAP_Y + VIEW_H * TILE {
+				set_px(f, sx, sy, color)
+			}
+		}
+	}
 }
 
 AUTOMAP_CELL :: 4
@@ -107,12 +131,34 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	draw_gfx(f, .Torch, x, 26, COLOR_ORANGE)
 	w := print(f, "Floor ", x + 16, 28, COLOR_LIGHT)
 	print(f, itoa(buf[:], floor_of(g).number), x + 16 + w, 28, COLOR_LIGHT)
-	rows := [?]string{"Health  --", "Mana    --", "Food    --", "Light   --", "Wind    --", "Load    --", "Jools   --"}
+	rows := [?]string{"Health  --", "Mana    --", "Food    --"}
 	for r, i in rows {
 		print(f, r, x, 46 + i * 10, COLOR_MID)
 	}
-	w = print(f, "Turn    ", x, 46 + len(rows) * 10, COLOR_MID)
-	print(f, itoa(buf[:], g.turn), x + w, 46 + len(rows) * 10, COLOR_MID)
+	y := 46 + len(rows) * 10
+	// Light: turns left in the torch in hand, and spares.
+	w = print(f, "Light   ", x, y, COLOR_MID)
+	if g.lit {
+		w += print(f, itoa(buf[:], g.torch), x + w, y, g.torch <= 30 ? COLOR_ORANGE : COLOR_YELLOW)
+	} else {
+		w += print(f, g.torch > 0 || g.spare_torches > 0 ? "out" : "none", x + w, y, COLOR_RED)
+	}
+	w += print(f, " +", x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], g.spare_torches), x + w, y, COLOR_DARK)
+	y += 10
+	// Wind: where it comes from, and turns to the next gust (bright while it warns).
+	fl := floor_of(g)
+	w = print(f, "Wind    ", x, y, COLOR_MID)
+	w += print(f, COMPASS[fl.wind_from], x + w, y, COLOR_LIGHT)
+	w += print(f, " gust ", x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], g.gust_in), x + w, y, gust_warning(g) ? COLOR_WHITE : COLOR_DARK)
+	y += 10
+	for r in ([?]string{"Load    --", "Jools   --"}) {
+		print(f, r, x, y, COLOR_MID)
+		y += 10
+	}
+	w = print(f, "Turn    ", x, y, COLOR_MID)
+	print(f, itoa(buf[:], g.turn), x + w, y, COLOR_MID)
 	print(f, "M: map", x, SCREEN_H - 30, COLOR_DARK)
-	print(f, "Slice 1, step 1", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 1, step 2", x, SCREEN_H - 12, COLOR_DARK)
 }

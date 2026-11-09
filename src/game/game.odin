@@ -65,6 +65,11 @@ Game :: struct {
 	path_len:    int,
 	path_i:      int,
 	travel_wait: int,
+	rng:         Rng, // gusts and other chances during play (floors use their own seeds)
+	gust_in:     int, // turns until the next gust
+	lit:         bool,
+	torch:       int, // turns left in the torch in hand
+	spare_torches: int,
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
@@ -74,6 +79,8 @@ floor_of :: proc(g: ^Game) -> ^Floor {
 init_game :: proc(g: ^Game, seed: u64) {
 	g^ = {}
 	g.seed = seed
+	g.rng = Rng{seed ~ 0x5EED_B1A5_7E2F_0001}
+	g.lit, g.torch, g.spare_torches = true, TORCH_TURNS, START_SPARE_TORCHES
 	enter_floor(g, 0, .Stairs_Down)
 	say(g, "The wind howls round the bulwark.")
 	say(g, "You climb in from the town gate.")
@@ -89,8 +96,9 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
 	g.x, g.y = at.x, at.y
+	g.gust_in = gust_period(f.number)
 	stop_travel(g)
-	compute_fov(f, g.x, g.y, &g.vis)
+	refresh_view(g)
 }
 
 // Adds a line to the message log, cut to the log's width.
@@ -142,15 +150,15 @@ stop_travel :: proc(g: ^Game) {
 	g.path_len, g.path_i, g.travel_wait = 0, 0, 0
 }
 
-// One step of the player; false when a wall is in the way (no turn passes).
+// One step of the player, then the turn passes (the wind may move them again); false when a wall
+// is in the way (no turn passes).
 step_player :: proc(g: ^Game, d: [2]int) -> bool {
 	if !passable(cell_at(g, g.x + d.x, g.y + d.y)) {
 		return false
 	}
 	g.x += d.x
 	g.y += d.y
-	g.turn += 1
-	compute_fov(floor_of(g), g.x, g.y, &g.vis)
+	end_turn(g)
 	return true
 }
 
@@ -177,8 +185,8 @@ command :: proc(g: ^Game, c: Command) {
 			say(g, "A wall.")
 		}
 	case .Wait:
-		g.turn += 1
 		say(g, "You wait. The wind does not.")
+		end_turn(g)
 	case .Confirm:
 		use_here(g)
 	case .Cancel:
@@ -206,7 +214,9 @@ use_here :: proc(g: ^Game) {
 			say(g, "Below is the town. It is not built yet.")
 		}
 	case:
-		say(g, "Nothing here to use.")
+		if !light_torch(g) {
+			say(g, "Nothing here to use.")
+		}
 	}
 }
 
@@ -299,7 +309,8 @@ tick :: proc(g: ^Game) -> bool {
 	g.travel_wait = 0
 	next := g.path[g.path_i]
 	g.path_i += 1
-	if !step_player(g, next - [2]int{g.x, g.y}) {
+	d := next - [2]int{g.x, g.y}
+	if abs(d.x) > 1 || abs(d.y) > 1 || !step_player(g, d) {
 		stop_travel(g)
 		return true
 	}
