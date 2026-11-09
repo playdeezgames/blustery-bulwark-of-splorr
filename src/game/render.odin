@@ -4,9 +4,12 @@ package game
 
 draw_game :: proc(f: ^Frame, g: ^Game) {
 	cls(f, COLOR_BLACK)
-	if g.mode == .Automap {
+	switch g.mode {
+	case .Automap:
 		draw_automap(f, g)
-	} else {
+	case .Inventory:
+		draw_inventory(f, g)
+	case .Play:
 		draw_map(f, g)
 	}
 	draw_log(f, g)
@@ -41,6 +44,21 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 			color := g.vis[y][x] ? lit : remembered
 			if color != COLOR_BLACK {
 				draw_gfx(f, gfx, MAP_X + vx * TILE, MAP_Y + vy * TILE, color)
+			}
+		}
+	}
+	// Things on the ground, where they can be seen now (the topmost of a pile).
+	for vy in 0 ..< VIEW_H {
+		for vx in 0 ..< VIEW_W {
+			x, y := ox + vx, oy + vy
+			if x < 0 || y < 0 || x >= FLOOR_W || y >= FLOOR_H || !g.vis[y][x] {
+				continue
+			}
+			if id := ground_item_at(g, x, y); id != 0 {
+				k := KIND[g.items[id].kind]
+				sx, sy := MAP_X + vx * TILE, MAP_Y + vy * TILE
+				fill_rect(f, sx, sy, TILE, TILE, COLOR_BLACK)
+				draw_gfx(f, k.gfx, sx, sy, k.color)
 			}
 		}
 	}
@@ -136,15 +154,16 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		print(f, r, x, 46 + i * 10, COLOR_MID)
 	}
 	y := 46 + len(rows) * 10
-	// Light: turns left in the torch in hand, and spares.
+	// Light: turns left in the torch in hand, and spare torches carried.
 	w = print(f, "Light   ", x, y, COLOR_MID)
+	fuel, spares := torch_fuel(g), spare_torches(g)
 	if g.lit {
-		w += print(f, itoa(buf[:], g.torch), x + w, y, g.torch <= 30 ? COLOR_ORANGE : COLOR_YELLOW)
+		w += print(f, itoa(buf[:], fuel), x + w, y, fuel <= 30 ? COLOR_ORANGE : COLOR_YELLOW)
 	} else {
-		w += print(f, g.torch > 0 || g.spare_torches > 0 ? "out" : "none", x + w, y, COLOR_RED)
+		w += print(f, fuel > 0 || spares > 0 ? "out" : "none", x + w, y, COLOR_RED)
 	}
 	w += print(f, " +", x + w, y, COLOR_DARK)
-	print(f, itoa(buf[:], g.spare_torches), x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], spares), x + w, y, COLOR_DARK)
 	y += 10
 	// Wind: where it comes from, and turns to the next gust (bright while it warns).
 	fl := floor_of(g)
@@ -153,12 +172,26 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	w += print(f, " gust ", x + w, y, COLOR_DARK)
 	print(f, itoa(buf[:], g.gust_in), x + w, y, gust_warning(g) ? COLOR_WHITE : COLOR_DARK)
 	y += 10
-	for r in ([?]string{"Load    --", "Jools   --"}) {
-		print(f, r, x, y, COLOR_MID)
-		y += 10
-	}
+	// Load: kilograms carried and the limit; orange when it anchors (and slows) you, red when too much.
+	kb1, kb2: [16]u8
+	load := carried_weight(g)
+	w = print(f, "Load    ", x, y, COLOR_MID)
+	w += print(f, kg(kb1[:], load), x + w, y, overloaded(g) ? COLOR_RED : anchored(g) ? COLOR_ORANGE : COLOR_LIGHT)
+	print(f, "/" , x + w, y, COLOR_DARK)
+	print(f, kg(kb2[:], CARRY_LIMIT), x + w + GLYPH_W, y, COLOR_DARK)
+	y += 10
+	w = print(f, "Jools   ", x, y, COLOR_MID)
+	print(f, itoa(buf[:], carried_jools(g)), x + w, y, COLOR_YELLOW)
+	y += 10
 	w = print(f, "Turn    ", x, y, COLOR_MID)
 	print(f, itoa(buf[:], g.turn), x + w, y, COLOR_MID)
-	print(f, "M: map", x, SCREEN_H - 30, COLOR_DARK)
-	print(f, "Slice 1, step 2", x, SCREEN_H - 12, COLOR_DARK)
+	if g.mode == .Inventory {
+		hints := [?]string{"Enter: take/put", "Right: open", "Left: back", "Esc/I: close"}
+		for h, i in hints {
+			print(f, h, x, SCREEN_H - 52 + i * 9, COLOR_DARK)
+		}
+	} else {
+		print(f, "M map  I inventory", x, SCREEN_H - 30, COLOR_DARK)
+	}
+	print(f, "Slice 1, step 3", x, SCREEN_H - 12, COLOR_DARK)
 }

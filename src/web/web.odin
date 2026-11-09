@@ -64,6 +64,14 @@ platform_pointer :: proc "c" (x, y, kind: i32) {
 	state.dirty = true
 }
 
+// A mouse button let go at framebuffer pixel (x, y) (dragging in the inventory).
+@(export)
+platform_pointer_up :: proc "c" (x, y: i32) {
+	context = runtime.default_context()
+	game.inventory_release(&state.rules, int(x), int(y))
+	state.dirty = true
+}
+
 // 1 when the frame holds pixels the page has not copied yet (and marks them taken).
 @(export)
 platform_frame_ready :: proc "c" () -> i32 {

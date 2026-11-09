@@ -21,6 +21,20 @@ PICKS = [
     ('Stairs_Up',   24, 0),   # user-confirmed in the Urizen catalogue
     ('Player',      104, 0),  # plain person
     ('Torch',       10, 31),  # from the tools row
+    # Items (slice 1 step 3).
+    ('Jools',        0, 46),  # a scatter of coins
+    ('Dagger',      44, 6),
+    ('Short_Sword', 39, 6),
+    ('Club',        28, 7),
+    ('Padded_Armour', 31, 11),
+    ('Leather_Cap', 39, 12),
+    ('Buckler',     28, 12),  # round wooden shield
+    ('Boots',        1, 29),
+    ('Bread',        1, 20),
+    ('Pack',        69, 9),   # a rucksack shape (from the medical row; painted brown)
+    ('Sack',        64, 30),  # a tied bag (the money bag; painted brown)
+    ('Belt',         0, 29),
+    ('Purse',        1, 23),  # leather pouch
 ]
 
 def tile(col, row):

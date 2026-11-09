@@ -232,7 +232,15 @@ test_log_and_itoa :: proc(t: ^testing.T) {
 	testing.expect_value(t, itoa(buf[:], -12), "-12")
 	long := "0123456789012345678901234567890123456789012345678901234567890123456789"
 	say(g, long)
-	testing.expect(t, message(&g.log[LOG_LINES - 1]) == long[:(VIEW_W * TILE - LOG_X) / GLYPH_W])
+	testing.expect(t, message(&g.log[LOG_LINES - 2]) == long[:LOG_WIDTH])
+	testing.expect(t, message(&g.log[LOG_LINES - 1])[1:] == long[LOG_WIDTH:])
+	// Words wrap at spaces, and every line fits.
+	say(g, "The gust blows out yer torch. Confirm to relight.")
+	testing.expect_value(t, message(&g.log[LOG_LINES - 2]), "The gust blows out yer torch. Confirm to")
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), " relight.")
+	for &m in g.log {
+		testing.expect(t, m.n <= LOG_WIDTH)
+	}
 }
 
 @(test)

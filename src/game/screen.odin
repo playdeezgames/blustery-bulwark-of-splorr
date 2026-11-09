@@ -37,6 +37,7 @@ PALETTE := [16]u32 {
 COLOR_BLACK :: 0
 COLOR_RED :: 2
 COLOR_ORANGE :: 3
+COLOR_BROWN :: 3 // Sweetie-16 has no brown; orange stands in
 COLOR_YELLOW :: 4
 COLOR_CYAN :: 11
 COLOR_WHITE :: 12
@@ -52,6 +53,19 @@ Gfx :: enum {
 	Stairs_Up,
 	Player,
 	Torch,
+	Jools,
+	Dagger,
+	Short_Sword,
+	Club,
+	Padded_Armour,
+	Leather_Cap,
+	Buckler,
+	Boots,
+	Bread,
+	Pack,
+	Sack,
+	Belt,
+	Purse,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

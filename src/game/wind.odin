@@ -1,10 +1,11 @@
 package game
 
-// The wind and the light (slice 1 step 2; DESIGN.md "Gusts are telegraphed by turn", "Light burns
-// down, and gusts snuff it"). Each floor has a prevailing wind; a gust comes every few turns, with a
-// warning two turns before, pushes the player a tile downwind (until step 3 nothing anchors them),
-// and may blow out the torch. A torch burns down one turn at a time; without light the player sees
-// only the cells next to them.
+// The wind and the light (slice 1 steps 2 and 3; DESIGN.md "Gusts are telegraphed by turn", "Gusts
+// push the player unless their load anchors them", "Light burns down, and gusts snuff it"). Each
+// floor has a prevailing wind; a gust comes every few turns, with a warning two turns before,
+// pushes the player a tile downwind unless their load anchors them, carries light things on the
+// ground along, and may blow out the torch. The torch in the light slot burns down one turn at a
+// time; without light the player sees only the cells next to them.
 
 COMPASS := [8]string{"N", "S", "W", "E", "NW", "NE", "SW", "SE"} // same order as DIRECTIONS
 
@@ -16,7 +17,6 @@ GUST_WARNING :: 2 // turns of warning before a gust
 SNUFF_CHANCE := [4]int{25, 35, 45, 60}
 
 TORCH_TURNS :: 300 // a fresh torch
-START_SPARE_TORCHES :: 2 // until the inventory (step 3) holds real torches
 DARK_SIGHT :: 1
 
 gust_period :: proc(number: int) -> int {
@@ -49,14 +49,19 @@ end_turn :: proc(g: ^Game) {
 	g.turn += 1
 	f := floor_of(g)
 	if g.lit {
-		g.torch -= 1
-		if g.torch <= 0 {
-			g.torch = 0
+		id := worn(g, .Light)
+		if id == 0 || g.items[id].kind != .Torch {
 			g.lit = false
-			if g.spare_torches > 0 {
-				say(g, "Yer torch burns out. Confirm to light another.")
-			} else {
-				say(g, "Yer torch burns out. That was the last.")
+		} else {
+			g.items[id].fuel -= 1
+			if g.items[id].fuel <= 0 {
+				free_item(g, id)
+				g.lit = false
+				if spare_torches(g) > 0 {
+					say(g, "Yer torch burns out. Confirm to light another.")
+				} else {
+					say(g, "Yer torch burns out. That was the last.")
+				}
 			}
 		}
 	}
@@ -75,7 +80,10 @@ gust :: proc(g: ^Game) {
 	f := floor_of(g)
 	stop_travel(g)
 	d := wind_blow(f)
-	if passable(floor_cell(f, g.x + d.x, g.y + d.y)) {
+	blow_items(g)
+	if anchored(g) {
+		say(g, "A gust tugs at you. Yer load holds you down.")
+	} else if passable(floor_cell(f, g.x + d.x, g.y + d.y)) {
 		g.x += d.x
 		g.y += d.y
 		say(g, "A gust shoves you ", COMPASS[direction_index(d)], ".")
@@ -98,24 +106,66 @@ direction_index :: proc(d: [2]int) -> int {
 	return 0
 }
 
-// Confirm with no stairs underfoot: relight a blown-out torch, or light a spare. A turn passes.
-// Returns false when there is nothing to light.
+// Torches carried but not in the light slot.
+spare_torches :: proc(g: ^Game) -> int {
+	n := 0
+	for i in 1 ..< MAX_ITEMS {
+		it := &g.items[i]
+		if it.kind == .Torch && !(it.place == .Worn && it.slot == .Light) && is_carried(g, i) {
+			n += 1
+		}
+	}
+	return n
+}
+
+// Turns left in the torch in the light slot (0 when there is none).
+torch_fuel :: proc(g: ^Game) -> int {
+	id := worn(g, .Light)
+	if id == 0 || g.items[id].kind != .Torch {
+		return 0
+	}
+	return int(g.items[id].fuel)
+}
+
+// Confirm with nothing else to do: relight the torch in the light slot, or take a spare (the belt's
+// first) into it and light that. A turn passes. Returns false when the torch is already lit.
 light_torch :: proc(g: ^Game) -> bool {
 	if g.lit {
 		return false
 	}
-	if g.torch > 0 {
+	id := worn(g, .Light)
+	if id != 0 && g.items[id].kind == .Torch {
 		g.lit = true
-		say(g, "You relight yer torch.")
-	} else if g.spare_torches > 0 {
-		g.spare_torches -= 1
-		g.torch = TORCH_TURNS
-		g.lit = true
-		say(g, "You light a fresh torch.")
-	} else {
+		say(g, "You light yer torch.")
+		end_turn(g)
+		return true
+	}
+	if id != 0 {
+		say(g, "Yer light hand holds the ", item_name(g, id), ".")
+		return true
+	}
+	best := 0
+	for i in 1 ..< MAX_ITEMS {
+		it := &g.items[i]
+		if it.kind != .Torch || !is_carried(g, i) {
+			continue
+		}
+		on_belt := it.place == .Inside && g.items[it.parent].kind == .Belt
+		if best == 0 || on_belt {
+			best = i
+		}
+		if on_belt {
+			break
+		}
+	}
+	if best == 0 {
 		say(g, "You have no torch to light.")
 		return true
 	}
+	unplace(g, best)
+	g.items[best].place, g.items[best].slot = .Worn, .Light
+	g.lit = true
+	say(g, "You light a fresh torch.")
 	end_turn(g)
 	return true
 }

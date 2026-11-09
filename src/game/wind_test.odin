@@ -17,7 +17,7 @@ open_spot :: proc(g: ^Game) -> [2]int {
 					}
 				}
 			}
-			if ok {
+			if ok && ground_item_at(g, x, y) == 0 && ground_item_at(g, x + 1, y) == 0 {
 				return {x, y}
 			}
 		}
@@ -79,11 +79,16 @@ test_gust_into_a_wall_does_not_move_you :: proc(t: ^testing.T) {
 test_torch_burns_out_and_a_spare_is_lit :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
-	g.torch = 2
+	teleport(g, open_spot(g))
+	g.gust_in = 1000
+	spares := spare_torches(g)
+	testing.expect_value(t, spares, 2) // the starting kit's two on the belt
+	g.items[worn(g, .Light)].fuel = 2
 	command(g, .Wait)
 	testing.expect(t, g.lit)
 	command(g, .Wait)
 	testing.expect(t, !g.lit)
+	testing.expect_value(t, worn(g, .Light), 0) // a burnt-out torch is gone
 	testing.expect_value(t, sight_radius(g), DARK_SIGHT)
 	// In the dark only the cells next to you are visible.
 	for y in 0 ..< FLOOR_H {
@@ -93,13 +98,12 @@ test_torch_burns_out_and_a_spare_is_lit :: proc(t: ^testing.T) {
 			}
 		}
 	}
-	// Confirm away from the stairs lights a spare and takes a turn.
-	teleport(g, open_spot(g))
+	// Confirm (with nothing underfoot) takes a spare into the light slot and lights it: a turn.
 	turn := g.turn
 	command(g, .Confirm)
 	testing.expect(t, g.lit)
-	testing.expect_value(t, g.torch, TORCH_TURNS - 1)
-	testing.expect_value(t, g.spare_torches, START_SPARE_TORCHES - 1)
+	testing.expect_value(t, torch_fuel(g), TORCH_TURNS - 1)
+	testing.expect_value(t, spare_torches(g), spares - 1)
 	testing.expect_value(t, g.turn, turn + 1)
 }
 
@@ -107,21 +111,23 @@ test_torch_burns_out_and_a_spare_is_lit :: proc(t: ^testing.T) {
 test_gusts_snuff_torches_and_relighting_keeps_the_fuel :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
-	teleport(g, open_spot(g))
+	spot := open_spot(g)
 	snuffed := 0
 	for _ in 0 ..< 200 {
-		g.x, g.y = open_spot(g).x, open_spot(g).y
+		g.x, g.y = spot.x, spot.y
 		g.gust_in = 1
-		fuel := g.torch
+		fuel := torch_fuel(g)
 		command(g, .Wait)
 		if !g.lit {
 			snuffed += 1
-			testing.expect_value(t, g.torch, fuel - 1) // blown out, not used up
+			testing.expect_value(t, torch_fuel(g), fuel - 1) // blown out, not used up
+			g.x, g.y = spot.x, spot.y
+			g.gust_in = 1000
 			command(g, .Confirm)
 			testing.expect(t, g.lit)
-			testing.expect_value(t, g.spare_torches, START_SPARE_TORCHES)
+			testing.expect_value(t, spare_torches(g), 2)
 		}
-		g.torch = TORCH_TURNS
+		g.items[worn(g, .Light)].fuel = TORCH_TURNS
 	}
 	// Floor 1 snuffs a quarter of the time; 200 gusts give plenty either way.
 	testing.expect(t, snuffed > 20 && snuffed < 90)
@@ -132,7 +138,12 @@ test_no_torches_left :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	teleport(g, open_spot(g))
-	g.lit, g.torch, g.spare_torches = false, 0, 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].kind == .Torch {
+			free_item(g, i)
+		}
+	}
+	g.lit = false
 	turn := g.turn
 	command(g, .Confirm)
 	testing.expect(t, !g.lit)
