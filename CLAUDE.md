@@ -22,6 +22,7 @@ tools/pages.sh                 # tests, size build, copy into docs/ for GitHub P
 ./shippit.sh [--push]          # tests, size build, zip; butler push to itch.io only with --push (only on the user's "ship")
 python3 -I tools/extract_gfx.py [--sheet out.png]  # regenerate src/game/gfx.odin and font.odin (add tiles to PICKS)
 python3 -I tools/make_cover.py # regenerate the placeholder assets/cover.png
+tools/make_shots.sh            # render a real frame natively: assets/screenshots/01-play.png and assets/portal.png (the portal card picture)
 ```
 
 The browser pane's launch config `bulwark-web` (port 8766, in the vault's `.claude/launch.json` and this repo's) serves `build/web`; run `tools/build.sh` first. The pane does not run frames until a screenshot is taken.
