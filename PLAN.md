@@ -57,7 +57,7 @@ Drafted November 9, 2026. `DESIGN.md` is the specification; this file is how it 
 - Character creation: point-buy.
 - Monsters: the list above, carnies included, as sideshow barkers.
 - Spells: the ten above.
-- **GitHub Pages as soon as it is walkable:** enable Pages after build step 1 and update it as steps land (each push and enabling Pages still need the user's go-ahead).
+- **GitHub Pages as soon as it is walkable:** enable Pages after build step 1 and update it as steps land (each push and enabling Pages still need the user's go-ahead). **Done November 9, 2026:** live at https://playdeezgames.github.io/blustery-bulwark-of-splorr/ after step 1.
 
 ## Open for slice 1
 

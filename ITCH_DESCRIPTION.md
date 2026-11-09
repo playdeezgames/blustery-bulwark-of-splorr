@@ -11,7 +11,7 @@ A gale flattened yer farm. His Lordship says he did it. Climb his windy bulwark 
 
 ## Page text
 
-**Latest version:** https://playdeezgames.github.io/blustery-bulwark-of-splorr/ (once Pages is enabled; also add it as an external link on the page)
+**Latest version:** https://playdeezgames.github.io/blustery-bulwark-of-splorr/ (live since November 9, 2026; also add it as an external link on the page)
 
 **Blustery Bulwark of SPLORR!!** is a metaphor about hot air, in the shape of a tile-based roguelike.
 

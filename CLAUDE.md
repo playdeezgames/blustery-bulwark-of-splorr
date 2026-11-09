@@ -38,7 +38,7 @@ Odin compiled to `js_wasm32`, a 384 by 216 software framebuffer of Sweetie-16 pa
 ## Standing rules (full text in the vault's `Home.md`)
 
 - **"Push" means `git push`; "ship" means itch.io.** Do neither unless the user says that word. One ship a day through Coxswain (`ship_today` before, `ship_complete` after); scheduling is not permission.
-- **GitHub Pages first.** The repo is public (`playdeezgames/blustery-bulwark-of-splorr`); the game goes to Pages (`main` `/docs`) before itch.io is decided. Enabling Pages and each push need the user's go-ahead.
+- **GitHub Pages first.** The repo is public (`playdeezgames/blustery-bulwark-of-splorr`). **Pages is live since November 9, 2026** at https://playdeezgames.github.io/blustery-bulwark-of-splorr/, served from `main` `/docs`. To update it: `tools/pages.sh`, commit `docs/`, push (each push needs the user's go-ahead).
 - **Release standard** from the start (`Tech/Release standard.md`): `ITCH_DESCRIPTION.md`, `assets/cover.png` (630 by 500), `assets/screenshots/`, `devlog/YYYYMMDD/`, `tools/ship.sh` and a one-line `shippit.sh` that pushes only with `--push`. The page footer carries back links, the AI disclosure and a "Send feedback" link to the shared LootLocker form (`Tech/LootLocker.md`).
 - **Public repo: no 1-Bit Kingdom art**, ever. Prefer CC0 sets (Urizen, Bountiful Bits, Bit Bonanza) and keep every licence record and credit.
 - If the ROM font 8x8 turns up, ask the user before replacing it (DINOBYTE first, then Public Pixel).
