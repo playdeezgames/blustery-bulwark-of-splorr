@@ -179,8 +179,8 @@ cast_command :: proc(g: ^Game, c: Command) {
 // A spell picked from the list: aimed ones ask for a direction, the rest happen at once.
 choose_spell :: proc(g: ^Game, s: Spell) {
 	g.mode = .Play
-	if g.mana < SPELL[s].cost {
-		say(g, "Not enough mana for ", SPELL[s].name, ".")
+	if s == .Kindle && g.lit {
+		say(g, "Yer torch already burns.")
 		return
 	}
 	if SPELL[s].aimed {
@@ -220,7 +220,18 @@ aim_pointer :: proc(g: ^Game, sx, sy: int) {
 
 cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	info := SPELL[s]
-	g.mana -= info.cost
+	// Short of mana, the spell goes off anyway and each missing point costs a point of health
+	// (the user's choice, November 10, 2026; Castle of the Winds risked Constitution).
+	short := max(0, info.cost - g.mana)
+	g.mana = max(0, g.mana - info.cost)
+	if short > 0 {
+		buf: [8]u8
+		say(g, "Short of mana, the spell takes ", itoa(buf[:], short), " health.")
+		hurt(g, short, "casting past yer mana")
+		if g.mode == .Dead {
+			return
+		}
+	}
 	turn := true
 	switch s {
 	case .Magic_Bolt:
@@ -247,9 +258,7 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	case .Identify:
 	case .Kindle:
 		turn = false
-		if !kindle(g) {
-			g.mana += info.cost
-		}
+		light_torch(g, false)
 	case .Anchor:
 		g.anchor_spell = true
 		say(g, "You feel heavy until the next gust has passed.")
@@ -257,15 +266,6 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	if turn {
 		end_turn(g)
 	}
-}
-
-// Kindle: light the torch in the light slot, or a spare into it, without spending a turn.
-kindle :: proc(g: ^Game) -> bool {
-	if g.lit {
-		say(g, "Yer torch already burns.")
-		return false
-	}
-	return light_torch(g, false)
 }
 
 hop :: proc(g: ^Game) {
@@ -427,9 +427,10 @@ draw_spell_rows :: proc(f: ^Frame, g: ^Game, list: []Spell, casting: bool) {
 			fill_rect(f, 2, y - 3, VIEW_W * TILE - 4, MENU_ROW_H, COLOR_DARK)
 			print(f, ">", 4, y, COLOR_YELLOW)
 		}
+		// Short of mana, the cost shows orange: the rest comes out of health.
 		afford := !casting || g.mana >= SPELL[s].cost
-		print(f, SPELL[s].name, 12, y, afford ? COLOR_LIGHT : COLOR_MID)
-		print(f, itoa(buf[:], SPELL[s].cost), MENU_COST_X, y, afford ? COLOR_CYAN : COLOR_MID)
+		print(f, SPELL[s].name, 12, y, COLOR_LIGHT)
+		print(f, itoa(buf[:], SPELL[s].cost), MENU_COST_X, y, afford ? COLOR_CYAN : COLOR_ORANGE)
 		print(f, SPELL[s].use, MENU_USE_X, y, COLOR_MID)
 	}
 }
@@ -460,7 +461,13 @@ draw_cast :: proc(f: ^Frame, g: ^Game) {
 	print(f, itoa(buf[:], max_mana(g)), 12 + w, 6, COLOR_DARK)
 	print(f, "mana", MENU_COST_X - 6, 18, COLOR_DARK)
 	draw_spell_rows(f, g, list[:n], true)
-	print(f, "Enter/OK or click: cast   Esc/Back: close", 6, VIEW_H * TILE - 10, COLOR_DARK)
+	if short := SPELL[list[g.menu_row]].cost - g.mana; short > 0 {
+		w = print(f, "Short of mana: it will cost ", 6, VIEW_H * TILE - 10, COLOR_ORANGE)
+		w += print(f, itoa(buf[:], short), 6 + w, VIEW_H * TILE - 10, COLOR_ORANGE)
+		print(f, " health", 6 + w, VIEW_H * TILE - 10, COLOR_ORANGE)
+	} else {
+		print(f, "Enter/OK or click: cast   Esc/Back: close", 6, VIEW_H * TILE - 10, COLOR_DARK)
+	}
 }
 
 // The path the last spell took (until yer next action), and the cells around you while aiming.

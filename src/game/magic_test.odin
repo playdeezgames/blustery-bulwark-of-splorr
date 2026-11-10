@@ -121,16 +121,23 @@ test_gust_ball_into_a_wall_catches_you :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_not_enough_mana :: proc(t: ^testing.T) {
+test_casting_short_of_mana_costs_health :: proc(t: ^testing.T) {
 	g := open_room()
 	defer free(g)
-	g.mana = 2
+	g.mana = 1
 	g.mode = .Cast
-	g.menu_row = 0 // Magic Bolt
+	g.menu_row = 0 // Magic Bolt, 3 mana
 	command(g, .Confirm)
-	testing.expect_value(t, g.mode, Mode.Play)
-	testing.expect_value(t, g.turn, 0)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "Not enough mana for Magic Bolt.")
+	testing.expect_value(t, g.mode, Mode.Aim)
+	command(g, .North)
+	testing.expect_value(t, g.mana, 0)
+	testing.expect_value(t, g.health, max_health(g) - 2)
+	testing.expect_value(t, g.turn, 1)
+	// With too little health left, it kills.
+	g.health = 2
+	cast_spell(g, .Ward, {0, 0})
+	testing.expect_value(t, g.mode, Mode.Dead)
+	testing.expect_value(t, g.killed_by, "casting past yer mana")
 }
 
 @(test)
@@ -202,7 +209,7 @@ test_kindle_takes_no_turn :: proc(t: ^testing.T) {
 	testing.expect(t, g.lit)
 	testing.expect_value(t, g.turn, 0)
 	testing.expect_value(t, g.mana, max_mana(g) - SPELL[.Kindle].cost)
-	cast_spell(g, .Kindle, {0, 0}) // already burning: the mana comes back
+	choose_spell(g, .Kindle) // already burning: nothing is spent
 	testing.expect_value(t, g.mana, max_mana(g) - SPELL[.Kindle].cost)
 }
 

@@ -119,6 +119,7 @@ test_dump_magic :: proc(t: ^testing.T) {
 		g.mana = 5
 		g.ward_turns, g.sense_turns, g.anchor_spell = 12, 7, true
 		open_cast(g)
+		g.menu_row = 1 // Gust Ball, short by 1
 		shot(g, fr, DUMP_MAGIC + "-cast.ppm")
 		g.mode = .Play
 		g.mana = 50
