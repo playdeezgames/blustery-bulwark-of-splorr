@@ -34,7 +34,7 @@ SPELL := [Spell]Spell_Info {
 	.Ward          = {"Ward", 4, false, true, "armour +3, 40 turns"},
 	.Mend          = {"Mend", 4, false, true, "heal a little"},
 	.Hop           = {"Hop", 3, false, true, "jump to a nearby spot"},
-	.Return        = {"Return", 8, false, true, "to floor 1's stairs"},
+	.Return        = {"Return", 8, false, true, "back to the town gate"},
 	.Sense_Tenants = {"Sense Tenants", 4, false, true, "show tenants, 30 turns"},
 	.Identify      = {"Identify", 5, false, true, "name one thing carried"},
 	.Kindle        = {"Kindle", 1, false, true, "light torch, no turn"},
@@ -249,8 +249,8 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	case .Hop:
 		hop(g)
 	case .Return:
-		enter_floor(g, 0, .Stairs_Down)
-		say(g, "The wind sets you down at floor 1's stairs (no town yet).")
+		say(g, "The wind sets you down at the town gate.")
+		enter_town(g, .Gate)
 		turn = false
 	case .Sense_Tenants:
 		g.sense_turns = SENSE_TURNS

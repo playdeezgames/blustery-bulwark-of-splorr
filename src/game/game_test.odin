@@ -11,6 +11,7 @@ new_game :: proc(seed: u64 = 12345) -> ^Game {
 	g.mode = .Play
 	g.tenants = {}
 	g.no_tenants = true
+	enter_floor(g, 0, .Stairs_Down) // a new character starts in town; most tests start on floor 1
 	return g
 }
 
@@ -142,12 +143,17 @@ test_stairs_climb_and_floors_persist :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_town_not_built :: proc(t: ^testing.T) {
+test_down_from_floor_one_is_the_town :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	command(g, .Confirm)
-	testing.expect_value(t, floor_of(g).number, 1)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "Below is the town. It is not built yet.")
+	testing.expect(t, in_town(g))
+	testing.expect_value(t, [2]int{g.x, g.y}, g.town.up + {0, 1})
+	// The gate goes back up to floor 1's stairs down.
+	teleport(g, g.town.up)
+	command(g, .Confirm)
+	testing.expect_value(t, g.current, 0)
+	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
 }
 
 @(test)

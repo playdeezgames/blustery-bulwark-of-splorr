@@ -22,6 +22,8 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 		draw_cast(f, g)
 	case .Aim:
 		draw_map(f, g)
+	case .Shop:
+		draw_shop(f, g)
 	}
 	draw_log(f, g)
 	draw_panel(f, g)
@@ -38,6 +40,10 @@ cell_look :: proc(c: Cell) -> (g: Gfx, lit, remembered: u8) {
 		return .Stairs_Up, COLOR_CYAN, COLOR_MID
 	case .Stairs_Down:
 		return .Stairs_Down, COLOR_YELLOW, COLOR_MID
+	case .Building:
+		return .Brick, COLOR_BROWN, COLOR_DARK
+	case .Door:
+		return .Door, COLOR_YELLOW, COLOR_MID
 	}
 	return .Floor, COLOR_DARK, COLOR_BLACK
 }
@@ -74,6 +80,9 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 		}
 	}
 	draw_tenants(f, g)
+	if in_town(g) {
+		draw_town(f, g)
+	}
 	// A mouse route still to walk, as dots.
 	for i in g.path_i ..< g.path_len {
 		p := g.path[i]
@@ -137,6 +146,10 @@ draw_automap :: proc(f: ^Frame, g: ^Game) {
 				color = COLOR_CYAN
 			case .Stairs_Down:
 				color = COLOR_YELLOW
+			case .Building:
+				color = COLOR_BROWN
+			case .Door:
+				color = COLOR_YELLOW
 			}
 			fill_rect(f, AUTOMAP_X + xx * AUTOMAP_CELL, AUTOMAP_Y + y * AUTOMAP_CELL, AUTOMAP_CELL, AUTOMAP_CELL, color)
 		}
@@ -160,8 +173,13 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	print(f, "Blustery Bulwark", x, 4, COLOR_CYAN)
 	print(f, "of SPLORR!!", x, 13, COLOR_CYAN)
 	draw_gfx(f, .Torch, x, 26, COLOR_ORANGE)
-	w := print(f, "Floor ", x + 16, 28, COLOR_LIGHT)
-	print(f, itoa(buf[:], floor_of(g).number), x + 16 + w, 28, COLOR_LIGHT)
+	w := 0
+	if in_town(g) {
+		print(f, "Town", x + 16, 28, COLOR_LIGHT)
+	} else {
+		w = print(f, "Floor ", x + 16, 28, COLOR_LIGHT)
+		print(f, itoa(buf[:], floor_of(g).number), x + 16 + w, 28, COLOR_LIGHT)
+	}
 	y := 46
 	hp, top := g.health, max_health(g)
 	w = print(f, "Health  ", x, y, COLOR_MID)
@@ -192,9 +210,13 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	// Wind: where it comes from, and turns to the next gust (bright while it warns).
 	fl := floor_of(g)
 	w = print(f, "Wind    ", x, y, COLOR_MID)
-	w += print(f, COMPASS[fl.wind_from], x + w, y, COLOR_LIGHT)
-	w += print(f, " gust ", x + w, y, COLOR_DARK)
-	print(f, itoa(buf[:], g.gust_in), x + w, y, gust_warning(g) ? COLOR_WHITE : COLOR_DARK)
+	if in_town(g) {
+		print(f, "calm here", x + w, y, COLOR_LIGHT)
+	} else {
+		w += print(f, COMPASS[fl.wind_from], x + w, y, COLOR_LIGHT)
+		w += print(f, " gust ", x + w, y, COLOR_DARK)
+		print(f, itoa(buf[:], g.gust_in), x + w, y, gust_warning(g) ? COLOR_WHITE : COLOR_DARK)
+	}
 	y += 10
 	// Load: kilograms carried and the limit; orange when it anchors (and slows) you, red when too much.
 	kb1, kb2: [16]u8
@@ -245,12 +267,15 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		for h, i in hints {
 			print(f, h, x, SCREEN_H - 52 + i * 9, COLOR_DARK)
 		}
+	} else if g.mode == .Shop {
+		print(f, "Enter/OK: choose", x, SCREEN_H - 43, COLOR_DARK)
+		print(f, "Esc/Back: leave", x, SCREEN_H - 34, COLOR_DARK)
 	} else {
 		for h in PANEL_HINTS {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 1, step 6", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 1, step 7", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

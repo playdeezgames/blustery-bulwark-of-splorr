@@ -51,6 +51,7 @@ Mode :: enum u8 {
 	Learn, // choosing a spell (at level 1 and each level after)
 	Cast, // the list of known spells
 	Aim, // a direction for an aimed spell
+	Shop, // inside a town shop (or at a carny's stall)
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -104,9 +105,28 @@ Game :: struct {
 	hunger:      int, // rises a point a turn; food takes it down (supplies.odin)
 	ident:       bit_set[Item_Kind], // kinds known by name
 	look:        [Item_Kind]u8, // which look each potion, scroll, ring and amulet kind wears
+	town:        Floor, // the town (town.odin); g.current is TOWN while there
+	shop:        Shop,
+	shop_scroll: int,
+	shop_tenant: int, // the carny whose stall is open
+	bank:        int,
+	trained:     bool, // with the mentor, this visit
+	talk:        int, // turns the mentor's and herald's lines
+	deepest:     int, // highest floor number reached
+	kills:       int,
+	told:        Told, // what the herald has already proclaimed
+	proclamation: [96]u8,
+	proclamation_n: int,
+}
+
+Told :: struct {
+	deepest, level, kills, deaths: int,
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
+	if g.current == TOWN {
+		return &g.town
+	}
 	return &g.floors[g.current]
 }
 
@@ -122,7 +142,7 @@ init_game :: proc(g: ^Game, seed: u64) {
 	g.mana = max_mana(g)
 	shuffle_looks(g)
 	give_starting_kit(g)
-	enter_floor(g, 0, .Stairs_Down)
+	enter_town(g, .Start)
 	g.mode = .Create
 	say(g, "A gale flattened yer farm.")
 	say(g, "The herald says the lord did it.")
@@ -144,6 +164,7 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
 	g.x, g.y = at.x, at.y
+	g.deepest = max(g.deepest, f.number)
 	g.gust_in = gust_period(f.number)
 	stop_travel(g)
 	refresh_view(g)
@@ -241,6 +262,11 @@ stop_travel :: proc(g: ^Game) {
 // a wall is in the way or the load is too heavy to move (no turn passes).
 step_player :: proc(g: ^Game, d: [2]int) -> bool {
 	if id := tenant_at(g, g.x + d.x, g.y + d.y); id != 0 {
+		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Carny {
+			g.shop_tenant = id
+			open_shop(g, .Carny)
+			return false
+		}
 		player_attack(g, id)
 		return false
 	}
@@ -267,7 +293,14 @@ describe_arrival :: proc(g: ^Game) {
 		return
 	}
 	#partial switch cell_at(g, g.x, g.y) {
+	case .Door:
+		s := shop_at(g.x, g.y)
+		say(g, SHOP[s].title, s == .Herald ? ". Enter/OK to listen." : ". Enter/OK to go in.")
 	case .Stairs_Up:
+		if in_town(g) {
+			say(g, "The bulwark gate. Enter/OK to climb.")
+			return
+		}
 		say(g, "Stairs up. Enter/OK to climb.")
 	case .Stairs_Down:
 		say(g, "Stairs down. Enter/OK to descend.")
@@ -303,6 +336,9 @@ command :: proc(g: ^Game, c: Command) {
 		aim_command(g, c)
 		open_learn_if_owed(g)
 		return
+	case .Shop:
+		shop_command(g, c)
+		return
 	case .Play, .Automap:
 	}
 	defer open_learn_if_owed(g)
@@ -330,6 +366,8 @@ command :: proc(g: ^Game, c: Command) {
 use_here :: proc(g: ^Game) {
 	buf: [8]u8
 	#partial switch cell_at(g, g.x, g.y) {
+	case .Door:
+		open_shop(g, shop_at(g.x, g.y))
 	case .Stairs_Up:
 		if g.current + 1 < FLOOR_COUNT {
 			enter_floor(g, g.current + 1, .Stairs_Down)
@@ -342,7 +380,8 @@ use_here :: proc(g: ^Game) {
 			enter_floor(g, g.current - 1, .Stairs_Up)
 			say(g, "You go down to floor ", itoa(buf[:], g.current + 1), ".")
 		} else {
-			say(g, "Below is the town. It is not built yet.")
+			say(g, "You go down to the town.")
+			enter_town(g, .Gate)
 		}
 	case:
 		if !get_here(g) && !light_torch(g) {
@@ -402,6 +441,9 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 		g.fx_len, g.fx_blast = 0, false
 		aim_pointer(g, sx, sy)
 		open_learn_if_owed(g)
+		return
+	case .Shop:
+		shop_pointer(g, sx, sy)
 		return
 	case .Play, .Automap:
 	}
@@ -464,6 +506,11 @@ inspect :: proc(g: ^Game, x, y: int) {
 		say(g, "Stairs up.")
 	case .Stairs_Down:
 		say(g, "Stairs down.")
+	case .Building:
+		say(g, "A house of the town.")
+	case .Door:
+		s := shop_at(x, y)
+		say(g, SHOP[s].title, ".")
 	}
 }
 

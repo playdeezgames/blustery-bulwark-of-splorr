@@ -85,6 +85,9 @@ Gfx :: enum {
 	Ring,
 	Amulet,
 	Spellbook,
+	Brick,
+	Door,
+	Herald,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

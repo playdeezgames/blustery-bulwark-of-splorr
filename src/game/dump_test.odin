@@ -174,3 +174,36 @@ test_dump_supplies :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_SUPPLIES + "-map.ppm")
 	}
 }
+
+// The town by eye (-define:DUMP_TOWN=<prefix>): <prefix>-street.ppm (from the gate),
+// <prefix>-low.ppm (the lower street), <prefix>-smith.ppm and <prefix>-bank.ppm.
+DUMP_TOWN :: #config(DUMP_TOWN, "")
+
+@(test)
+test_dump_town :: proc(t: ^testing.T) {
+	when DUMP_TOWN != "" {
+		g := town_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		shot(g, fr, DUMP_TOWN + "-street.ppm")
+		teleport(g, door_of(.Bank) + {6, 1})
+		shot(g, fr, DUMP_TOWN + "-low.ppm")
+		dagger := worn(g, .Weapon)
+		for _ in 0 ..< 7 {
+			wear_down(g, dagger)
+		}
+		give(g, .Club)
+		go_in(g, .Smith)
+		shot(g, fr, DUMP_TOWN + "-smith.ppm")
+		command(g, .Cancel)
+		g.bank = 120
+		go_in(g, .Bank)
+		shot(g, fr, DUMP_TOWN + "-bank.ppm")
+	}
+}

@@ -44,6 +44,8 @@ Item_Kind :: enum u8 {
 	Amulet_Vigour,
 	Amulet_Hop,
 	Spellbook,
+	// Sold in town (step 7).
+	Wind_Charm,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -156,6 +158,7 @@ KIND := [Item_Kind]Kind_Info {
 	.Amulet_Vigour   = {name = "Vigour amulet", gfx = .Amulet, color = COLOR_YELLOW, weight = 30, bulk = 20, slot = .Amulet, group = .Amulet},
 	.Amulet_Hop      = {name = "Hop amulet", gfx = .Amulet, color = COLOR_YELLOW, weight = 30, bulk = 20, slot = .Amulet, group = .Amulet, cursed = true},
 	.Spellbook       = {name = "Spellbook", gfx = .Spellbook, color = 9, weight = 800, bulk = 1200},
+	.Wind_Charm      = {name = "Wind charm", gfx = .Amulet, color = COLOR_CYAN, weight = 20, bulk = 20, slot = .Amulet},
 }
 
 Place :: enum u8 {
@@ -482,6 +485,20 @@ get_here :: proc(g: ^Game) -> bool {
 	name_buf: [32]u8
 	n := copy(name_buf[:], item_name(g, id))
 	name := string(name_buf[:n])
+	if !stow(g, id) {
+		say(g, "No room to carry ", name, ".")
+	} else if g.items[id].place == .Worn {
+		say(g, "You pick up ", name, " and wear it.")
+	} else {
+		say(g, "You pick up ", name, ".")
+	}
+	return true
+}
+
+// Puts a thing where it is best carried: coins to the purse, small things to the belt, the rest
+// to the pack (trophies to the pack before the belt); a wearable thing goes on if nothing holds it
+// and its slot is free. False when there is no room anywhere.
+stow :: proc(g: ^Game, id: int) -> bool {
 	order := [?]Slot{.Purse, .Belt, .Pack}
 	if KIND[g.items[id].kind].trophy {
 		order = {.Purse, .Pack, .Belt} // keep belt slots for things you reach for
@@ -493,18 +510,14 @@ get_here :: proc(g: ^Game) -> bool {
 		}
 		if ok, _ := can_put_in(g, id, c); ok {
 			put_in(g, id, c)
-			say(g, "You pick up ", name, ".")
 			return true
 		}
 	}
-	// A wearable thing goes on if its slot is free.
 	if s := KIND[g.items[id].kind].slot; s != .None && worn(g, s) == 0 {
 		wear(g, id, s)
-		say(g, "You pick up ", name, " and wear it.")
 		return true
 	}
-	say(g, "No room to carry ", name, ".")
-	return true
+	return false
 }
 
 // A few things lying about on a floor, made once from the floor's seed when it is first entered.

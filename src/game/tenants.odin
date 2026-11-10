@@ -285,6 +285,7 @@ kill_tenant :: proc(g: ^Game, id: int) {
 	info := TENANT[t.kind]
 	g.tenants[id] = {}
 	g.xp += info.xp
+	g.kills += 1
 	say(g, "You kill the ", info.name, ".")
 	check_level(g)
 	drop_at :: proc(g: ^Game, t: Tenant, kind: Item_Kind, count: int) {

@@ -111,7 +111,7 @@ begin_climb :: proc(g: ^Game) {
 	g.mode = .Play
 	g.health = max_health(g)
 	g.mana = max_mana(g)
-	say(g, "You climb in from the town gate.")
+	say(g, "The bulwark gate is at the top of the street.")
 	g.learns = 1
 	open_learn_if_owed(g)
 }
@@ -219,14 +219,14 @@ wake :: proc(g: ^Game) {
 	g.health = max_health(g)
 	g.mana = max_mana(g)
 	g.ward_turns, g.sense_turns, g.anchor_spell = 0, 0, false
-	g.hunger = 0 // fed while you lay there (until the town exists)
+	g.hunger = 0 // the temple fed you while you lay there
 	for &t in g.tenants {
 		t.awake = false
 	}
-	enter_floor(g, 0, .Stairs_Down)
-	g.lit = torch_fuel(g) > 0
-	say(g, "You wake below the bulwark (no town yet).")
+	say(g, "You wake in the temple. They fed you.")
 	say(g, "What you carried lies where you fell.")
+	enter_town(g, .Temple)
+	g.lit = torch_fuel(g) > 0
 	open_learn_if_owed(g)
 }
 
@@ -240,5 +240,8 @@ draw_dead :: proc(f: ^Frame, g: ^Game) {
 	w := print(f, "Brought down by ", 30, DEAD_Y + 12, COLOR_LIGHT)
 	print(f, g.killed_by, 30 + w, DEAD_Y + 12, COLOR_LIGHT)
 	print(f, "Yer pack's contents stay here.", 30, DEAD_Y + 24, COLOR_MID)
+	if g.bank > 0 {
+		print(f, "Yer banked Jools are safe.", 30, DEAD_Y + 32, COLOR_MID)
+	}
 	print(f, "Press Enter, OK or click to wake.", 30, DEAD_Y + 40, COLOR_YELLOW)
 }

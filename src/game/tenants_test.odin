@@ -8,6 +8,7 @@ new_game_with_tenants :: proc(seed: u64 = 12345) -> ^Game {
 	g := new(Game)
 	init_game(g, seed)
 	g.mode = .Play
+	enter_floor(g, 0, .Stairs_Down)
 	return g
 }
 
@@ -129,7 +130,12 @@ test_carny_is_peaceful_until_struck :: proc(t: ^testing.T) {
 	testing.expect(t, !hostile_in_view(g))
 	g.attr[.Dexterity] = 100 // never miss
 	g.items[worn(g, .Weapon)] = {} // bare hands, so it lives
-	command(g, .East)
+	command(g, .East) // a peaceful carny opens its stall
+	testing.expect_value(t, g.mode, Mode.Shop)
+	testing.expect_value(t, g.shop, Shop.Carny)
+	g.menu_row = 2 // Shove past
+	command(g, .Confirm)
+	testing.expect_value(t, g.mode, Mode.Play)
 	if g.tenants[id].kind != .None {
 		testing.expect(t, hostile(&g.tenants[id]))
 	}
@@ -179,8 +185,8 @@ test_death_drops_the_pack_and_wakes_below :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.mode, Mode.Dead)
 	command(g, .Confirm)
 	testing.expect_value(t, g.mode, Mode.Play)
-	testing.expect_value(t, g.current, 0)
-	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
+	testing.expect(t, in_town(g)) // outside the temple
+	testing.expect_value(t, [2]int{g.x, g.y}, g.town.down)
 	testing.expect_value(t, g.health, max_health(g))
 	// Dying again before fetching it loses the pile.
 	hurt(g, 1000, "a test")
@@ -195,6 +201,7 @@ test_picking_up_saves_it_from_the_pile :: proc(t: ^testing.T) {
 	teleport(g, spot)
 	hurt(g, 1000, "a test")
 	command(g, .Confirm)
+	enter_floor(g, 0, .Stairs_Down)
 	teleport(g, spot)
 	id := ground_item_at(g, g.x, g.y)
 	testing.expect(t, id != 0 && g.items[id].pile)

@@ -11,6 +11,8 @@ Cell :: enum u8 {
 	Floor,
 	Stairs_Up,
 	Stairs_Down,
+	Building, // the town's houses
+	Door, // a way into a town shop (or the herald's spot)
 }
 
 Room :: struct {
@@ -31,7 +33,7 @@ Floor :: struct {
 }
 
 passable :: proc(c: Cell) -> bool {
-	return c != .Wall
+	return c != .Wall && c != .Building
 }
 
 floor_cell :: proc(f: ^Floor, x, y: int) -> Cell {

@@ -37,6 +37,15 @@ sight_radius :: proc(g: ^Game) -> int {
 }
 
 refresh_view :: proc(g: ^Game) {
+	if in_town(g) { // daylight: the whole street is in view
+		for y in 0 ..< FLOOR_H {
+			for x in 0 ..< FLOOR_W {
+				g.vis[y][x] = true
+				g.town.seen[y][x] = true
+			}
+		}
+		return
+	}
 	compute_fov(floor_of(g), g.x, g.y, sight_radius(g), &g.vis)
 }
 
@@ -51,7 +60,7 @@ end_turn :: proc(g: ^Game) {
 	}
 	g.turn += 1
 	f := floor_of(g)
-	if g.lit {
+	if g.lit && !in_town(g) { // daylight in town: the torch is not used up
 		id := worn(g, .Light)
 		if id == 0 || g.items[id].kind != .Torch {
 			g.lit = false
@@ -79,6 +88,10 @@ end_turn :: proc(g: ^Game) {
 	}
 	if g.turn % heal_period(g) == 0 && g.health < max_health(g) {
 		g.health += 1
+	}
+	if in_town(g) { // no gusts reach the street
+		refresh_view(g)
+		return
 	}
 	g.gust_in -= 1
 	if g.gust_in == GUST_WARNING {

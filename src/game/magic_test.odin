@@ -237,6 +237,6 @@ test_return_hop_mend_and_sense :: proc(t: ^testing.T) {
 	cast_spell(g, .Sense_Tenants, {0, 0})
 	testing.expect(t, g.sense_turns > 0)
 	cast_spell(g, .Return, {0, 0})
-	testing.expect_value(t, g.current, 0)
-	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
+	testing.expect(t, in_town(g))
+	testing.expect_value(t, [2]int{g.x, g.y}, g.town.up + {0, 1})
 }

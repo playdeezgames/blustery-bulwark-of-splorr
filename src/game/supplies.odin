@@ -214,8 +214,8 @@ use_item :: proc(g: ^Game, id: int) -> bool {
 		say(g, "You see every tenant on the floor.")
 	case .Scroll_Return:
 		g.mode = .Play
-		enter_floor(g, 0, .Stairs_Down)
-		say(g, "The wind sets you down at floor 1's stairs (no town yet).")
+		say(g, "The wind sets you down at the town gate.")
+		enter_town(g, .Gate)
 		turn = false
 	case .Scroll_Identify:
 		start_identify(g)

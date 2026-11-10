@@ -56,6 +56,10 @@ PICKS = [
     ('Ring',        11, 43),
     ('Amulet',       2, 44),
     ('Spellbook',   30, 15),  # a tome with a symbol
+    # The town (slice 1 step 7).
+    ('Brick',        0, 3),
+    ('Door',         4, 1),
+    ('Herald',     117, 0),  # a figure holding up a notice
 ]
 
 def tile(col, row):
