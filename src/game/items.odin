@@ -356,7 +356,7 @@ wear :: proc(g: ^Game, id: int, s: Slot) -> bool {
 	it := &g.items[id]
 	it.place, it.slot = .Worn, s
 	if s == .Light {
-		say(g, "Confirm to light it.")
+		say(g, "Enter/OK to light it.")
 	}
 	return true
 }

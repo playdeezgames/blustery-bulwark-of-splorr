@@ -169,7 +169,7 @@ draw_create :: proc(f: ^Frame, g: ^Game) {
 	w += print(f, kg(kb[:], carry_limit(g)), 12 + w, y, COLOR_LIGHT)
 	print(f, " kg", 12 + w, y, COLOR_MID)
 	print(f, "Up/Down: pick    Left/Right: change", 12, y + 14, COLOR_DARK)
-	print(f, "Enter, or click Begin, to start", 12, y + 24, COLOR_DARK)
+	print(f, "Enter/OK, or click Begin, to start", 12, y + 24, COLOR_DARK)
 }
 
 hurt :: proc(g: ^Game, amount: int, by: string) {
@@ -226,5 +226,5 @@ draw_dead :: proc(f: ^Frame, g: ^Game) {
 	w := print(f, "Brought down by ", 30, DEAD_Y + 12, COLOR_LIGHT)
 	print(f, g.killed_by, 30 + w, DEAD_Y + 12, COLOR_LIGHT)
 	print(f, "Yer pack's contents stay here.", 30, DEAD_Y + 24, COLOR_MID)
-	print(f, "Confirm or click to wake.", 30, DEAD_Y + 40, COLOR_YELLOW)
+	print(f, "Press Enter, OK or click to wake.", 30, DEAD_Y + 40, COLOR_YELLOW)
 }

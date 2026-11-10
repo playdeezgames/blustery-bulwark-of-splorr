@@ -239,14 +239,14 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 
 describe_arrival :: proc(g: ^Game) {
 	if id := ground_item_at(g, g.x, g.y); id != 0 {
-		say(g, "Here: ", item_name(g, id), ". Confirm to pick up.")
+		say(g, "Here: ", item_name(g, id), ". Enter/OK to pick up.")
 		return
 	}
 	#partial switch cell_at(g, g.x, g.y) {
 	case .Stairs_Up:
-		say(g, "Stairs up. Confirm to climb.")
+		say(g, "Stairs up. Enter/OK to climb.")
 	case .Stairs_Down:
-		say(g, "Stairs down. Confirm to descend.")
+		say(g, "Stairs down. Enter/OK to descend.")
 	}
 }
 

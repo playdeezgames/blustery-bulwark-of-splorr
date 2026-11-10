@@ -61,7 +61,7 @@ end_turn :: proc(g: ^Game) {
 				free_item(g, id)
 				g.lit = false
 				if spare_torches(g) > 0 {
-					say(g, "Yer torch burns out. Confirm to light another.")
+					say(g, "Yer torch burns out. Enter/OK to light another.")
 				} else {
 					say(g, "Yer torch burns out. That was the last.")
 				}
@@ -108,7 +108,7 @@ gust :: proc(g: ^Game) {
 	}
 	if g.lit && rng_int(&g.rng, 100) < snuff_chance(f.number) {
 		g.lit = false
-		say(g, "The gust blows out yer torch. Confirm to relight.")
+		say(g, "The gust blows out yer torch. Enter/OK to relight.")
 	}
 }
 
