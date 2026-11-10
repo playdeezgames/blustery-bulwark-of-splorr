@@ -46,7 +46,7 @@
 	<button data-c="6">&#8601;</button><button data-c="1">&#8595;</button><button data-c="7">&#8600;</button>
 </div>
 <div id="acts" class="pad">
-	<button data-c="9">OK</button><button data-c="10">Back</button><button data-c="11">Map</button><button data-c="12">Pack</button>
+	<button data-c="9">OK</button><button data-c="10">Back</button><button data-c="11">Map</button><button data-c="12">Pack</button><button data-c="13">Cast</button>
 </div>
 <footer>
 	Blustery Bulwark of SPLORR!! by TheGrumpyGameDev. Code made by an AI agent (Claude Code) at the author's direction.
@@ -75,15 +75,15 @@
 	ex.platform_start((Math.random() * 0x7fffffff) | 0, Date.now() & 0x7fffffff);
 
 	// game.Command order (src/game/game.odin): North South West East NorthWest NorthEast SouthWest SouthEast
-	// Wait Confirm Cancel Map Inventory.
-	const C = { N: 0, S: 1, W: 2, E: 3, NW: 4, NE: 5, SW: 6, SE: 7, WAIT: 8, CONFIRM: 9, CANCEL: 10, MAP: 11, INVENTORY: 12 };
+	// Wait Confirm Cancel Map Inventory Cast.
+	const C = { N: 0, S: 1, W: 2, E: 3, NW: 4, NE: 5, SW: 6, SE: 7, WAIT: 8, CONFIRM: 9, CANCEL: 10, MAP: 11, INVENTORY: 12, CAST: 13 };
 	const KEYS = {
 		ArrowUp: C.N, ArrowDown: C.S, ArrowLeft: C.W, ArrowRight: C.E,
 		Numpad8: C.N, Numpad2: C.S, Numpad4: C.W, Numpad6: C.E,
 		Numpad7: C.NW, Numpad9: C.NE, Numpad1: C.SW, Numpad3: C.SE,
 		Home: C.NW, PageUp: C.NE, End: C.SW, PageDown: C.SE,
 		Numpad5: C.WAIT, Period: C.WAIT, Space: C.WAIT,
-		Enter: C.CONFIRM, NumpadEnter: C.CONFIRM, Escape: C.CANCEL, KeyM: C.MAP, Tab: C.MAP, KeyI: C.INVENTORY,
+		Enter: C.CONFIRM, NumpadEnter: C.CONFIRM, Escape: C.CANCEL, KeyM: C.MAP, Tab: C.MAP, KeyI: C.INVENTORY, KeyC: C.CAST,
 	};
 	window.addEventListener("keydown", (e) => {
 		if (e.code === "KeyF" && !e.repeat) { e.preventDefault(); feedback.open(); return; }
@@ -134,7 +134,7 @@
 	});
 
 	// Gamepad (standard mapping): d-pad or left stick to move (diagonals from the stick), A confirm, B cancel,
-	// X wait, Y map, Start inventory. Held directions repeat after 12 frames, then every 6.
+	// X wait, Y map, Start inventory, either shoulder button casts. Held directions repeat after 12 frames, then every 6.
 	const pad = { held: -1, frames: 0, buttons: [] };
 	function stickCommand(gp) {
 		const b = (i) => gp.buttons[i] && gp.buttons[i].pressed;
@@ -155,7 +155,7 @@
 		const d = stickCommand(gp);
 		if (d !== pad.held) { pad.held = d; pad.frames = 0; if (d >= 0) ex.platform_command(d); }
 		else if (d >= 0 && ++pad.frames >= 12) { pad.frames = 6; ex.platform_command(d); }
-		[[0, C.CONFIRM], [1, C.CANCEL], [2, C.WAIT], [3, C.MAP], [9, C.INVENTORY]].forEach(([i, c]) => {
+		[[0, C.CONFIRM], [1, C.CANCEL], [2, C.WAIT], [3, C.MAP], [9, C.INVENTORY], [4, C.CAST], [5, C.CAST]].forEach(([i, c]) => {
 			const now = !!(gp.buttons[i] && gp.buttons[i].pressed);
 			if (now && !pad.buttons[i]) ex.platform_command(c);
 			pad.buttons[i] = now;
