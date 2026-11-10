@@ -132,3 +132,45 @@ test_dump_magic :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_MAGIC + "-ball.ppm")
 	}
 }
+
+// Step 6 by eye (-define:DUMP_SUPPLIES=<prefix>): <prefix>-inv.ppm (unknown things, the Use row, a
+// cursed ring worn), <prefix>-map.ppm (potions and jewellery on the ground) and <prefix>-ident.ppm.
+DUMP_SUPPLIES :: #config(DUMP_SUPPLIES, "")
+
+@(test)
+test_dump_supplies :: proc(t: ^testing.T) {
+	when DUMP_SUPPLIES != "" {
+		g := open_room()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		for k in ([?]Item_Kind{.Potion_Healing, .Potion_Blight, .Scroll_Decree, .Cheese, .Jerky, .Spellbook}) {
+			give(g, k)
+		}
+		g.ident += {.Potion_Healing}
+		wear(g, give(g, .Ring_Draught), .Ring_Left)
+		wear(g, give(g, .Amulet_Vigour), .Amulet)
+		g.hunger = 905
+		open_inventory(g)
+		g.inv.pane, g.inv.cursor[0] = 0, USE_ROW
+		g.inv.held = worn(g, .Pack) + 4
+		shot(g, fr, DUMP_SUPPLIES + "-inv.ppm")
+		g.inv.held = 0
+		start_identify(g)
+		shot(g, fr, DUMP_SUPPLIES + "-ident.ppm")
+		close_inventory(g)
+		ks := [?]Item_Kind{.Potion_Healing, .Potion_Mana, .Potion_Blight, .Potion_Sight, .Scroll_Return, .Ring_Guard, .Amulet_Hop, .Cheese, .Jerky, .Spellbook}
+		for k, i in ks {
+			id := new_item(g, k)
+			g.items[id].place, g.items[id].floor = .Ground, i8(g.current)
+			g.items[id].x, g.items[id].y = i16(17 + i % 5 * 2), i16(17 + i / 5 * 2)
+		}
+		refresh_view(g)
+		shot(g, fr, DUMP_SUPPLIES + "-map.ppm")
+	}
+}

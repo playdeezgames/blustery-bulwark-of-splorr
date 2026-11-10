@@ -14,6 +14,7 @@ Inventory_View :: struct {
 	held:   int, // the item chosen to move, or 0
 	press:  [2]int, // pane and row where a mouse button went down (for dragging)
 	scroll: int, // first item row shown in the right pane
+	identify: bool, // the Identify spell or scroll: the next thing chosen is named
 }
 
 LEFT_SLOTS := [?]Slot {
@@ -33,10 +34,11 @@ LEFT_SLOTS := [?]Slot {
 	.Pack,
 	.Purse,
 }
-GROUND_ROW :: len(LEFT_SLOTS) // the last left row
-LEFT_ROWS :: len(LEFT_SLOTS) + 1
+GROUND_ROW :: len(LEFT_SLOTS)
+USE_ROW :: len(LEFT_SLOTS) + 1 // the last left row: put a held thing here to eat, drink or read it
+LEFT_ROWS :: len(LEFT_SLOTS) + 2
 
-INV_ROW_H :: 10
+INV_ROW_H :: 9
 INV_TOP :: 14 // y of the first row under the headers
 INV_LEFT_X :: MAP_X + 2
 INV_RIGHT_X :: MAP_X + 130
@@ -126,7 +128,10 @@ inventory_command :: proc(g: ^Game, c: Command) {
 	case .Confirm:
 		act(g, v.pane, v.cursor[v.pane])
 	case .Cancel:
-		if v.held != 0 {
+		if v.identify {
+			v.identify = false
+			say(g, "The magic fades unused.")
+		} else if v.held != 0 {
 			v.held = 0
 			say(g, "You leave it where it was.")
 		} else {
@@ -161,7 +166,23 @@ act :: proc(g: ^Game, pane, row: int) {
 	v := &g.inv
 	v.pane, v.cursor[pane] = pane, row
 	target := row_item(g, pane, row)
+	if v.identify && v.held == 0 && target != 0 {
+		identify_item(g, target)
+		return
+	}
+	if pane == 0 && row == USE_ROW {
+		if v.held == 0 {
+			say(g, "Hold something, then choose Use to eat, drink or read it.")
+		} else if use_item(g, v.held) {
+			v.held = 0
+			v.cursor[1] = min(v.cursor[1], max(0, pane_rows(g, 1) - 1))
+		}
+		return
+	}
 	if v.held == 0 {
+		if target != 0 && stuck_on(g, target) {
+			return
+		}
 		if target != 0 {
 			v.held = target
 			say(g, "Holding: ", item_name(g, target), ". Choose where.")
@@ -287,15 +308,21 @@ draw_inventory :: proc(f: ^Frame, g: ^Game) {
 	// Left header: the load.
 	load := carried_weight(g)
 	load_color: u8 = overloaded(g) ? COLOR_RED : load_anchors(g) ? COLOR_ORANGE : COLOR_CYAN
-	x := print(f, "Worn ", INV_LEFT_X, 2, COLOR_CYAN)
-	x += print(f, kg(b1[:], load), INV_LEFT_X + x, 2, load_color)
-	x += print(f, "/", INV_LEFT_X + x, 2, COLOR_MID)
-	x += print(f, kg(b2[:], carry_limit(g)), INV_LEFT_X + x, 2, COLOR_MID)
-	print(f, "kg", INV_LEFT_X + x, 2, COLOR_MID)
+	x := 0
+	if v.identify {
+		print(f, "Identify which?", INV_LEFT_X, 2, COLOR_YELLOW)
+	} else {
+		x = print(f, "Worn ", INV_LEFT_X, 2, COLOR_CYAN)
+		x += print(f, kg(b1[:], load), INV_LEFT_X + x, 2, load_color)
+		x += print(f, "/", INV_LEFT_X + x, 2, COLOR_MID)
+		x += print(f, kg(b2[:], carry_limit(g)), INV_LEFT_X + x, 2, COLOR_MID)
+		print(f, "kg", INV_LEFT_X + x, 2, COLOR_MID)
+	}
 	for s, i in LEFT_SLOTS {
 		draw_inv_row(f, g, 0, i, SLOT_LABEL[s], worn(g, s))
 	}
 	draw_inv_row(f, g, 0, GROUND_ROW, "Floor", 0)
+	draw_inv_row(f, g, 0, USE_ROW, "Use  ", 0)
 	fill_rect(f, INV_RIGHT_X - 5, 0, 1, VIEW_H * TILE, COLOR_DARK)
 	// Right header: the open container and its limits.
 	y := 2
@@ -362,6 +389,8 @@ draw_inv_row :: proc(f: ^Frame, g: ^Game, pane, row: int, label: string, id: int
 				print(f, "-", x, y, COLOR_DARK)
 			}
 			print(f, ">", x0 + INV_PANE_W - 8, y, COLOR_MID)
+		} else if pane == 0 && row == USE_ROW {
+			print(f, "eat/drink/read", x, y, v.held != 0 ? COLOR_LIGHT : COLOR_DARK)
 		} else {
 			print(f, "-", x, y, COLOR_DARK)
 		}

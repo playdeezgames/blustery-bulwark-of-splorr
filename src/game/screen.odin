@@ -78,6 +78,13 @@ Gfx :: enum {
 	Spider_Leg,
 	Beetle_Shell,
 	Kobold_Ear,
+	Cheese,
+	Jerky,
+	Potion,
+	Scroll,
+	Ring,
+	Amulet,
+	Spellbook,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

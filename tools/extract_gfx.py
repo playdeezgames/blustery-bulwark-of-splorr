@@ -48,6 +48,14 @@ PICKS = [
     ('Spider_Leg',   0, 25),
     ('Beetle_Shell', 5, 18),  # a round shell (from the food rows)
     ('Kobold_Ear',  14, 18),  # an ear-like curl (from the food rows)
+    # Food, potions, scrolls and jewellery (slice 1 step 6).
+    ('Cheese',       7, 17),  # a wedge
+    ('Jerky',       19, 18),  # dried strips
+    ('Potion',      30, 4),   # a round flask, painted in the potion's colour
+    ('Scroll',      26, 14),
+    ('Ring',        11, 43),
+    ('Amulet',       2, 44),
+    ('Spellbook',   30, 15),  # a tome with a symbol
 ]
 
 def tile(col, row):

@@ -101,7 +101,7 @@ test_inventory_screen_moves_things :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.items[bread].kind, Item_Kind.Bread)
 	command(g, .West)
 	testing.expect_value(t, g.inv.pane, 0)
-	for _ in 0 ..< LEFT_ROWS {
+	for g.inv.cursor[0] < GROUND_ROW {
 		command(g, .South)
 	}
 	testing.expect_value(t, g.inv.cursor[0], GROUND_ROW)

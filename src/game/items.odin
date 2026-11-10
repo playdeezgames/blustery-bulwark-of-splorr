@@ -27,6 +27,32 @@ Item_Kind :: enum u8 {
 	Spider_Leg,
 	Beetle_Shell,
 	Kobold_Ear,
+	// Food, potions, scrolls, jewellery and a book (step 6). Potions, scrolls, rings and amulets
+	// go by their look until identified.
+	Cheese,
+	Jerky,
+	Potion_Healing,
+	Potion_Mana,
+	Potion_Blight,
+	Potion_Sight,
+	Scroll_Return,
+	Scroll_Identify,
+	Scroll_Uncurse,
+	Scroll_Decree,
+	Ring_Guard,
+	Ring_Draught,
+	Amulet_Vigour,
+	Amulet_Hop,
+	Spellbook,
+}
+
+// Kinds that go by a look until identified; the looks are shuffled per character.
+Group :: enum u8 {
+	None,
+	Potion,
+	Scroll,
+	Ring,
+	Amulet,
 }
 
 Slot :: enum u8 {
@@ -84,6 +110,9 @@ Kind_Info :: struct {
 	armour:     int, // how much a worn piece turns blows aside
 	durability: int, // uses before it breaks (0: never wears out)
 	trophy:     bool, // a monster's leavings, picked up into the pack before the belt
+	food:       int, // hunger an eaten one takes away
+	group:      Group,
+	cursed:     bool, // will not come off once worn, until uncursed
 }
 
 BELT_SLOT_BULK :: 1000 // the biggest thing a belt slot holds
@@ -102,7 +131,7 @@ KIND := [Item_Kind]Kind_Info {
 	.Leather_Cap   = {name = "Leather cap", gfx = .Leather_Cap, color = COLOR_BROWN, weight = 500, bulk = 1500, slot = .Helmet, armour = 1, durability = 30},
 	.Buckler       = {name = "Buckler", gfx = .Buckler, color = COLOR_BROWN, weight = 1500, bulk = 3000, slot = .Shield, armour = 1, durability = 40},
 	.Boots         = {name = "Boots", gfx = .Boots, color = COLOR_BROWN, weight = 1000, bulk = 2500, slot = .Boots, armour = 1, durability = 50},
-	.Bread         = {name = "Bread", gfx = .Bread, color = COLOR_BROWN, weight = 300, bulk = 800},
+	.Bread         = {name = "Bread", gfx = .Bread, color = COLOR_BROWN, weight = 300, bulk = 800, food = 400},
 	.Pack          = {name = "Pack", gfx = .Pack, color = COLOR_BROWN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 12000, cap_bulk = 25000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
@@ -112,6 +141,21 @@ KIND := [Item_Kind]Kind_Info {
 	.Spider_Leg    = {name = "Spider leg", gfx = .Spider_Leg, color = COLOR_RED, weight = 10, bulk = 20, trophy = true},
 	.Beetle_Shell  = {name = "Beetle shell", gfx = .Beetle_Shell, color = COLOR_ORANGE, weight = 150, bulk = 200, trophy = true},
 	.Kobold_Ear    = {name = "Kobold ear", gfx = .Kobold_Ear, color = 5, weight = 10, bulk = 15, trophy = true},
+	.Cheese          = {name = "Cheese", gfx = .Cheese, color = COLOR_YELLOW, weight = 200, bulk = 300, food = 250},
+	.Jerky           = {name = "Jerky", gfx = .Jerky, color = COLOR_RED, weight = 100, bulk = 150, food = 300},
+	.Potion_Healing  = {name = "Healing potion", gfx = .Potion, weight = 250, bulk = 250, group = .Potion},
+	.Potion_Mana     = {name = "Mana potion", gfx = .Potion, weight = 250, bulk = 250, group = .Potion},
+	.Potion_Blight   = {name = "Blight potion", gfx = .Potion, weight = 250, bulk = 250, group = .Potion},
+	.Potion_Sight    = {name = "Sight potion", gfx = .Potion, weight = 250, bulk = 250, group = .Potion},
+	.Scroll_Return   = {name = "Return scroll", gfx = .Scroll, color = COLOR_LIGHT, weight = 30, bulk = 100, group = .Scroll},
+	.Scroll_Identify = {name = "Identify scroll", gfx = .Scroll, color = COLOR_LIGHT, weight = 30, bulk = 100, group = .Scroll},
+	.Scroll_Uncurse  = {name = "Uncurse scroll", gfx = .Scroll, color = COLOR_LIGHT, weight = 30, bulk = 100, group = .Scroll},
+	.Scroll_Decree   = {name = "Decree scroll", gfx = .Scroll, color = COLOR_LIGHT, weight = 30, bulk = 100, group = .Scroll},
+	.Ring_Guard      = {name = "Guard ring", gfx = .Ring, color = COLOR_YELLOW, weight = 10, bulk = 5, slot = .Ring_Left, armour = 2, group = .Ring},
+	.Ring_Draught    = {name = "Draught ring", gfx = .Ring, color = COLOR_YELLOW, weight = 10, bulk = 5, slot = .Ring_Left, group = .Ring, cursed = true},
+	.Amulet_Vigour   = {name = "Vigour amulet", gfx = .Amulet, color = COLOR_YELLOW, weight = 30, bulk = 20, slot = .Amulet, group = .Amulet},
+	.Amulet_Hop      = {name = "Hop amulet", gfx = .Amulet, color = COLOR_YELLOW, weight = 30, bulk = 20, slot = .Amulet, group = .Amulet, cursed = true},
+	.Spellbook       = {name = "Spellbook", gfx = .Spellbook, color = 9, weight = 800, bulk = 1200},
 }
 
 Place :: enum u8 {
@@ -132,6 +176,7 @@ Item :: struct {
 	fuel:   i32, // Torch: turns of light left
 	dur:    i16, // Weapons and armour: uses left before it breaks
 	pile:   bool, // dropped when you died; lost if you die again before picking it up
+	cursed: bool, // from its kind; an Uncurse scroll clears it
 }
 
 MAX_ITEMS :: 256 // id 0 is never used, so 0 means "no item"
@@ -143,7 +188,7 @@ is_container :: proc(k: Item_Kind) -> bool {
 new_item :: proc(g: ^Game, kind: Item_Kind, count := 1) -> int {
 	for i in 1 ..< MAX_ITEMS {
 		if g.items[i].place == .Nowhere {
-			g.items[i] = Item{kind = kind, count = i32(count), fuel = i32(KIND[kind].fuel), dur = i16(KIND[kind].durability)}
+			g.items[i] = Item{kind = kind, count = i32(count), fuel = i32(KIND[kind].fuel), dur = i16(KIND[kind].durability), cursed = KIND[kind].cursed}
 			return i
 		}
 	}
@@ -407,7 +452,11 @@ item_name :: proc(g: ^Game, id: int) -> string {
 		add(buf[:], &n, itoa(num[:], int(it.fuel)))
 		add(buf[:], &n, ")")
 	case:
-		add(buf[:], &n, KIND[it.kind].name)
+		if KIND[it.kind].group != .None && it.kind not_in g.ident {
+			add(buf[:], &n, look_name(g, it.kind))
+		} else {
+			add(buf[:], &n, KIND[it.kind].name)
+		}
 	}
 	return string(buf[:n])
 }
@@ -483,6 +532,16 @@ populate_floor :: proc(g: ^Game, index: int) {
 	}
 	place(g, f, &r, index, .Torch, 1)
 	place(g, f, &r, index, .Bread, 1)
+	// Step 6: more food, potions, a scroll, a piece of jewellery, and a spellbook on floor 3.
+	place(g, f, &r, index, rng_int(&r, 2) == 0 ? .Cheese : .Jerky, 1)
+	for _ in 0 ..< 2 {
+		place(g, f, &r, index, Item_Kind(int(Item_Kind.Potion_Healing) + rng_int(&r, 4)), 1)
+	}
+	place(g, f, &r, index, Item_Kind(int(Item_Kind.Scroll_Return) + rng_int(&r, 4)), 1)
+	place(g, f, &r, index, Item_Kind(int(Item_Kind.Ring_Guard) + rng_int(&r, 4)), 1)
+	if f.number == 3 {
+		place(g, f, &r, index, .Spellbook, 1)
+	}
 	finds := [?]Item_Kind{.Short_Sword, .Club, .Leather_Cap, .Buckler, .Sack}
 	for _ in 0 ..< 2 {
 		place(g, f, &r, index, finds[rng_int(&r, len(finds))], 1)

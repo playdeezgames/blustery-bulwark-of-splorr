@@ -101,6 +101,9 @@ Game :: struct {
 	fx_len:      int,
 	fx_blast:    bool,
 	fx_at:       [2]int,
+	hunger:      int, // rises a point a turn; food takes it down (supplies.odin)
+	ident:       bit_set[Item_Kind], // kinds known by name
+	look:        [Item_Kind]u8, // which look each potion, scroll, ring and amulet kind wears
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
@@ -117,6 +120,7 @@ init_game :: proc(g: ^Game, seed: u64) {
 	g.level = 1
 	g.health = max_health(g)
 	g.mana = max_mana(g)
+	shuffle_looks(g)
 	give_starting_kit(g)
 	enter_floor(g, 0, .Stairs_Down)
 	g.mode = .Create

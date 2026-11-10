@@ -45,7 +45,11 @@ max_health :: proc(g: ^Game) -> int {
 
 // Turns between each point of health coming back.
 heal_period :: proc(g: ^Game) -> int {
-	return max(5, 30 - g.attr[.Constitution])
+	p := max(5, 30 - g.attr[.Constitution])
+	if worn_kind(g, .Amulet_Vigour) != 0 {
+		p /= VIGOUR_HEAL
+	}
+	return p
 }
 
 // Added to every blow you land.
@@ -215,6 +219,7 @@ wake :: proc(g: ^Game) {
 	g.health = max_health(g)
 	g.mana = max_mana(g)
 	g.ward_turns, g.sense_turns, g.anchor_spell = 0, 0, false
+	g.hunger = 0 // fed while you lay there (until the town exists)
 	for &t in g.tenants {
 		t.awake = false
 	}

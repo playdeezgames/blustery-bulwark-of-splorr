@@ -44,15 +44,11 @@ test_first_spell_is_chosen_after_creation :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_identify_is_not_offered_yet :: proc(t: ^testing.T) {
+test_every_spell_is_offered :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	list: [len(Spell)]Spell
-	n := learnable(g, &list)
-	testing.expect_value(t, n, len(Spell) - 1)
-	for s in list[:n] {
-		testing.expect(t, s != .Identify)
-	}
+	testing.expect_value(t, learnable(g, &list), len(Spell))
 }
 
 @(test)

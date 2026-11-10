@@ -69,7 +69,7 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 				k := KIND[g.items[id].kind]
 				sx, sy := MAP_X + vx * TILE, MAP_Y + vy * TILE
 				fill_rect(f, sx, sy, TILE, TILE, COLOR_BLACK)
-				draw_gfx(f, k.gfx, sx, sy, k.color)
+				draw_gfx(f, k.gfx, sx, sy, item_color(g, id))
 			}
 		}
 	}
@@ -174,7 +174,9 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	w += print(f, "/", x + w, y, COLOR_DARK)
 	print(f, itoa(buf[:], max_mana(g)), x + w, y, COLOR_DARK)
 	y += 10
-	print(f, "Food    --", x, y, COLOR_MID)
+	word, wc := hunger_word(g)
+	w = print(f, "Food    ", x, y, COLOR_MID)
+	print(f, word, x + w, y, wc)
 	y += 10
 	// Light: turns left in the torch in hand, and spare torches carried.
 	w = print(f, "Light   ", x, y, COLOR_MID)
@@ -248,7 +250,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 1, step 5", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 1, step 6", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

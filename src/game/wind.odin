@@ -73,6 +73,10 @@ end_turn :: proc(g: ^Game) {
 		return
 	}
 	magic_turn(g)
+	supplies_turn(g)
+	if g.mode == .Dead {
+		return
+	}
 	if g.turn % heal_period(g) == 0 && g.health < max_health(g) {
 		g.health += 1
 	}

@@ -36,7 +36,7 @@ SPELL := [Spell]Spell_Info {
 	.Hop           = {"Hop", 3, false, true, "jump to a nearby spot"},
 	.Return        = {"Return", 8, false, true, "to floor 1's stairs"},
 	.Sense_Tenants = {"Sense Tenants", 4, false, true, "show tenants, 30 turns"},
-	.Identify      = {"Identify", 5, false, false, "name an item (step 6)"},
+	.Identify      = {"Identify", 5, false, true, "name one thing carried"},
 	.Kindle        = {"Kindle", 1, false, true, "light torch, no turn"},
 	.Anchor        = {"Anchor", 2, false, true, "hold fast, one gust"},
 }
@@ -256,6 +256,7 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 		g.sense_turns = SENSE_TURNS
 		say(g, "You feel who pays rent on this floor.")
 	case .Identify:
+		start_identify(g)
 	case .Kindle:
 		turn = false
 		light_torch(g, false)
