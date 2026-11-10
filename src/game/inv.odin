@@ -185,13 +185,22 @@ act :: proc(g: ^Game, pane, row: int) {
 		}
 		if target != 0 {
 			v.held = target
-			say(g, "Holding: ", item_name(g, target), ". Choose where.")
+			if usable(g.items[target].kind) {
+				say(g, "Holding: ", item_name(g, target), ". Choose where, or choose it again to use it.")
+			} else {
+				say(g, "Holding: ", item_name(g, target), ". Choose where.")
+			}
 		} else if pane == 0 && row == GROUND_ROW {
 			open_view(g, 0)
 		}
 		return
 	}
+	// Choosing the held thing again uses it (the user's choice, November 10, 2026), or lets go of
+	// something that cannot be used.
 	if target == v.held {
+		if usable(g.items[target].kind) && use_item(g, target) {
+			v.cursor[1] = min(v.cursor[1], max(0, pane_rows(g, 1) - 1))
+		}
 		v.held = 0
 		return
 	}

@@ -241,7 +241,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		print(f, "Anchor  till gust", x, y, COLOR_CYAN)
 	}
 	if g.mode == .Inventory {
-		hints := [?]string{"Enter: take/put", "Right: open", "Left: back", "Esc/I: close"}
+		hints := [?]string{"Enter: take/put/use", "Right: open", "Left: back", "Esc/I: close"}
 		for h, i in hints {
 			print(f, h, x, SCREEN_H - 52 + i * 9, COLOR_DARK)
 		}

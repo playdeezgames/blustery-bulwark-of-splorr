@@ -248,3 +248,26 @@ test_floors_hold_supplies :: proc(t: ^testing.T) {
 		free(g)
 	}
 }
+
+@(test)
+test_choosing_a_held_thing_again_uses_it :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	g.hunger = 500
+	command(g, .Inventory)
+	command(g, .East)
+	command(g, .South)
+	command(g, .Confirm) // hold the bread
+	bread := g.inv.held
+	command(g, .Confirm) // and again: eat it
+	testing.expect_value(t, g.items[bread].kind, Item_Kind.None)
+	testing.expect_value(t, g.hunger, 500 - KIND[.Bread].food + 1)
+	// Something that cannot be used is let go instead.
+	command(g, .West)
+	command(g, .Confirm) // hold the dagger (the Hand row)
+	dagger := g.inv.held
+	testing.expect_value(t, g.items[dagger].kind, Item_Kind.Dagger)
+	command(g, .Confirm)
+	testing.expect_value(t, g.inv.held, 0)
+	testing.expect_value(t, g.items[dagger].place, Place.Worn)
+}

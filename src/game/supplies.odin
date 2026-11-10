@@ -154,6 +154,11 @@ stuck_on :: proc(g: ^Game, id: int) -> bool {
 	return true
 }
 
+// Things to eat, drink or read.
+usable :: proc(k: Item_Kind) -> bool {
+	return KIND[k].food > 0 || k == .Spellbook || KIND[k].group == .Potion || KIND[k].group == .Scroll
+}
+
 // Eats, drinks or reads an item from the inventory. A turn passes (Return excepted). False when it
 // is not something to use.
 use_item :: proc(g: ^Game, id: int) -> bool {
