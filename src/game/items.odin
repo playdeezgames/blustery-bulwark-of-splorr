@@ -232,8 +232,14 @@ carry_limit :: proc(g: ^Game) -> int {
 	return CARRY_PER_STRENGTH * g.attr[.Strength]
 }
 
-anchored :: proc(g: ^Game) -> bool {
+// A load heavy enough to hold you against gusts (and slow you).
+load_anchors :: proc(g: ^Game) -> bool {
 	return carried_weight(g) * 100 >= carry_limit(g) * ANCHOR_PERCENT
+}
+
+// Held against the next gust: by yer load, or by the Anchor spell (which does not slow you).
+anchored :: proc(g: ^Game) -> bool {
+	return load_anchors(g) || g.anchor_spell
 }
 
 overloaded :: proc(g: ^Game) -> bool {

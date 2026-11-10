@@ -72,6 +72,7 @@ end_turn :: proc(g: ^Game) {
 	if g.mode == .Dead {
 		return
 	}
+	magic_turn(g)
 	if g.turn % heal_period(g) == 0 && g.health < max_health(g) {
 		g.health += 1
 	}
@@ -93,7 +94,8 @@ gust :: proc(g: ^Game) {
 	blow_items(g)
 	blow_tenants(g)
 	if anchored(g) {
-		say(g, "A gust tugs at you. Yer load holds you down.")
+		say(g, "A gust tugs at you. ", load_anchors(g) ? "Yer load" : "Yer spell", " holds you down.")
+		g.anchor_spell = false
 	} else if passable(floor_cell(f, g.x + d.x, g.y + d.y)) {
 		g.x += d.x
 		g.y += d.y
@@ -144,7 +146,7 @@ torch_fuel :: proc(g: ^Game) -> int {
 
 // Confirm with nothing else to do: relight the torch in the light slot, or take a spare (the belt's
 // first) into it and light that. A turn passes. Returns false when the torch is already lit.
-light_torch :: proc(g: ^Game) -> bool {
+light_torch :: proc(g: ^Game, takes_turn := true) -> bool {
 	if g.lit {
 		return false
 	}
@@ -152,7 +154,10 @@ light_torch :: proc(g: ^Game) -> bool {
 	if id != 0 && g.items[id].kind == .Torch {
 		g.lit = true
 		say(g, "You light yer torch.")
-		end_turn(g)
+		refresh_view(g)
+		if takes_turn {
+			end_turn(g)
+		}
 		return true
 	}
 	if id != 0 {
@@ -181,6 +186,9 @@ light_torch :: proc(g: ^Game) -> bool {
 	g.items[best].place, g.items[best].slot = .Worn, .Light
 	g.lit = true
 	say(g, "You light a fresh torch.")
-	end_turn(g)
+	refresh_view(g)
+	if takes_turn {
+		end_turn(g)
+	}
 	return true
 }

@@ -20,6 +20,7 @@ Command :: enum i32 {
 	Cancel,
 	Map,
 	Inventory,
+	Cast,
 }
 
 DIRECTION := [Command][2]int {
@@ -36,6 +37,7 @@ DIRECTION := [Command][2]int {
 	.Cancel     = {0, 0},
 	.Map        = {0, 0},
 	.Inventory  = {0, 0},
+	.Cast       = {0, 0},
 }
 
 FLOOR_COUNT :: 3 // generated floors in slice 1; floor 4 (the first boss) is hand-built in step 8
@@ -46,6 +48,9 @@ Mode :: enum u8 {
 	Inventory,
 	Create, // character creation, before the climb
 	Dead, // fallen; the next Confirm or click wakes you
+	Learn, // choosing a spell (at level 1 and each level after)
+	Cast, // the list of known spells
+	Aim, // a direction for an aimed spell
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -83,6 +88,19 @@ Game :: struct {
 	deaths:      int,
 	killed_by:   string,
 	no_tenants:  bool, // tests set this to check other rules without tenants about
+	level:       int,
+	mana:        int,
+	known:       bit_set[Spell],
+	learns:      int, // spell choices owed
+	menu_row:    int, // the learn and cast lists
+	aim_spell:   Spell,
+	ward_turns:  int,
+	sense_turns: int,
+	anchor_spell: bool, // Anchor holds you until the next gust
+	fx:          [MAX_FX][2]int, // the cells the last spell crossed
+	fx_len:      int,
+	fx_blast:    bool,
+	fx_at:       [2]int,
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
@@ -96,7 +114,9 @@ init_game :: proc(g: ^Game, seed: u64) {
 	for &v in g.attr {
 		v = ATTR_BASE
 	}
+	g.level = 1
 	g.health = max_health(g)
+	g.mana = max_mana(g)
 	give_starting_kit(g)
 	enter_floor(g, 0, .Stairs_Down)
 	g.mode = .Create
@@ -231,7 +251,7 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 	g.x += d.x
 	g.y += d.y
 	end_turn(g)
-	if anchored(g) {
+	if load_anchors(g) {
 		end_turn(g)
 	}
 	return true
@@ -252,6 +272,7 @@ describe_arrival :: proc(g: ^Game) {
 
 command :: proc(g: ^Game, c: Command) {
 	stop_travel(g)
+	g.fx_len, g.fx_blast = 0, false
 	if g.mode == .Automap {
 		g.mode = .Play // any command closes the map
 		return
@@ -268,8 +289,19 @@ command :: proc(g: ^Game, c: Command) {
 			wake(g)
 		}
 		return
+	case .Learn:
+		learn_command(g, c)
+		return
+	case .Cast:
+		cast_command(g, c)
+		return
+	case .Aim:
+		aim_command(g, c)
+		open_learn_if_owed(g)
+		return
 	case .Play, .Automap:
 	}
+	defer open_learn_if_owed(g)
 	switch c {
 	case .North, .South, .West, .East, .North_West, .North_East, .South_West, .South_East:
 		if step_player(g, DIRECTION[c]) {
@@ -285,6 +317,8 @@ command :: proc(g: ^Game, c: Command) {
 		g.mode = .Automap
 	case .Inventory:
 		open_inventory(g)
+	case .Cast:
+		open_cast(g)
 	}
 }
 
@@ -337,6 +371,9 @@ Pointer :: enum i32 {
 // cells); a right click or a tap inspects (touch moves with the d-pad; DESIGN.md).
 pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 	stop_travel(g)
+	if g.mode != .Aim {
+		g.fx_len, g.fx_blast = 0, false
+	}
 	if g.mode == .Automap {
 		g.mode = .Play
 		return
@@ -351,7 +388,23 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 	case .Dead:
 		wake(g)
 		return
+	case .Learn:
+		learn_pointer(g, sx, sy)
+		return
+	case .Cast:
+		cast_pointer(g, sx, sy)
+		return
+	case .Aim:
+		g.fx_len, g.fx_blast = 0, false
+		aim_pointer(g, sx, sy)
+		open_learn_if_owed(g)
+		return
 	case .Play, .Automap:
+	}
+	defer open_learn_if_owed(g)
+	if hint, ok := panel_hint_at(sx, sy); ok {
+		command(g, hint)
+		return
 	}
 	x, y, ok := screen_to_cell(g, sx, sy)
 	if !ok {

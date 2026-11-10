@@ -134,7 +134,7 @@ inventory_command :: proc(g: ^Game, c: Command) {
 		}
 	case .Inventory, .Map:
 		close_inventory(g)
-	case .Wait, .North_West, .North_East, .South_West, .South_East:
+	case .Wait, .North_West, .North_East, .South_West, .South_East, .Cast:
 	}
 	keep_cursor_in_view(g)
 }
@@ -286,7 +286,7 @@ draw_inventory :: proc(f: ^Frame, g: ^Game) {
 	b1, b2: [16]u8
 	// Left header: the load.
 	load := carried_weight(g)
-	load_color: u8 = overloaded(g) ? COLOR_RED : anchored(g) ? COLOR_ORANGE : COLOR_CYAN
+	load_color: u8 = overloaded(g) ? COLOR_RED : load_anchors(g) ? COLOR_ORANGE : COLOR_CYAN
 	x := print(f, "Worn ", INV_LEFT_X, 2, COLOR_CYAN)
 	x += print(f, kg(b1[:], load), INV_LEFT_X + x, 2, load_color)
 	x += print(f, "/", INV_LEFT_X + x, 2, COLOR_MID)

@@ -286,6 +286,7 @@ kill_tenant :: proc(g: ^Game, id: int) {
 	g.tenants[id] = {}
 	g.xp += info.xp
 	say(g, "You kill the ", info.name, ".")
+	check_level(g)
 	drop_at :: proc(g: ^Game, t: Tenant, kind: Item_Kind, count: int) {
 		item := new_item(g, kind, count)
 		if item != 0 {
@@ -337,7 +338,11 @@ draw_tenants :: proc(f: ^Frame, g: ^Game) {
 	ox, oy := view_origin(g)
 	for i in 1 ..< MAX_TENANTS {
 		t := &g.tenants[i]
-		if t.kind == .None || int(t.floor) != g.current || !g.vis[t.y][t.x] {
+		if t.kind == .None || int(t.floor) != g.current {
+			continue
+		}
+		sensed := !g.vis[t.y][t.x]
+		if sensed && g.sense_turns <= 0 {
 			continue
 		}
 		vx, vy := int(t.x) - ox, int(t.y) - oy
@@ -346,7 +351,7 @@ draw_tenants :: proc(f: ^Frame, g: ^Game) {
 		}
 		sx, sy := MAP_X + vx * TILE, MAP_Y + vy * TILE
 		fill_rect(f, sx, sy, TILE, TILE, COLOR_BLACK)
-		draw_gfx(f, TENANT[t.kind].gfx, sx, sy, TENANT[t.kind].color)
+		draw_gfx(f, TENANT[t.kind].gfx, sx, sy, sensed ? COLOR_MID : TENANT[t.kind].color)
 	}
 }
 

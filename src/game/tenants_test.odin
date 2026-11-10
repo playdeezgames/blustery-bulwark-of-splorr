@@ -49,7 +49,7 @@ test_creation_spends_points :: proc(t: ^testing.T) {
 	command(g, .North)
 	testing.expect_value(t, g.create_row, CREATE_BEGIN_ROW)
 	command(g, .Confirm)
-	testing.expect_value(t, g.mode, Mode.Play)
+	testing.expect_value(t, g.mode, Mode.Learn) // the first spell comes next
 	testing.expect_value(t, g.health, max_health(g))
 }
 

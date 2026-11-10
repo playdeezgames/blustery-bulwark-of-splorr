@@ -8,7 +8,7 @@ package game
 Attr :: enum u8 {
 	Strength, // damage and the load limit
 	Dexterity, // landing blows and dodging them
-	Intelligence, // mana (step 5)
+	Intelligence, // mana
 	Constitution, // health and healing
 }
 
@@ -22,7 +22,7 @@ ATTR_NAME := [Attr]string {
 ATTR_USE := [Attr]string {
 	.Strength     = "hits, load",
 	.Dexterity    = "aim, dodge",
-	.Intelligence = "mana (soon)",
+	.Intelligence = "mana",
 	.Constitution = "health",
 }
 
@@ -40,7 +40,7 @@ points_left :: proc(g: ^Game) -> int {
 }
 
 max_health :: proc(g: ^Game) -> int {
-	return 2 * g.attr[.Constitution]
+	return 2 * g.attr[.Constitution] + LEVEL_HEALTH * (g.level - 1)
 }
 
 // Turns between each point of health coming back.
@@ -60,6 +60,9 @@ armour_worn :: proc(g: ^Game) -> int {
 		if g.items[i].place == .Worn {
 			a += KIND[g.items[i].kind].armour
 		}
+	}
+	if g.ward_turns > 0 {
+		a += WARD_ARMOUR
 	}
 	return a
 }
@@ -103,7 +106,10 @@ change_attr :: proc(g: ^Game, d: int) {
 begin_climb :: proc(g: ^Game) {
 	g.mode = .Play
 	g.health = max_health(g)
+	g.mana = max_mana(g)
 	say(g, "You climb in from the town gate.")
+	g.learns = 1
+	open_learn_if_owed(g)
 }
 
 // Creation screen layout (in the map area).
@@ -207,6 +213,8 @@ die :: proc(g: ^Game, by: string) {
 wake :: proc(g: ^Game) {
 	g.mode = .Play
 	g.health = max_health(g)
+	g.mana = max_mana(g)
+	g.ward_turns, g.sense_turns, g.anchor_spell = 0, 0, false
 	for &t in g.tenants {
 		t.awake = false
 	}
@@ -214,6 +222,7 @@ wake :: proc(g: ^Game) {
 	g.lit = torch_fuel(g) > 0
 	say(g, "You wake below the bulwark (no town yet).")
 	say(g, "What you carried lies where you fell.")
+	open_learn_if_owed(g)
 }
 
 DEAD_Y :: 50

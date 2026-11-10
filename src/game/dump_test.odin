@@ -91,3 +91,43 @@ test_dump_fight :: proc(t: ^testing.T) {
 		}
 	}
 }
+
+// Magic screens for checking by eye (-define:DUMP_MAGIC=<prefix>): <prefix>-learn.ppm,
+// <prefix>-cast.ppm, <prefix>-bolt.ppm (a bolt bent by the wind) and <prefix>-ball.ppm.
+DUMP_MAGIC :: #config(DUMP_MAGIC, "")
+
+@(test)
+test_dump_magic :: proc(t: ^testing.T) {
+	when DUMP_MAGIC != "" {
+		g := open_room()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		g.known = {}
+		g.learns = 1
+		g.level = 3
+		open_learn_if_owed(g)
+		g.menu_row = 6
+		shot(g, fr, DUMP_MAGIC + "-learn.ppm")
+		g.known = ~bit_set[Spell]{}
+		g.mode = .Play
+		g.mana = 5
+		g.ward_turns, g.sense_turns, g.anchor_spell = 12, 7, true
+		open_cast(g)
+		shot(g, fr, DUMP_MAGIC + "-cast.ppm")
+		g.mode = .Play
+		g.mana = 50
+		new_tenant(g, .Kobold, g.current, 22, 13)
+		cast_spell(g, .Magic_Bolt, {0, -1})
+		shot(g, fr, DUMP_MAGIC + "-bolt.ppm")
+		new_tenant(g, .Rat, g.current, 25, 21)
+		cast_spell(g, .Gust_Ball, {1, 0})
+		g.mode = .Aim
+		shot(g, fr, DUMP_MAGIC + "-ball.ppm")
+	}
+}

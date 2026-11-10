@@ -16,6 +16,12 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	case .Dead:
 		draw_map(f, g)
 		draw_dead(f, g)
+	case .Learn:
+		draw_learn(f, g)
+	case .Cast:
+		draw_cast(f, g)
+	case .Aim:
+		draw_map(f, g)
 	}
 	draw_log(f, g)
 	draw_panel(f, g)
@@ -79,6 +85,7 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 	px, py := MAP_X + (g.x - ox) * TILE, MAP_Y + (g.y - oy) * TILE
 	fill_rect(f, px, py, TILE, TILE, COLOR_BLACK)
 	draw_gfx(f, .Player, px, py, COLOR_WHITE)
+	draw_magic(f, g)
 	if gust_warning(g) {
 		draw_streaks(f, g)
 	}
@@ -162,11 +169,13 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	w += print(f, "/", x + w, y, COLOR_DARK)
 	print(f, itoa(buf[:], top), x + w, y, COLOR_DARK)
 	y += 10
-	rows := [?]string{"Mana    --", "Food    --"}
-	for r in rows {
-		print(f, r, x, y, COLOR_MID)
-		y += 10
-	}
+	w = print(f, "Mana    ", x, y, COLOR_MID)
+	w += print(f, itoa(buf[:], g.mana), x + w, y, COLOR_CYAN)
+	w += print(f, "/", x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], max_mana(g)), x + w, y, COLOR_DARK)
+	y += 10
+	print(f, "Food    --", x, y, COLOR_MID)
+	y += 10
 	// Light: turns left in the torch in hand, and spare torches carried.
 	w = print(f, "Light   ", x, y, COLOR_MID)
 	fuel, spares := torch_fuel(g), spare_torches(g)
@@ -189,15 +198,20 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	kb1, kb2: [16]u8
 	load := carried_weight(g)
 	w = print(f, "Load    ", x, y, COLOR_MID)
-	w += print(f, kg(kb1[:], load), x + w, y, overloaded(g) ? COLOR_RED : anchored(g) ? COLOR_ORANGE : COLOR_LIGHT)
+	w += print(f, kg(kb1[:], load), x + w, y, overloaded(g) ? COLOR_RED : load_anchors(g) ? COLOR_ORANGE : COLOR_LIGHT)
 	print(f, "/" , x + w, y, COLOR_DARK)
 	print(f, kg(kb2[:], carry_limit(g)), x + w + GLYPH_W, y, COLOR_DARK)
 	y += 10
 	w = print(f, "Jools   ", x, y, COLOR_MID)
 	print(f, itoa(buf[:], carried_jools(g)), x + w, y, COLOR_YELLOW)
 	y += 10
-	w = print(f, "XP      ", x, y, COLOR_MID)
-	print(f, itoa(buf[:], g.xp), x + w, y, COLOR_LIGHT)
+	// Level, and XP toward the next.
+	w = print(f, "Level   ", x, y, COLOR_MID)
+	w += print(f, itoa(buf[:], g.level), x + w, y, COLOR_LIGHT)
+	w += print(f, " xp ", x + w, y, COLOR_DARK)
+	w += print(f, itoa(buf[:], g.xp), x + w, y, COLOR_LIGHT)
+	w += print(f, "/", x + w, y, COLOR_DARK)
+	print(f, itoa(buf[:], xp_for_level(g.level + 1)), x + w, y, COLOR_DARK)
 	y += 10
 	w = print(f, "Turn    ", x, y, COLOR_MID)
 	print(f, itoa(buf[:], g.turn), x + w, y, COLOR_MID)
@@ -209,13 +223,53 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		ax += print(f, short[a], ax, y, COLOR_DARK)
 		ax += print(f, itoa(buf[:], g.attr[a]), ax, y, COLOR_LIGHT) + 4
 	}
+	// Spells still running, a line each.
+	if g.ward_turns > 0 {
+		y += 9
+		w = print(f, "Ward    ", x, y, COLOR_CYAN)
+		print(f, itoa(buf[:], g.ward_turns), x + w, y, COLOR_CYAN)
+	}
+	if g.sense_turns > 0 {
+		y += 9
+		w = print(f, "Sense   ", x, y, COLOR_CYAN)
+		print(f, itoa(buf[:], g.sense_turns), x + w, y, COLOR_CYAN)
+	}
+	if g.anchor_spell {
+		y += 9
+		print(f, "Anchor  till gust", x, y, COLOR_CYAN)
+	}
 	if g.mode == .Inventory {
 		hints := [?]string{"Enter: take/put", "Right: open", "Left: back", "Esc/I: close"}
 		for h, i in hints {
 			print(f, h, x, SCREEN_H - 52 + i * 9, COLOR_DARK)
 		}
 	} else {
-		print(f, "M map  I inventory", x, SCREEN_H - 30, COLOR_DARK)
+		for h in PANEL_HINTS {
+			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
+		}
 	}
-	print(f, "Slice 1, step 4", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 1, step 5", x, SCREEN_H - 12, COLOR_DARK)
+}
+
+// The panel's key hints, which a click or tap also uses.
+Panel_Hint :: struct {
+	text: string,
+	x:    int,
+	c:    Command,
+}
+
+PANEL_HINT_Y :: SCREEN_H - 30
+PANEL_HINTS := [?]Panel_Hint{{"M map", 0, .Map}, {"I pack", 6 * GLYPH_W, .Inventory}, {"C cast", 13 * GLYPH_W, .Cast}}
+
+panel_hint_at :: proc(sx, sy: int) -> (Command, bool) {
+	if sy < PANEL_HINT_Y - 3 || sy >= PANEL_HINT_Y + GLYPH_H + 3 {
+		return .Wait, false
+	}
+	for h in PANEL_HINTS {
+		x := PANEL_X + 2 + h.x
+		if sx >= x - 2 && sx < x + text_width(h.text) + 2 {
+			return h.c, true
+		}
+	}
+	return .Wait, false
 }
