@@ -138,6 +138,12 @@ build_town :: proc(f: ^Floor) {
 	f^ = {}
 	f.number = 0
 	f.made = true
+	town_cells(f)
+	f.down = door_of(.Temple) + {0, 1} // where you wake: outside the temple
+}
+
+// The town's cells and gate from TOWN_MAP (also used to restore a save).
+town_cells :: proc(f: ^Floor) {
 	for y in 0 ..< FLOOR_H {
 		for x in 0 ..< FLOOR_W {
 			f.cells[y][x] = .Wall
@@ -162,7 +168,6 @@ build_town :: proc(f: ^Floor) {
 			f.cells[TOWN_Y + y][TOWN_X + x] = c
 		}
 	}
-	f.down = door_of(.Temple) + {0, 1} // where you wake: outside the temple
 }
 
 door_of :: proc(s: Shop) -> [2]int {

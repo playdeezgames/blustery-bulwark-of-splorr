@@ -36,6 +36,31 @@ build_boss_floor :: proc(g: ^Game) {
 	f.number = BOSS_INDEX + 1
 	f.made = true
 	f.wind_from = 2 // from the west: the gusts blow east across the hall
+	boss_cells(f)
+	for row, y in BOSS_MAP {
+		for x in 0 ..< len(row) {
+			cx, cy := BOSS_X + x, BOSS_Y + y
+			switch row[x] {
+			case 'b':
+				if !g.no_tenants {
+					new_tenant(g, .Bones, BOSS_INDEX, cx, cy)
+				}
+			case 'S':
+				if !g.no_tenants {
+					new_tenant(g, .Skeleton, BOSS_INDEX, cx, cy)
+				}
+			case 'C':
+				if !g.no_tenants {
+					g.ticket = new_tenant(g, .Carny, BOSS_INDEX, cx, cy)
+					g.tenants[g.ticket].still = true
+				}
+			}
+		}
+	}
+}
+
+// Floor 4's cells and stairs from BOSS_MAP (also used to restore a save).
+boss_cells :: proc(f: ^Floor) {
 	for y in 0 ..< FLOOR_H {
 		for x in 0 ..< FLOOR_W {
 			f.cells[y][x] = .Wall
@@ -54,19 +79,6 @@ build_boss_floor :: proc(g: ^Game) {
 			case 'D':
 				c = .Stairs_Down
 				f.down = {cx, cy}
-			case 'b':
-				if !g.no_tenants {
-					new_tenant(g, .Bones, BOSS_INDEX, cx, cy)
-				}
-			case 'S':
-				if !g.no_tenants {
-					new_tenant(g, .Skeleton, BOSS_INDEX, cx, cy)
-				}
-			case 'C':
-				if !g.no_tenants {
-					g.ticket = new_tenant(g, .Carny, BOSS_INDEX, cx, cy)
-					g.tenants[g.ticket].still = true
-				}
 			}
 			f.cells[cy][cx] = c
 		}

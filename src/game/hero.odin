@@ -182,6 +182,10 @@ draw_create :: proc(f: ^Frame, g: ^Game) {
 	print(f, "Enter/OK, or click Begin, to start", 12, y + 24, COLOR_DARK)
 }
 
+killed_by :: proc(g: ^Game) -> string {
+	return string(g.killed_by[:g.killed_n])
+}
+
 hurt :: proc(g: ^Game, amount: int, by: string) {
 	g.health -= amount
 	if g.health <= 0 {
@@ -208,7 +212,7 @@ die :: proc(g: ^Game, by: string) {
 	}
 	g.deaths += 1
 	g.mode = .Dead
-	g.killed_by = by
+	g.killed_n = copy(g.killed_by[:], by)
 	say(g, "You fall to ", by, ".")
 }
 
@@ -238,7 +242,7 @@ draw_dead :: proc(f: ^Frame, g: ^Game) {
 	fill_rect(f, 20, DEAD_Y + 55, VIEW_W * TILE - 40, 1, COLOR_RED)
 	print(f, "You fall.", 30, DEAD_Y, COLOR_RED)
 	w := print(f, "Brought down by ", 30, DEAD_Y + 12, COLOR_LIGHT)
-	print(f, g.killed_by, 30 + w, DEAD_Y + 12, COLOR_LIGHT)
+	print(f, killed_by(g), 30 + w, DEAD_Y + 12, COLOR_LIGHT)
 	print(f, "Yer pack's contents stay here.", 30, DEAD_Y + 24, COLOR_MID)
 	if g.bank > 0 {
 		print(f, "Yer banked Jools are safe.", 30, DEAD_Y + 32, COLOR_MID)

@@ -217,7 +217,7 @@ test_blight_can_kill :: proc(t: ^testing.T) {
 	g.health = 1
 	use_item(g, give(g, .Potion_Blight))
 	testing.expect_value(t, g.mode, Mode.Dead)
-	testing.expect_value(t, g.killed_by, "a bad potion")
+	testing.expect_value(t, killed_by(g), "a bad potion")
 }
 
 @(test)

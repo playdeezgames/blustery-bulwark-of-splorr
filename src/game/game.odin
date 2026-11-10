@@ -89,7 +89,8 @@ Game :: struct {
 	create_row:  int,
 	tenants:     [MAX_TENANTS]Tenant,
 	deaths:      int,
-	killed_by:   string,
+	killed_by:   [40]u8, // what brought you down last (a copy: saves hold no pointers)
+	killed_n:    int,
 	no_tenants:  bool, // tests set this to check other rules without tenants about
 	level:       int,
 	mana:        int,

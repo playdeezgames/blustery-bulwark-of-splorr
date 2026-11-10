@@ -133,7 +133,7 @@ test_casting_short_of_mana_costs_health :: proc(t: ^testing.T) {
 	g.health = 2
 	cast_spell(g, .Ward, {0, 0})
 	testing.expect_value(t, g.mode, Mode.Dead)
-	testing.expect_value(t, g.killed_by, "casting past yer mana")
+	testing.expect_value(t, killed_by(g), "casting past yer mana")
 }
 
 @(test)

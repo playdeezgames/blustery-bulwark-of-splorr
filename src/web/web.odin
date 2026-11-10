@@ -12,6 +12,8 @@ state: struct {
 	screen: game.Frame,
 	dirty:  bool,
 	ready:  bool,
+	save:   [game.SAVE_CAP]u8, // the packed save, for the page to put in localStorage
+	load:   [game.SAVE_CAP]u8, // where the page writes a save it read back
 }
 
 main :: proc() {
@@ -70,6 +72,43 @@ platform_pointer_up :: proc "c" (x, y: i32) {
 	context = runtime.default_context()
 	game.inventory_release(&state.rules, int(x), int(y))
 	state.dirty = true
+}
+
+// Packs the game into the save buffer; returns its length for the page to store.
+@(export)
+platform_save :: proc "c" () -> i32 {
+	context = runtime.default_context()
+	return i32(game.save_game(&state.rules, state.save[:]))
+}
+
+@(export)
+platform_save_ptr :: proc "c" () -> rawptr {
+	return &state.save
+}
+
+@(export)
+platform_save_cap :: proc "c" () -> i32 {
+	return game.SAVE_CAP
+}
+
+@(export)
+platform_load_ptr :: proc "c" () -> rawptr {
+	return &state.load
+}
+
+// Restores the save the page wrote into the load buffer (`n` bytes). 1 when it was one this build
+// can read; 0 leaves the game as it was.
+@(export)
+platform_load :: proc "c" (n: i32) -> i32 {
+	context = runtime.default_context()
+	if n <= 0 || int(n) > len(state.load) {
+		return 0
+	}
+	if !game.load_game(&state.rules, state.load[:n]) {
+		return 0
+	}
+	state.dirty = true
+	return 1
 }
 
 // 1 when the frame holds pixels the page has not copied yet (and marks them taken).
