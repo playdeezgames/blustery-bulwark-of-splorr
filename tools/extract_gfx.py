@@ -60,6 +60,11 @@ PICKS = [
     ('Brick',        0, 3),
     ('Door',         4, 1),
     ('Herald',     117, 0),  # a figure holding up a notice
+    # Floor 4 (slice 1 step 8).
+    ('Skeleton',   104, 10),
+    ('Skull',        1, 38),
+    ('Bone_Pile',    4, 38),
+    ('Key',          6, 45),
 ]
 
 def tile(col, row):

@@ -88,6 +88,10 @@ Gfx :: enum {
 	Brick,
 	Door,
 	Herald,
+	Skeleton,
+	Skull,
+	Bone_Pile,
+	Key,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

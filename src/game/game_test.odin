@@ -31,7 +31,7 @@ test_floors_are_connected_over_many_seeds :: proc(t: ^testing.T) {
 	path: ^[MAX_PATH][2]int = new([MAX_PATH][2]int)
 	defer free(path)
 	for seed in u64(1) ..= 300 {
-		for number in 1 ..= FLOOR_COUNT {
+		for number in 1 ..= GENERATED_FLOORS {
 			generate_floor(f, floor_seed(seed, number), number)
 			testing.expect(t, f.room_count >= 6)
 			testing.expect_value(t, f.cells[f.up.y][f.up.x], Cell.Stairs_Up)
@@ -133,13 +133,16 @@ test_stairs_climb_and_floors_persist :: proc(t: ^testing.T) {
 	command(g, .Confirm)
 	testing.expect_value(t, floor_of(g).number, 2)
 	testing.expect(t, floor_of(g).seen[0][0])
-	// The top of slice 1 and the bottom (the town) are not built yet.
+	// Up to floor 4, where the door to floor 5 is locked.
 	teleport(g, floor_of(g).up)
 	command(g, .Confirm)
 	teleport(g, floor_of(g).up)
 	command(g, .Confirm)
-	testing.expect_value(t, floor_of(g).number, 3)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "The stairs above are not built yet.")
+	testing.expect_value(t, floor_of(g).number, 4)
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 4)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), " has the key, they say.") // the line wraps
 }
 
 @(test)

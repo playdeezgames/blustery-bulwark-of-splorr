@@ -224,7 +224,7 @@ test_blight_can_kill :: proc(t: ^testing.T) {
 test_floors_hold_supplies :: proc(t: ^testing.T) {
 	for seed in u64(1) ..= 20 {
 		g := new_game(seed)
-		for i in 0 ..< FLOOR_COUNT {
+		for i in 0 ..< GENERATED_FLOORS {
 			enter_floor(g, i, .Stairs_Down)
 			groups: [Group]int
 			food, books := 0, 0

@@ -38,6 +38,8 @@ Shop :: enum u8 {
 	Tavern,
 	Herald,
 	Carny, // a carny's stall on the floors
+	Admission, // the carny at floor 4's door
+	Gate, // the bulwark gate, once the windchute is open
 }
 
 Shop_Info :: struct {
@@ -58,6 +60,8 @@ SHOP := [Shop]Shop_Info {
 	.Tavern  = {'V', "The tavern", "TAVERN", "The mentor sits in the corner, as always."},
 	.Herald  = {'H', "The herald", "", "Hear ye! His Lordship commands the wind!"},
 	.Carny   = {0, "A carny's stall", "", "\"Step up! Every game a winner, nearly!\""},
+	.Admission = {0, "The door to the Horde", "", "\"See the Undead Horde! Two Jools! Terrifying! Mostly!\""},
+	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to floor 4, where you have been."},
 }
 
 // What a thing is worth in Jools (shops sell at this, the smith buys gear at half, the junk shop
@@ -97,6 +101,8 @@ VALUE := #partial [Item_Kind]int {
 	.Amulet_Hop      = 5,
 	.Spellbook       = 60,
 	.Wind_Charm      = 5,
+	.Skull           = 3,
+	.Old_Bones       = 1,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Wind_Charm}
@@ -220,6 +226,8 @@ proclaim :: proc(g: ^Game) {
 		}
 	}
 	switch {
+	case g.boss_dead && !told.boss:
+		add(text[:], &n, "His Lordship has destroyed the Undead Horde, as foretold.")
 	case g.deepest > told.deepest:
 		add(text[:], &n, "His Lordship has conquered floor ", itoa(buf[:], g.deepest), " of his own bulwark, as foretold.")
 	case g.level > told.level:
@@ -231,7 +239,7 @@ proclaim :: proc(g: ^Game) {
 	case:
 		return
 	}
-	told^ = {g.deepest, g.level, g.kills, g.deaths}
+	told^ = {g.deepest, g.level, g.kills, g.deaths, g.boss_dead}
 	g.proclamation_n = copy(g.proclamation[:], text[:n])
 	say(g, "The herald reads: \"", string(g.proclamation[:g.proclamation_n]), "\"")
 	say(g, "The town cheers the lord.")
@@ -314,6 +322,9 @@ Act :: enum u8 {
 	Ask,
 	Toss,
 	Shove,
+	Admit,
+	Climb,
+	Chute,
 }
 
 Row :: struct {
@@ -362,7 +373,7 @@ repair_price :: proc(g: ^Game, id: int) -> int {
 // Things carried that a shop could take: not worn, not coins, not a container with anything in it.
 sellable :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
-	return it.kind != .None && it.kind != .Jools && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
+	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
 }
 
 shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
@@ -446,6 +457,12 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		add_row(rows, &n, .Toss, 0, RING_TOSS, "Ring toss (win a prize)")
 		add_row(rows, &n, .Buy, int(Item_Kind.Wind_Charm), VALUE[.Wind_Charm], "Buy a Wind charm")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
+	case .Admission:
+		add_row(rows, &n, .Admit, 0, ADMISSION, "Pay to see the Horde")
+		add_row(rows, &n, .Shove, 0, 0, "Shove past")
+	case .Gate:
+		add_row(rows, &n, .Climb, 0, 0, "Climb to floor 1")
+		add_row(rows, &n, .Chute, 0, 0, "Ride the windchute to floor 4")
 	}
 	add_row(rows, &n, .Leave, 0, 0, "Leave")
 	return n
@@ -570,7 +587,7 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			say(g, "\"The wind is His Lordship's breath. I have identified it.\"")
 		case .Temple:
 			say(g, "You pray for calm. The priest prays for His Lordship's health.")
-		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny:
+		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate:
 		}
 		g.talk += 1
 	case .Train:
@@ -596,6 +613,19 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 				say(g, "The ring bounces off. \"So close! Again?\"")
 			}
 		}
+	case .Admit:
+		if pay(g, r.price) {
+			leave_shop(g)
+			admit(g)
+		}
+	case .Climb:
+		leave_shop(g)
+		enter_floor(g, 0, .Stairs_Down)
+		say(g, "You climb to floor 1. The wind is stronger.")
+	case .Chute:
+		leave_shop(g)
+		enter_floor(g, BOSS_INDEX, .Stairs_Down)
+		say(g, "The windchute blows you up to floor 4.")
 	case .Shove:
 		id := g.shop_tenant
 		leave_shop(g)
@@ -692,7 +722,7 @@ draw_shop :: proc(f: ^Frame, g: ^Game) {
 draw_town :: proc(f: ^Frame, g: ^Game) {
 	ox, oy := view_origin(g)
 	for s in Shop {
-		if s == .None || s == .Carny {
+		if SHOP[s].letter == 0 {
 			continue
 		}
 		d := door_of(s)

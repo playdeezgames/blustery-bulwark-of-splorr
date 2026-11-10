@@ -46,6 +46,10 @@ Item_Kind :: enum u8 {
 	Spellbook,
 	// Sold in town (step 7).
 	Wind_Charm,
+	// Floor 4 (step 8).
+	Skull,
+	Old_Bones,
+	Key,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -159,6 +163,9 @@ KIND := [Item_Kind]Kind_Info {
 	.Amulet_Hop      = {name = "Hop amulet", gfx = .Amulet, color = COLOR_YELLOW, weight = 30, bulk = 20, slot = .Amulet, group = .Amulet, cursed = true},
 	.Spellbook       = {name = "Spellbook", gfx = .Spellbook, color = 9, weight = 800, bulk = 1200},
 	.Wind_Charm      = {name = "Wind charm", gfx = .Amulet, color = COLOR_CYAN, weight = 20, bulk = 20, slot = .Amulet},
+	.Skull           = {name = "Skull", gfx = .Skull, color = COLOR_WHITE, weight = 600, bulk = 1500, trophy = true},
+	.Old_Bones       = {name = "Old bones", gfx = .Bone_Pile, color = COLOR_LIGHT, weight = 1500, bulk = 3000},
+	.Key             = {name = "Key to floor 5", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
 }
 
 Place :: enum u8 {
@@ -487,6 +494,10 @@ get_here :: proc(g: ^Game) -> bool {
 	name := string(name_buf[:n])
 	if !stow(g, id) {
 		say(g, "No room to carry ", name, ".")
+	} else if g.items[id].kind == .Key && !g.slice_done {
+		say(g, "You pick up the ", name, ".")
+		g.slice_done = true
+		g.mode = .Notice
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {

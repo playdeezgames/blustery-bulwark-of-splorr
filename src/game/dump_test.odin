@@ -207,3 +207,34 @@ test_dump_town :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_TOWN + "-bank.ppm")
 	}
 }
+
+// Floor 4 by eye (-define:DUMP_BOSS=<prefix>): <prefix>-door.ppm (arriving, the carny at the
+// door), <prefix>-hall.ppm (the Horde, one toppled) and <prefix>-notice.ppm.
+DUMP_BOSS :: #config(DUMP_BOSS, "")
+
+@(test)
+test_dump_boss :: proc(t: ^testing.T) {
+	when DUMP_BOSS != "" {
+		g := boss_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		command(g, .North)
+		shot(g, fr, DUMP_BOSS + "-door.ppm")
+		c := g.tenants[g.ticket]
+		teleport(g, {int(c.x), int(c.y) + 1})
+		command(g, .North)
+		choose(g, .Admit)
+		command(g, .North)
+		command(g, .North)
+		topple(g, find_kind(g, .Bones), true)
+		shot(g, fr, DUMP_BOSS + "-hall.ppm")
+		g.mode = .Notice
+		shot(g, fr, DUMP_BOSS + "-notice.ppm")
+	}
+}

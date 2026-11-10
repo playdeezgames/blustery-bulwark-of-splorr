@@ -48,7 +48,7 @@ test_every_door_is_reachable_and_its_own :: proc(t: ^testing.T) {
 	path: ^[MAX_PATH][2]int = new([MAX_PATH][2]int)
 	defer free(path)
 	for s in Shop {
-		if s == .None || s == .Carny {
+		if SHOP[s].letter == 0 {
 			continue
 		}
 		d := door_of(s)

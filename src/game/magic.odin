@@ -353,6 +353,10 @@ cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool) {
 spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 	t := &g.tenants[id]
 	info := TENANT[t.kind]
+	if info.prop {
+		topple(g, id, false)
+		return
+	}
 	if !hostile(t) {
 		t.angry = true
 		say(g, "The ", info.name, " shouts for the law. There is none.")

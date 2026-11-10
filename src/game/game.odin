@@ -40,7 +40,8 @@ DIRECTION := [Command][2]int {
 	.Cast       = {0, 0},
 }
 
-FLOOR_COUNT :: 3 // generated floors in slice 1; floor 4 (the first boss) is hand-built in step 8
+FLOOR_COUNT :: 4 // floors in slice 1: three generated, then floor 4 (the first boss) built by hand
+GENERATED_FLOORS :: 3
 
 Mode :: enum u8 {
 	Play,
@@ -52,6 +53,7 @@ Mode :: enum u8 {
 	Cast, // the list of known spells
 	Aim, // a direction for an aimed spell
 	Shop, // inside a town shop (or at a carny's stall)
+	Notice, // the end of slice 1, once
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -117,10 +119,15 @@ Game :: struct {
 	told:        Told, // what the herald has already proclaimed
 	proclamation: [96]u8,
 	proclamation_n: int,
+	ticket:      int, // the carny at floor 4's door
+	admitted:    bool, // paid to see the Horde
+	boss_dead:   bool,
+	slice_done:  bool, // the end-of-slice notice has been shown
 }
 
 Told :: struct {
 	deepest, level, kills, deaths: int,
+	boss: bool,
 }
 
 floor_of :: proc(g: ^Game) -> ^Floor {
@@ -154,7 +161,9 @@ init_game :: proc(g: ^Game, seed: u64) {
 enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	g.current = i
 	f := floor_of(g)
-	if !f.made {
+	if !f.made && i == BOSS_INDEX {
+		build_boss_floor(g)
+	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
 		if !g.no_tenants {
@@ -264,7 +273,7 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 	if id := tenant_at(g, g.x + d.x, g.y + d.y); id != 0 {
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Carny {
 			g.shop_tenant = id
-			open_shop(g, .Carny)
+			open_shop(g, id == g.ticket && !g.admitted ? .Admission : .Carny)
 			return false
 		}
 		player_attack(g, id)
@@ -339,6 +348,11 @@ command :: proc(g: ^Game, c: Command) {
 	case .Shop:
 		shop_command(g, c)
 		return
+	case .Notice:
+		if c == .Confirm || c == .Cancel {
+			g.mode = .Play
+		}
+		return
 	case .Play, .Automap:
 	}
 	defer open_learn_if_owed(g)
@@ -369,11 +383,13 @@ use_here :: proc(g: ^Game) {
 	case .Door:
 		open_shop(g, shop_at(g.x, g.y))
 	case .Stairs_Up:
-		if g.current + 1 < FLOOR_COUNT {
+		if in_town(g) {
+			gate(g)
+		} else if g.current + 1 < FLOOR_COUNT {
 			enter_floor(g, g.current + 1, .Stairs_Down)
 			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")
 		} else {
-			say(g, "The stairs above are not built yet.")
+			door_to_floor_five(g)
 		}
 	case .Stairs_Down:
 		if g.current > 0 {
@@ -444,6 +460,9 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 		return
 	case .Shop:
 		shop_pointer(g, sx, sy)
+		return
+	case .Notice:
+		g.mode = .Play
 		return
 	case .Play, .Automap:
 	}
