@@ -1,7 +1,7 @@
 # itch.io page copy: Blustery Bulwark of SPLORR!!
 
 Page: https://thegrumpygamedev.itch.io/blustery-bulwark-of-splorr (not created yet; no release booked). Pages comes first (`DESIGN.md`: a normal release, GitHub Pages first, itch.io later on a Coxswain-booked day).
-**Draft, written November 9, 2026 at slice 1 step 0; the user has not approved any of it.** Pasted in by hand; nothing here is published by the repo. Cover: `assets/cover.png` (630 by 500, a placeholder made by `tools/make_cover.py`). Screenshots: `assets/screenshots/` (none yet).
+**Draft, written November 9, 2026 at slice 1 step 0; the user has not approved any of it.** Pasted in by hand; nothing here is published by the repo. Cover: `assets/cover.png` (630 by 500, a placeholder made by `tools/make_cover.py`). Screenshots: `assets/screenshots/` (seven, rendered by `tools/make_shots.sh`, November 11, 2026).
 
 ## Short description (the one-line field)
 
@@ -25,7 +25,16 @@ One night a gale flattens yer farm. Next morning the herald reads a proclamation
 
 ### How to play
 
-To be written as the controls settle. Mouse, keyboard, gamepad and touch (landscape) are all supported.
+Every screen works with the keyboard, the mouse, a gamepad and touch (turn yer phone sideways).
+
+- **Keyboard:** arrow keys or the number pad to move (Home, Page Up, End and Page Down go diagonally); walk into a tenant to fight it. Enter to take stairs, pick things up, go into a shop or choose a row; Space or . to wait; Esc to go back; I for yer pack, M or Tab for the map, C to cast; F to send feedback.
+- **Mouse:** click a cell to walk there; click yerself to use what is underfoot; right-click to look at something. Click the hints in the side panel (map, pack, cast). In yer pack, click a thing to hold it and click where it goes, or drag it.
+- **Gamepad:** d-pad or left stick to move; A to choose, B to go back, X to wait, Y for the map, Start for yer pack, either shoulder button to cast.
+- **Touch:** the pads beside the screen move you and give OK, Back, Map, Pack and Cast; tap a cell to look at it; tap rows on any list.
+
+In yer pack, choose a thing to hold it, then choose a slot to wear it, the floor to drop it, a container to put it in, or **Use** to eat, drink or read it (or choose it a second time).
+
+Yer climber is saved in the browser as you play. "Start over" under the screen begins a new one.
 
 ### About it
 

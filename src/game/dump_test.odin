@@ -122,7 +122,7 @@ test_dump_magic :: proc(t: ^testing.T) {
 		g.menu_row = 1 // Gust Ball, short by 1
 		shot(g, fr, DUMP_MAGIC + "-cast.ppm")
 		g.mode = .Play
-		g.mana = 50
+		g.mana = max_mana(g)
 		new_tenant(g, .Kobold, g.current, 22, 13)
 		cast_spell(g, .Magic_Bolt, {0, -1})
 		shot(g, fr, DUMP_MAGIC + "-bolt.ppm")
