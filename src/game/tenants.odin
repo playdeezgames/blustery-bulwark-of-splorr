@@ -49,7 +49,7 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Spider = {name = "spider", a = "a spider", gfx = .Spider, color = COLOR_RED, health = 5, hit = 60, dmin = 1, dmax = 4, defence = 5, speed = 10, xp = 3, light = true, trophy = .Spider_Leg, chance = 50, first = 2, verb = "bites", line = "Was promised a view."},
 	.Kobold = {name = "kobold", a = "a kobold", gfx = .Kobold, color = 5, health = 8, hit = 55, dmin = 1, dmax = 5, defence = 10, speed = 10, xp = 4, trophy = .Kobold_Ear, chance = 40, first = 2, verb = "stabs", line = "Reads every proclamation aloud, slowly."},
 	.Slime  = {name = "slime", a = "a slime", gfx = .Slime, color = 6, health = 12, hit = 50, dmin = 2, dmax = 4, speed = 5, xp = 5, first = 3, verb = "burns", line = "Owes three months. Nobody asks."},
-	.Skeleton = {name = "skeleton", a = "the Undead Horde", gfx = .Skeleton, color = COLOR_LIGHT, health = 20, hit = 55, dmin = 1, dmax = 5, defence = 5, speed = 10, xp = 15, first = 99, verb = "rattles at", line = "Nobody got round to burying it."},
+	.Skeleton = {name = "skeleton", a = "the Undead Horde", gfx = .Skeleton, color = COLOR_LIGHT, health = 14, hit = 55, dmin = 1, dmax = 4, defence = 5, speed = 10, xp = 15, first = 99, verb = "rattles at", line = "Nobody got round to burying it."},
 	.Bones    = {name = "skeleton", a = "a skeleton", gfx = .Skeleton, color = COLOR_LIGHT, health = 1, peaceful = true, prop = true, first = 99, line = "It stands very still."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
