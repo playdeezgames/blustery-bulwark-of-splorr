@@ -129,12 +129,12 @@ test_the_skeleton_drops_the_key_and_the_slice_ends :: proc(t: ^testing.T) {
 		}
 	}
 	testing.expect_value(t, n, 2)
-	for _ in 0 ..< 3 {
-		if g.mode == .Notice {
-			break
-		}
-		command(g, .Confirm) // pick up what is on top
+	if g.mode == .Learn {
+		command(g, .Confirm) // the level the kill gave: a spell first
 	}
+	// The key lies on top: you see it, and one Enter takes it.
+	testing.expect_value(t, g.items[ground_item_at(g, g.x, g.y)].kind, Item_Kind.Key)
+	command(g, .Confirm)
 	testing.expect(t, has_key(g))
 	testing.expect_value(t, g.mode, Mode.Notice)
 	command(g, .Confirm)

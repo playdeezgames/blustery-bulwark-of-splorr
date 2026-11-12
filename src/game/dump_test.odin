@@ -176,7 +176,7 @@ test_dump_supplies :: proc(t: ^testing.T) {
 }
 
 // The town by eye (-define:DUMP_TOWN=<prefix>): <prefix>-street.ppm (from the gate),
-// <prefix>-low.ppm (the lower street), <prefix>-smith.ppm and <prefix>-bank.ppm.
+// <prefix>-low.ppm (the lower street), <prefix>-smith.ppm, <prefix>-bank.ppm and <prefix>-general(-after).ppm.
 DUMP_TOWN :: #config(DUMP_TOWN, "")
 
 @(test)
@@ -205,6 +205,12 @@ test_dump_town :: proc(t: ^testing.T) {
 		g.bank = 120
 		go_in(g, .Bank)
 		shot(g, fr, DUMP_TOWN + "-bank.ppm")
+		command(g, .Cancel)
+		receive_jools(g, 120)
+		go_in(g, .General)
+		shot(g, fr, DUMP_TOWN + "-general.ppm")
+		choose(g, .Buy, int(Item_Kind.Big_Pack))
+		shot(g, fr, DUMP_TOWN + "-general-after.ppm")
 	}
 }
 

@@ -80,6 +80,7 @@ VALUE := #partial [Item_Kind]int {
 	.Jerky           = 6,
 	.Pack            = 40,
 	.Sack            = 15,
+	.Big_Pack        = 100,
 	.Belt            = 20,
 	.Purse           = 10,
 	.Rat_Tail        = 2,
@@ -105,7 +106,7 @@ VALUE := #partial [Item_Kind]int {
 	.Old_Bones       = 1,
 }
 
-GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Wind_Charm}
+GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
 SMITH_STOCK := [?]Item_Kind{.Dagger, .Club, .Short_Sword, .Leather_Cap, .Boots, .Buckler, .Padded_Armour}
 
 // Tuning (PLAN.md step 7; to review).
@@ -309,6 +310,25 @@ receive_item :: proc(g: ^Game, k: Item_Kind) -> bool {
 	return true
 }
 
+// Puts on a new Big pack in place of the pack worn, moving everything in it over (the old pack goes
+// to the store). False when there is no free item slot.
+swap_pack :: proc(g: ^Game) -> bool {
+	id := new_item(g, .Big_Pack)
+	if id == 0 {
+		say(g, "You have no room for it.")
+		return false
+	}
+	if old := worn(g, .Pack); old != 0 {
+		for i in 1 ..< MAX_ITEMS {
+			if g.items[i].place == .Inside && int(g.items[i].parent) == old {
+				g.items[i].parent = i16(id)
+			}
+		}
+		free_item(g, old)
+	}
+	return wear(g, id, .Pack)
+}
+
 // A row on a shop screen.
 Act :: enum u8 {
 	Leave,
@@ -388,6 +408,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 	case .None:
 	case .General:
 		for k in GENERAL_STOCK {
+			if k == .Big_Pack && g.items[worn(g, .Pack)].kind == .Big_Pack {
+				continue // one is enough
+			}
 			add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 		}
 	case .Smith:
@@ -528,6 +551,11 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		k := Item_Kind(r.arg)
 		if carried_jools(g) < r.price {
 			say(g, "You have too few Jools.")
+		} else if k == .Big_Pack {
+			if swap_pack(g) {
+				pay(g, r.price)
+				say(g, "The store takes yer old pack and moves yer things into a Big pack.")
+			}
 		} else if receive_item(g, k) {
 			pay(g, r.price)
 			say(g, "You buy a ", KIND[k].name, ".")
@@ -641,7 +669,7 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 }
 
 // Shop screen layout (in the map area).
-SHOP_TOP :: 40
+SHOP_TOP :: 48 // room for a three-line keeper's line above the rows
 SHOP_ROW_H :: 10
 SHOP_ROWS :: (VIEW_H * TILE - SHOP_TOP - 2) / SHOP_ROW_H
 SHOP_PRICE_X :: VIEW_W * TILE - 8

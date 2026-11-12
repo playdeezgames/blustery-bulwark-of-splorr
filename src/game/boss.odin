@@ -118,7 +118,9 @@ topple :: proc(g: ^Game, id: int, by_gust: bool) {
 boss_falls :: proc(g: ^Game, t: Tenant) {
 	g.boss_dead = true
 	say(g, "That was the Undead Horde.")
-	for k in ([?]Item_Kind{.Key, .Skull}) {
+	// The Skull first and the Key last, so the Key lies on top (new_item takes the lowest free
+	// slot and the topmost thing on a cell is the highest slot): you see it, and Enter takes it.
+	for k in ([?]Item_Kind{.Skull, .Key}) {
 		id := new_item(g, k)
 		if id != 0 {
 			g.items[id].place, g.items[id].floor = .Ground, t.floor

@@ -50,6 +50,8 @@ Item_Kind :: enum u8 {
 	Skull,
 	Old_Bones,
 	Key,
+	// Sold in town (playtest round 4): appended so saved kinds keep their numbers.
+	Big_Pack,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -139,6 +141,7 @@ KIND := [Item_Kind]Kind_Info {
 	.Boots         = {name = "Boots", gfx = .Boots, color = COLOR_BROWN, weight = 1000, bulk = 2500, slot = .Boots, armour = 1, durability = 50},
 	.Bread         = {name = "Bread", gfx = .Bread, color = COLOR_BROWN, weight = 300, bulk = 800, food = 400},
 	.Pack          = {name = "Pack", gfx = .Pack, color = COLOR_BROWN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 12000, cap_bulk = 25000},
+	.Big_Pack      = {name = "Big pack", gfx = .Pack, color = COLOR_RED, weight = 1500, bulk = 7000, slot = .Pack, cap_weight = 20000, cap_bulk = 40000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},

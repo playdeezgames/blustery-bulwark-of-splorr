@@ -229,3 +229,37 @@ test_the_carny_ring_toss :: proc(t: ^testing.T) {
 	testing.expect(t, choose(g, .Leave))
 	testing.expect_value(t, g.mode, Mode.Play)
 }
+
+@(test)
+test_big_pack_swap :: proc(t: ^testing.T) {
+	g := town_game()
+	defer free(g)
+	old := worn(g, .Pack)
+	inside := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Inside && int(g.items[i].parent) == old {
+			inside += 1
+		}
+	}
+	testing.expect(t, inside > 0)
+	receive_jools(g, VALUE[.Big_Pack])
+	before := carried_jools(g)
+	go_in(g, .General)
+	choose(g, .Buy, int(Item_Kind.Big_Pack))
+	pack := worn(g, .Pack)
+	testing.expect_value(t, g.items[pack].kind, Item_Kind.Big_Pack)
+	testing.expect_value(t, carried_jools(g), before - VALUE[.Big_Pack])
+	moved := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Inside && int(g.items[i].parent) == pack {
+			moved += 1
+		}
+	}
+	testing.expect_value(t, moved, inside)
+	// Only one: the row is gone once worn.
+	rows: [MAX_ROWS]Row
+	n := shop_rows(g, &rows)
+	for i in 0 ..< n {
+		testing.expect(t, !(rows[i].act == .Buy && Item_Kind(rows[i].arg) == .Big_Pack))
+	}
+}

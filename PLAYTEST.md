@@ -198,3 +198,12 @@ Two things from this for discussion (nothing in the game was changed):
 
 - **The Key is hidden under the Skull.** The skeleton drops the Key first and the Skull on top of it. Standing there you see a skull, and the log says "Here: Skull." The slice's goal lies underneath, and nothing says so. If yer bags are full you are told "No room to carry Skull." and you might walk off. Options: drop the Key on top, say "and more" when a pile has more than one thing, or have Enter take the first thing that fits.
 - **For strong builds, the pack is the real limit, not Strength.** From round 3, Strength carries 2.5 kg a point (35 kg at 14). But the pack holds 12 kg and the belt four small things, so a Fighter fills its bags around 26 kg and never reaches its limit. Strength above about 12 then adds nothing to carrying (it still adds to damage). A bigger pack from the general store would be one way to let it count.
+
+### Decided with the user (November 12, 2026)
+
+- **The Key on top.** The skeleton now drops the Skull first and the Key last, so you see the Key where it fell, and one Enter takes it. Tested.
+- **A Big pack in the general store.** It holds 20 kg and 40,000 bulk (the Pack holds 12 kg and 25,000), weighs 1.5 kg and costs 100 Jools. The store moves everything from yer pack into it and keeps the old one, and stops offering it once you wear one. Tested. The numbers are Claude's, for review. Saves still load: the new kind is added at the end, so saved kinds keep their numbers and the Game's size is unchanged.
+
+The bot rerun is the same as round 4. The bot never comes back to town with money (it shops only at the start and after a death, which costs it what it carries), so it never buys the Big pack. A player who uses Return, or walks down, can. That is round 1's "money has little use" again.
+
+Found on the way and fixed: the general store's line ("...He breathes a great deal.") needed three lines, and the shop screen had room for two, so the joke lost its last words. The rows now start 8 px lower. There is still room for 13 rows, and every other shop's line fits in two.

@@ -277,6 +277,15 @@ shop_town :: proc(g: ^Game, s: ^Bot_Stats) {
 		}
 	}
 	for spare_torches(g) < 2 && buy(g, s, .Torch) {}
+	// A Big pack once there is money for it and the usual shopping after.
+	if g.items[worn(g, .Pack)].kind != .Big_Pack && carried_jools(g) >= VALUE[.Big_Pack] + 30 {
+		before := carried_jools(g)
+		if swap_pack(g) {
+			pay(g, VALUE[.Big_Pack])
+			s.bought += 1
+			s.spent += before - carried_jools(g)
+		}
+	}
 	if w := worn(g, .Weapon); w != 0 && repair_price(g, w) > 0 && carried_jools(g) >= repair_price(g, w) {
 		s.spent += repair_price(g, w)
 		pay(g, repair_price(g, w))
