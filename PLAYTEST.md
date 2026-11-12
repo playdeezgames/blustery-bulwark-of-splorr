@@ -104,3 +104,15 @@ odin build src/game -build-mode:test -collection:tggd=src -o:speed -define:PLAYT
 ```
 
 Build the binary and run it. Through `odin test`, the memory tracking makes it far slower. 400 climbs take about four minutes.
+
+## Decided with the user (November 12, 2026)
+
+1. **Dexterity:** halved: 2 % to land a blow and 1 % off being hit per point above 10 (was 4 % and 2 %).
+2. **Blight:** left as it is (3 to 6 damage, it can kill): the identification lesson stands.
+3. **Anchoring:** starts at 75 % of the load limit (was 60 %); being anchored still slows you.
+4. **Light:** left as it is; torches are sold in town.
+5. **Money:** Jools weigh 50 g each (was 10 g). The purse (6 kg) then holds 120; more goes in the pack.
+6. **The skeleton:** back to health 20 and damage 1 to 5 (from the step 9 easing to 14 and 1 to 4).
+7. **Interface:** a line said again straight away shows once with a count ("A wall. (x4)") instead of filling the log. The herald stays where it is, the log stays four lines, and clicks on unexplored ground stay as they are.
+
+Not yet built; once built, the bot is to run again to check the effect.
