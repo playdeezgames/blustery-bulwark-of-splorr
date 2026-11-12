@@ -180,7 +180,18 @@ worth_taking :: proc(g: ^Game, id: int) -> bool {
 	if KIND[k].slot != .None && k != .Torch && !is_container(k) && worn(g, KIND[k].slot) != 0 && KIND[k].dmax == 0 {
 		return false // a second piece of armour or jewellery: leave it
 	}
-	return carried_weight(g) + weight_of(g, id) <= carry_limit(g) * BOT_LOAD / 100
+	if carried_weight(g) + weight_of(g, id) > carry_limit(g) * BOT_LOAD / 100 {
+		return false
+	}
+	// Only what there is room for (a full pack is a limit too).
+	for sl in ([?]Slot{.Purse, .Belt, .Pack}) {
+		if c := worn(g, sl); c != 0 {
+			if ok, _ := can_put_in(g, id, c); ok {
+				return true
+			}
+		}
+	}
+	return KIND[k].slot != .None && worn(g, KIND[k].slot) == 0
 }
 
 @(private = "file")

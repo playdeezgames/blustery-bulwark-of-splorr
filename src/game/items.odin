@@ -122,7 +122,7 @@ Kind_Info :: struct {
 }
 
 BELT_SLOT_BULK :: 1000 // the biggest thing a belt slot holds
-CARRY_PER_STRENGTH :: 2000 // grams of load limit per point of Strength (10 Strength carries 20 kg)
+CARRY_PER_STRENGTH :: 2500 // grams of load limit per point of Strength (10 Strength carries 25 kg; 2 kg until November 12, 2026)
 ANCHOR_PERCENT :: 75 // a load this heavy keeps a gust from moving you, and slows you
 LIGHT_ITEM :: 300 // grams; things this light on the ground are blown along by gusts
 

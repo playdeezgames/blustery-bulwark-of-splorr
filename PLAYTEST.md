@@ -149,3 +149,26 @@ What it shows:
 - **Light still runs out for most players who carry a lot**, as before (left as it is, by decision).
 
 Open for discussion: whether the load (kit weight, Jools weight, the 75 % line, Strength's carry limit) needs another look now that coin is heavy. Nothing else was changed.
+
+## Round 3: more carry per Strength (November 12, 2026)
+
+Decided with the user: **2.5 kg of load limit per point of Strength** (was 2 kg), so Strength 10 carries 25 kg and anchoring starts at 18.75 kg. With the 10.1 kg kit, that leaves about 8.5 kg of room before you are anchored, where there was 5. The bot now also checks that a thing fits in its containers before going for it: with the bigger limit, the Fighter's pack filled before its load did.
+
+| Bot loads to 90 % | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Got the key (round 2) | 99 % (99 %) | 77 % (100 %), 23 bot wedges | 100 % (100 %) | 96 % (90 %) |
+| Turn the key was taken (round 2) | 1657 (2256) | 1161 (1410) | 1608 (2262) | 2230 (2843) |
+| Climbs with a death (round 2) | 42 % (37 %) | 18 % (9 %) | 9 % (10 %) | 22 % (20 %) |
+| Turns anchored (round 2) | 1027 (1871) | 195 (704) | 1040 (1927) | 2046 (3553) |
+| Ran out of torches (round 2) | 42 % (89 %) | 6 % (5 %) | 26 % (95 %) | 84 % (99 %) |
+| Turns starving (round 2) | 0 (0) | 0 (0) | 0 (0) | 173 (758) |
+| Jools at the end (round 2) | 109 (77) | 146 (140) | 121 (85) | 82 (53) |
+
+What it shows:
+
+- **Climbs are about a quarter shorter and anchoring roughly halves**, even for a bot that picks everything up. Running out of light drops from most climbs to under half (Even 42 %, Nimble 26 %); the Caster still struggles (Strength 8 carries 20 kg).
+- **Deaths moved little.** Even dies in 42 % of climbs, Nimble in 9 %, the Caster in 22 %. Kobolds, Blight and the skeleton are the main killers.
+- **The Fighter's 23 wedged climbs are a bot fault, not yet traced.** It stops making progress somewhere on floors 2 and 3 with a big load. Nothing points to a game bug, but it has not been ruled out.
+- **The 74 % variant** (the bot stops just under the anchoring line) was run too. It is faster (1100 to 1300 turns) and rarely anchored, but it leaves food and potions behind, so it starves and dies much more (Even 70 % of climbs). As in round 2, that is mostly the bot not choosing what to leave.
+
+Nothing else was changed.

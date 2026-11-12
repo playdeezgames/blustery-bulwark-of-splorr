@@ -161,6 +161,7 @@ test_a_heavy_load_anchors_and_slows_and_too_much_stops_you :: proc(t: ^testing.T
 	spot := open_spot(g)
 	teleport(g, spot)
 	clear_ground(g)
+	g.attr[.Strength] = 8 // a 20 kg limit, so this load is easy to reckon
 	sack := new_item(g, .Sack)
 	put_in(g, sack, worn(g, .Pack))
 	put_in(g, new_item(g, .Jools, 100), sack) // 5 kg more: 15.3 kg, at least 75% of 20
