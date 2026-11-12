@@ -29,7 +29,7 @@ test_starting_kit :: proc(t: ^testing.T) {
 	testing.expect(t, g.lit)
 	testing.expect_value(t, carried_jools(g), 25)
 	testing.expect_value(t, spare_torches(g), 2)
-	testing.expect_value(t, carried_weight(g), 400 + 4000 + 1000 + 500 + 1000 + 600 + 300 + 1000 + 50 + 250)
+	testing.expect_value(t, carried_weight(g), 400 + 4000 + 1000 + 500 + 1000 + 600 + 300 + 1000 + 50 + 25 * 50)
 	testing.expect(t, !anchored(g))
 }
 
@@ -163,7 +163,7 @@ test_a_heavy_load_anchors_and_slows_and_too_much_stops_you :: proc(t: ^testing.T
 	clear_ground(g)
 	sack := new_item(g, .Sack)
 	put_in(g, sack, worn(g, .Pack))
-	put_in(g, new_item(g, .Jools, 300), sack) // 3 kg more: 12.1 kg, over 60% of 20
+	put_in(g, new_item(g, .Jools, 100), sack) // 5 kg more: 15.3 kg, at least 75% of 20
 	testing.expect(t, anchored(g))
 	g.gust_in = 1
 	command(g, .Wait)

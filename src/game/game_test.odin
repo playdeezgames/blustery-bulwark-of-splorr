@@ -278,3 +278,24 @@ test_frames_draw :: proc(t: ^testing.T) {
 	draw_game(f, g)
 	testing.expect_value(t, get_px(f, AUTOMAP_X + g.x * AUTOMAP_CELL + 1, AUTOMAP_Y + g.y * AUTOMAP_CELL + 1), COLOR_WHITE)
 }
+
+@(test)
+test_a_repeated_line_shows_once_with_a_count :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	say(g, "Before.")
+	for _ in 0 ..< 4 {
+		say(g, "A wall.")
+	}
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "A wall. (x4)")
+	testing.expect_value(t, message(&g.log[LOG_LINES - 2]), "Before.")
+	say(g, "Something else.")
+	say(g, "A wall.")
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), "A wall.")
+	// A message that wraps onto two lines is not folded.
+	long := "The wind picks up from the north and carries on for quite a while."
+	say(g, long)
+	say(g, long)
+	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), message(&g.log[LOG_LINES - 3])) // both copies, in full
+	testing.expect_value(t, message(&g.log[LOG_LINES - 2]), message(&g.log[LOG_LINES - 4]))
+}

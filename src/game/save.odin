@@ -9,7 +9,7 @@ package game
 import "base:runtime"
 
 SAVE_MAGIC :: u32(0x4C42_5342) // "BSBL"
-SAVE_VERSION :: u32(1) // bump whenever Game changes shape or meaning
+SAVE_VERSION :: u32(2) // bump whenever Game changes shape or meaning
 SAVE_HEADER :: 12
 SAVE_CAP :: 2 * size_of(Game) + SAVE_HEADER // a packed save is never longer than this
 

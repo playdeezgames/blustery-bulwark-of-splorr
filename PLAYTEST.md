@@ -116,3 +116,36 @@ Build the binary and run it. Through `odin test`, the memory tracking makes it f
 7. **Interface:** a line said again straight away shows once with a count ("A wall. (x4)") instead of filling the log. The herald stays where it is, the log stays four lines, and clicks on unexplored ground stay as they are.
 
 Not yet built; once built, the bot is to run again to check the effect.
+
+## Round 2: after the changes (November 12, 2026)
+
+All five changes are built: Dexterity halved (`DEX_AIM` 2, `DEX_DODGE` 1), anchoring at 75 %, Jools 50 g each, the skeleton back to 20 health and 1 to 5 damage, and a repeated one-line message shown once with a count ("A wall. (x4)"). The save version went up to 2, so a climber saved before this starts over. 97 native tests pass. The same bot ran 100 climbs per build again, first as before (it picks things up to 90 % of its limit), then stopping at 74 %, just under the new anchoring line.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| **Bot loads to 90 %** | | | | |
+| Got the key | 99 % | 100 % | 100 % | 90 % |
+| Climbs with a death (round 1) | 37 % (32 %) | 9 % (5 %) | 10 % (0 %) | 20 % (10 %) |
+| Deaths on floor 4 (round 1) | 9 (0) | 0 (0) | 3 (0) | 8 (0) |
+| Main killers | kobold 18, bad potion 10, the Horde 6, spider 5 | kobold 4, spider 2 | kobold 4, the Horde 3, bad potion 2 | kobold 7, the Horde 7, bad potion 4 |
+| Turn the key was taken | 2256 | 1410 | 2262 | 2843 |
+| Turns anchored | 1871 | 704 | 1927 | 3553 |
+| Jools at the end (round 1) | 77 (157) | 140 (161) | 85 (156) | 53 (143) |
+| Ran out of torches | 89 % | 5 % | 95 % | 99 % |
+| **Bot stops at 74 %** | | | | |
+| Got the key | 92 % | 99 % | 99 % | 82 % |
+| Climbs with a death | 62 % | 21 % | 29 % | 70 % |
+| Turn the key was taken | 1488 | 1146 | 1303 | 1630 |
+| Turns anchored | 1007 | 26 | 265 | 1521 |
+| Turns starving | 776 | 0 | 102 | 1737 |
+| Ran out of torches | 51 % | 10 % | 33 % | 78 % |
+
+What it shows:
+
+- **Dexterity is no longer the one right answer.** Nimble (Dx 16) now dies about as often as the Fighter (10 % and 9 %). Strength and Constitution matter again.
+- **The skeleton is a boss again.** It killed 18 times in these 400 climbs (none before), mostly the Even and Caster builds. Kobolds stay the deadliest tenant, and Blight still kills.
+- **Raising anchoring to 75 % barely helps a player who picks everything up.** The bot still loads to 90 % and is anchored most of the climb. Heavy Jools add to the load: the bot leaves more coin behind (77 at the end, down from 157).
+- **There is little room under the line.** The starting kit is now 10.1 kg (its 25 Jools weigh 1.25 kg), and the line at Strength 10 is 15 kg. A player who stays under it moves faster (about 1500 turns instead of 2250) and runs out of light less often. But this bot then left food and potions behind and starved and died far more. That is partly the bot (it does not choose what to leave), but it shows how tight the load is at Strength 10 and below.
+- **Light still runs out for most players who carry a lot**, as before (left as it is, by decision).
+
+Open for discussion: whether the load (kit weight, Jools weight, the 75 % line, Strength's carry limit) needs another look now that coin is heavy. Nothing else was changed.

@@ -17,6 +17,7 @@ _ :: fmt
 PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
 PLAYTEST_TURNS :: 12000 // give up after this many turns
+BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
 	won:             bool, // picked up the key
@@ -179,7 +180,7 @@ worth_taking :: proc(g: ^Game, id: int) -> bool {
 	if KIND[k].slot != .None && k != .Torch && !is_container(k) && worn(g, KIND[k].slot) != 0 && KIND[k].dmax == 0 {
 		return false // a second piece of armour or jewellery: leave it
 	}
-	return carried_weight(g) + weight_of(g, id) <= carry_limit(g) * 9 / 10
+	return carried_weight(g) + weight_of(g, id) <= carry_limit(g) * BOT_LOAD / 100
 }
 
 @(private = "file")

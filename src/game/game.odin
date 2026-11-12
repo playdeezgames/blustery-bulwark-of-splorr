@@ -74,6 +74,9 @@ Game :: struct {
 	mode:        Mode,
 	vis:         Visible,
 	log:         [LOG_LINES]Message, // oldest first
+	last_said:   Message, // the last message, whole, to fold an immediate repeat into a count
+	last_count:  int, // how many times in a row it was said
+	last_lines:  int, // log lines it took
 	path:        [MAX_PATH][2]int,
 	path_len:    int,
 	path_i:      int,
@@ -195,6 +198,23 @@ say :: proc(g: ^Game, parts: ..string) {
 			}
 		}
 	}
+	// The same one-line message again straight away shows once, with a count: "A wall. (x4)".
+	said := string(text[:n])
+	if g.last_count > 0 && g.last_lines == 1 && said == message(&g.last_said) && n + 7 <= LOG_WIDTH {
+		g.last_count += 1
+		buf: [8]u8
+		m := &g.log[LOG_LINES - 1]
+		m^ = {}
+		m.n = copy(m.text[:], said)
+		m.n += copy(m.text[m.n:], " (x")
+		m.n += copy(m.text[m.n:], itoa(buf[:], g.last_count))
+		m.n += copy(m.text[m.n:], ")")
+		return
+	}
+	g.last_said = {}
+	g.last_said.n = copy(g.last_said.text[:], said)
+	g.last_count = 1
+	g.last_lines = 0
 	start := 0
 	first := true
 	for start < n {
@@ -210,6 +230,7 @@ say :: proc(g: ^Game, parts: ..string) {
 			}
 		}
 		push_log_line(g, string(text[start:end]), !first)
+		g.last_lines += 1
 		start = end
 		for start < n && text[start] == ' ' {
 			start += 1

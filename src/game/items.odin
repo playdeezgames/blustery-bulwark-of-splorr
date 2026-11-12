@@ -123,12 +123,12 @@ Kind_Info :: struct {
 
 BELT_SLOT_BULK :: 1000 // the biggest thing a belt slot holds
 CARRY_PER_STRENGTH :: 2000 // grams of load limit per point of Strength (10 Strength carries 20 kg)
-ANCHOR_PERCENT :: 60 // a load this heavy keeps a gust from moving you, and slows you
+ANCHOR_PERCENT :: 75 // a load this heavy keeps a gust from moving you, and slows you
 LIGHT_ITEM :: 300 // grams; things this light on the ground are blown along by gusts
 
 KIND := [Item_Kind]Kind_Info {
 	.None          = {},
-	.Jools         = {name = "Jools", gfx = .Jools, color = COLOR_YELLOW, weight = 10, bulk = 2},
+	.Jools         = {name = "Jools", gfx = .Jools, color = COLOR_YELLOW, weight = 50, bulk = 2},
 	.Torch         = {name = "Torch", gfx = .Torch, color = COLOR_ORANGE, weight = 500, bulk = 600, slot = .Light, fuel = TORCH_TURNS},
 	.Dagger        = {name = "Dagger", gfx = .Dagger, color = COLOR_LIGHT, weight = 400, bulk = 300, slot = .Weapon, dmin = 1, dmax = 4, durability = 30},
 	.Short_Sword   = {name = "Short sword", gfx = .Short_Sword, color = COLOR_LIGHT, weight = 1200, bulk = 1500, slot = .Weapon, dmin = 2, dmax = 6, durability = 50},

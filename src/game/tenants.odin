@@ -49,7 +49,7 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Spider = {name = "spider", a = "a spider", gfx = .Spider, color = COLOR_RED, health = 5, hit = 60, dmin = 1, dmax = 4, defence = 5, speed = 10, xp = 3, light = true, trophy = .Spider_Leg, chance = 50, first = 2, verb = "bites", line = "Was promised a view."},
 	.Kobold = {name = "kobold", a = "a kobold", gfx = .Kobold, color = 5, health = 8, hit = 55, dmin = 1, dmax = 5, defence = 10, speed = 10, xp = 4, trophy = .Kobold_Ear, chance = 40, first = 2, verb = "stabs", line = "Reads every proclamation aloud, slowly."},
 	.Slime  = {name = "slime", a = "a slime", gfx = .Slime, color = 6, health = 12, hit = 50, dmin = 2, dmax = 4, speed = 5, xp = 5, first = 3, verb = "burns", line = "Owes three months. Nobody asks."},
-	.Skeleton = {name = "skeleton", a = "the Undead Horde", gfx = .Skeleton, color = COLOR_LIGHT, health = 14, hit = 55, dmin = 1, dmax = 4, defence = 5, speed = 10, xp = 15, first = 99, verb = "rattles at", line = "Nobody got round to burying it."},
+	.Skeleton = {name = "skeleton", a = "the Undead Horde", gfx = .Skeleton, color = COLOR_LIGHT, health = 20, hit = 55, dmin = 1, dmax = 5, defence = 5, speed = 10, xp = 15, first = 99, verb = "rattles at", line = "Nobody got round to burying it."},
 	.Bones    = {name = "skeleton", a = "a skeleton", gfx = .Skeleton, color = COLOR_LIGHT, health = 1, peaceful = true, prop = true, first = 99, line = "It stands very still."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
@@ -70,6 +70,8 @@ MAX_TENANTS :: 160 // id 0 is never used
 TENANT_SIGHT :: 8 // how far a tenant sees a lit climber
 TENANT_DARK_SIGHT :: 2 // and one in the dark
 PLAYER_HIT :: 60 // chance in 100 to land a blow, before Dexterity and the tenant's defence
+DEX_AIM :: 2 // chance in 100 to land a blow per point of Dexterity above 10 (was 4 until November 12, 2026)
+DEX_DODGE :: 1 // and taken off a tenant's chance to hit you (was 2)
 WEAPON_WEAR :: 3 // a blow you land wears yer weapon one time in this many
 ARMOUR_WEAR :: 2 // a blow that lands on you wears a piece of armour one time in this many
 
@@ -237,7 +239,7 @@ tenant_step :: proc(g: ^Game, id: int, d: [2]int) {
 tenant_attack :: proc(g: ^Game, id: int) {
 	t := &g.tenants[id]
 	info := TENANT[t.kind]
-	chance := clamp(info.hit - 4 * armour_worn(g) - 2 * (g.attr[.Dexterity] - ATTR_BASE), 5, 95)
+	chance := clamp(info.hit - 4 * armour_worn(g) - DEX_DODGE * (g.attr[.Dexterity] - ATTR_BASE), 5, 95)
 	if rng_int(&g.rng, 100) >= chance {
 		say(g, "The ", info.name, " misses.")
 		return
@@ -279,7 +281,7 @@ player_attack :: proc(g: ^Game, id: int) {
 	if weapon != 0 && KIND[g.items[weapon].kind].dmax > 0 {
 		dmin, dmax = KIND[g.items[weapon].kind].dmin, KIND[g.items[weapon].kind].dmax
 	}
-	chance := clamp(PLAYER_HIT + 4 * (g.attr[.Dexterity] - ATTR_BASE) - info.defence, 5, 95)
+	chance := clamp(PLAYER_HIT + DEX_AIM * (g.attr[.Dexterity] - ATTR_BASE) - info.defence, 5, 95)
 	if rng_int(&g.rng, 100) >= chance {
 		say(g, "You miss the ", info.name, ".")
 	} else {
