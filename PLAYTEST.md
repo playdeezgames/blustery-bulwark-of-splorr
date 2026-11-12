@@ -192,7 +192,7 @@ After the fix, no climb wedges and every build takes the key in all 100 climbs. 
 | Turns anchored (round 3) | 970 (1027) | 191 (195) | 1002 (1040) | 1674 (2046) |
 | Ran out of torches (round 3) | 37 % (42 %) | 6 % (6 %) | 24 % (26 %) | 82 % (84 %) |
 
-Killers over the 400 climbs: kobolds 45, unknown potions 25, the skeleton 15, spiders 9, everything else 11.
+Killers over the 400 climbs: kobolds 45, unknown potions 25, the skeleton 15, spiders 9, everything else 10.
 
 Two things from this for discussion (nothing in the game was changed):
 
