@@ -17,6 +17,7 @@ _ :: fmt
 PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
 PLAYTEST_TURNS :: 12000 // give up after this many turns
+BOT_DEBUG :: #config(BOT_DEBUG, false)
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
@@ -386,11 +387,35 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 		return true
 	}
-	// Pick up what is underfoot.
-	if .Item in bot_view.goal[g.y][g.x] {
-		command(g, .Confirm)
-		best_weapon(g)
+	// Too loaded to move: drop something.
+	if overloaded(g) && drop_one(g) {
 		return true
+	}
+	// Pick up what is underfoot: the key first, else something worth taking (not just the top of
+	// the pile, which may not fit; a player would use the inventory's ground pane).
+	if .Item in bot_view.goal[g.y][g.x] || .Key in bot_view.goal[g.y][g.x] {
+		pick := 0
+		for i in 1 ..< MAX_ITEMS {
+			it := &g.items[i]
+			if it.place != .Ground || int(it.floor) != g.current || int(it.x) != g.x || int(it.y) != g.y {
+				continue
+			}
+			if it.kind == .Key {
+				pick = i
+				break
+			}
+			if pick == 0 && worth_taking(g, i) {
+				pick = i
+			}
+		}
+		if pick != 0 {
+			pick_up(g, pick)
+			if g.items[pick].kind == .Key && g.items[pick].place == .Ground {
+				drop_one(g) // no room for the key: make some
+			}
+			best_weapon(g)
+			return true
+		}
 	}
 	// Go somewhere: the key, a hostile in view, things, the unexplored, then the stairs up.
 	plan := bfs(g, .Key)
@@ -429,6 +454,26 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	command(g, step_dir(plan.dir))
 	return true
+}
+
+// Drops the heaviest trophy carried (or else the heaviest thing not worn). False if nothing.
+@(private = "file")
+drop_one :: proc(g: ^Game) -> bool {
+	heaviest, trophy := 0, false
+	for i in 1 ..< MAX_ITEMS {
+		k := g.items[i].kind
+		if k == .None || k == .Key || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
+			continue
+		}
+		t := KIND[k].trophy
+		if heaviest == 0 || (t && !trophy) || (t == trophy && weight_of(g, i) > weight_of(g, heaviest)) {
+			heaviest, trophy = i, t
+		}
+	}
+	if heaviest != 0 {
+		drop(g, heaviest)
+	}
+	return heaviest != 0
 }
 
 @(private = "file")
@@ -517,6 +562,25 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 			idle += 1
 			if idle > 200 {
 				s.stuck = true
+				when BOT_DEBUG {
+					f := floor_of(g)
+					fmt.printfln("STUCK seed %d mode %v floor %d at %d,%d cell %v turn %d hp %d/%d lit %v fuel %d spare %d hunger %d load %d/%d", seed, g.mode, g.current + 1, g.x, g.y, f.cells[g.y][g.x], g.turn, g.health, max_health(g), g.lit, torch_fuel(g), spare_torches(g), g.hunger, carried_weight(g), carry_limit(g))
+					for i in 1 ..< MAX_ITEMS {
+						it := &g.items[i]
+						if it.place == .Ground && int(it.floor) == g.current && abs(int(it.x) - g.x) <= 1 && abs(int(it.y) - g.y) <= 1 {
+							fmt.printfln("  item %v at %d,%d", it.kind, it.x, it.y)
+						}
+					}
+					for i in 1 ..< MAX_TENANTS {
+						t := &g.tenants[i]
+						if t.kind != .None && int(t.floor) == g.current && abs(int(t.x) - g.x) <= 2 && abs(int(t.y) - g.y) <= 2 {
+							fmt.printfln("  tenant %v at %d,%d hostile %v", t.kind, t.x, t.y, hostile(t))
+						}
+					}
+					for i in 0 ..< LOG_LINES {
+						fmt.printfln("  log: %s", message(&g.log[i]))
+					}
+				}
 				break
 			}
 		} else {

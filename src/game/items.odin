@@ -489,6 +489,13 @@ get_here :: proc(g: ^Game) -> bool {
 	if id == 0 {
 		return false
 	}
+	pick_up(g, id)
+	return true
+}
+
+// Picks up one thing lying underfoot (the top one for Enter; the inventory's ground pane and the
+// playtest bot choose others), saying how it went.
+pick_up :: proc(g: ^Game, id: int) {
 	name_buf: [32]u8
 	n := copy(name_buf[:], item_name(g, id))
 	name := string(name_buf[:n])
@@ -503,7 +510,6 @@ get_here :: proc(g: ^Game) -> bool {
 	} else {
 		say(g, "You pick up ", name, ".")
 	}
-	return true
 }
 
 // Puts a thing where it is best carried: coins to the purse, small things to the belt, the rest

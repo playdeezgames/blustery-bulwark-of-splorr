@@ -105,6 +105,8 @@ odin build src/game -build-mode:test -collection:tggd=src -o:speed -define:PLAYT
 
 Build the binary and run it. Through `odin test`, the memory tracking makes it far slower. 400 climbs take about four minutes.
 
+Add `-define:BOT_DEBUG=true` to print where and why a climb wedges (round 4).
+
 ## Decided with the user (November 12, 2026)
 
 1. **Dexterity:** halved: 2 % to land a blow and 1 % off being hit per point above 10 (was 4 % and 2 %).
@@ -172,3 +174,27 @@ What it shows:
 - **The 74 % variant** (the bot stops just under the anchoring line) was run too. It is faster (1100 to 1300 turns) and rarely anchored, but it leaves food and potions behind, so it starves and dies much more (Even 70 % of climbs). As in round 2, that is mostly the bot not choosing what to leave.
 
 Nothing else was changed.
+
+## Round 4: the bot wedge traced (November 12, 2026)
+
+The bot now prints its state when it wedges (`-define:BOT_DEBUG=true`). In round 3, 26 climbs wedged across the four builds (23 Fighter, 1 Even, 2 Caster). Round 3 said these were on floors 2 and 3, but most were on floor 4, on the cell where the skeleton fell. **Every one was a bot fault**, of two kinds:
+
+- **Piles.** Enter takes only the top thing on a cell. When that thing would not fit (the Skull over the Key, more Jools than the purse holds), the bot pressed Enter for ever. A player opens the inventory's ground pane and takes what they want from under it. The bot now picks a chosen thing from the pile (the key first). For that, the game's pick-up was split into `pick_up(g, id)`, with `get_here` calling it for the top thing; play is unchanged.
+- **No room, by bulk and count.** In two climbs the top of a pile was a heavy heap of Jools that took the bot past its limit, and it could not move. In three, the Key itself would not fit: the pack (12 kg) and the belt's four slots were full, though the bot carried only 27 of its 35 kg. A player drops something. The bot now drops its heaviest trophy when it cannot move, or to make room for the key.
+
+After the fix, no climb wedges and every build takes the key in all 100 climbs. The bot also sheds trophies now, so climbs are a little quicker and less anchored than in round 3. Deaths are the same.
+
+| Bot loads to 90 % | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Got the key (round 3) | 100 % (99 %) | 100 % (77 %) | 100 % (100 %) | 100 % (96 %) |
+| Turn the key was taken (round 3) | 1594 (1657) | 1161 (1161) | 1571 (1608) | 2035 (2230) |
+| Climbs with a death (round 3) | 42 % (42 %) | 18 % (18 %) | 9 % (9 %) | 22 % (22 %) |
+| Turns anchored (round 3) | 970 (1027) | 191 (195) | 1002 (1040) | 1674 (2046) |
+| Ran out of torches (round 3) | 37 % (42 %) | 6 % (6 %) | 24 % (26 %) | 82 % (84 %) |
+
+Killers over the 400 climbs: kobolds 45, unknown potions 25, the skeleton 15, spiders 9, everything else 11.
+
+Two things from this for discussion (nothing in the game was changed):
+
+- **The Key is hidden under the Skull.** The skeleton drops the Key first and the Skull on top of it. Standing there you see a skull, and the log says "Here: Skull." The slice's goal lies underneath, and nothing says so. If yer bags are full you are told "No room to carry Skull." and you might walk off. Options: drop the Key on top, say "and more" when a pile has more than one thing, or have Enter take the first thing that fits.
+- **For strong builds, the pack is the real limit, not Strength.** From round 3, Strength carries 2.5 kg a point (35 kg at 14). But the pack holds 12 kg and the belt four small things, so a Fighter fills its bags around 26 kg and never reaches its limit. Strength above about 12 then adds nothing to carrying (it still adds to damage). A bigger pack from the general store would be one way to let it count.
