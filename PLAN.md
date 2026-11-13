@@ -65,9 +65,9 @@ Drafted November 9, 2026. `DESIGN.md` is the specification; this file is how it 
 - Tenants restocking on floors you left (DESIGN.md "killed monsters slowly restock"): not built yet.
 - Carnies selling rigged games and charms on the floors: built in step 7 (a stall when bumped); admission to the boss floor built in step 8.
 
-## Slice 2: the second stretch (proposed November 13, 2026)
+## Slice 2: the second stretch (proposed and decided November 13, 2026)
 
-Everything in this section is Claude's proposal for the user to decide, item by item, as slice 1's was. Nothing is built.
+Proposed by Claude and decided by the user item by item on November 13, 2026: everything below was accepted as proposed, except that restocking is every 150 turns (proposed 300). Nothing is built yet. The numbers are still starting values, to review step by step as in slice 1.
 
 **Goal:** the key to floor 5 opens the next stretch: three more generated floors, windier and more crowded, then floor 8, the second boss floor, "an army of a thousand". On the way you meet the traces of earlier climbers, and the town gives you reasons to come back with yer Jools (the playtest found that money had little use and the town was visited once). When the army is routed, the herald proclaims it, the windchute reaches floor 8, and the slice ends with the key to floor 9 and the same kind of notice as slice 1.
 
@@ -75,7 +75,7 @@ Everything in this section is Claude's proposal for the user to decide, item by 
 - **The floor count settled:** 16 floors, bosses on floors 4, 8 and 12, the champion on 15 and the lord on 16 (DESIGN.md says 12 to 16 floors, with a boss every three or four). Slice 2 builds floors 5 to 8; slice 3 builds 9 to 12; slice 4 builds 13 to 16 and the ending.
 - **Floors 5 to 7:** generated as before, a little bigger (64 by 44), with gusts every 9, 8, 8 turns, an 8-turn gust on floor 8, and a 50, 55, 60 % chance to snuff a lit torch (65 on floor 8). The gust pushes 2 cells from floor 5 on (DESIGN.md: "higher floors have a shorter N and a stronger push").
 - **New tenants**, from floor 5: crows (light and fast; gusts carry them), giant ants (come in threes), goblins (a tougher kobold, sometimes with a dagger to drop), a cave bear (slow and heavy: gusts do not move it, it hits hard, and one maul in ten takes a point of Strength until the temple restores it), and a **bailiff** (does not fight; it takes Jools from yer purse and runs: "Collecting His Lordship's rent." Kill it to get them back). The bailiff is a reason to bank.
-- **Tenants restock** (DESIGN.md "killed monsters slowly restock", open since slice 1): a floor you left gets a new tenant every 300 turns, up to its starting number.
+- **Tenants restock** (DESIGN.md "killed monsters slowly restock", open since slice 1): a floor you left gets a new tenant every 150 turns, up to its starting number (the user's choice; proposed 300).
 - **Earlier climbers** (DESIGN.md beat 3): each of floors 5 to 7 has a camp: a cold fire, a bedroll and a note ("Day 40. The wind is louder up here. Nobody is louder than His Lordship.") and heavy gear (worth taking, costly to carry). The notes hint at the top without saying. On floor 6 a climber who stopped there lives in her camp, a **hermit** who trades: food and torches at twice the town's price, and she buys trophies. She knew the mentor ("Tell them I still have their kettle.").
 - **The town after the Horde:** once the Horde is destroyed the shops stock more (Castle of the Winds' "time changes shop stock"). The smith adds a mace, leather armour and a cloak; the general store adds a lantern, oil and a tinderbox; the sage starts selling scrolls and potions you have already named. The temple restores a point of a drained attribute (see the cave bear). Things that cost real Jools: a lantern 60, leather armour 60.
 - **Light, the second clock:** the **lantern** burns oil (a flask lasts 600 turns), and a gust snuffs it a third as often as a torch. The tinderbox relights without a turn.
