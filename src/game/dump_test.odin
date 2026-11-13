@@ -246,7 +246,8 @@ test_dump_boss :: proc(t: ^testing.T) {
 }
 
 // Floor 5 by eye (-define:DUMP_HIGHER=<prefix>): <prefix>-view.ppm (arriving), <prefix>-map.ppm
-// (the automap of the bigger floor, all of it seen).
+// (the automap of the bigger floor, all of it seen), <prefix>-tenants.ppm (the floor 5 tenants and
+// their trophies).
 DUMP_HIGHER :: #config(DUMP_HIGHER, "")
 
 @(test)
@@ -272,5 +273,29 @@ test_dump_higher :: proc(t: ^testing.T) {
 		draw_game(fr, g)
 		resolve(fr)
 		write_ppm(DUMP_HIGHER + "-map.ppm", fr)
+		// The new tenants in a row, lit, beside you.
+		g.mode = .Play
+		for &tn in g.tenants {
+			if int(tn.floor) == g.current {
+				tn = {}
+			}
+		}
+		for k, i in ([?]Tenant_Kind{.Crow, .Ant, .Goblin, .Bear, .Bailiff}) {
+			new_tenant(g, k, g.current, g.x - 4 + 2 * i, g.y - 1)
+		}
+		for k, i in ([?]Item_Kind{.Crow_Feather, .Ant_Feeler, .Goblin_Ear, .Bear_Hide, .Eviction_Notice}) {
+			id := new_item(g, k)
+			it := &g.items[id]
+			it.place, it.floor, it.x, it.y = .Ground, i8(g.current), i16(g.x - 4 + 2 * i), i16(g.y + 1)
+		}
+		for y in 0 ..< FLOOR_H {
+			for x in 0 ..< FLOOR_W {
+				f.cells[y][x] = x > 0 && y > 0 && x < f.w - 1 && y < f.h - 1 ? .Floor : .Wall
+			}
+		}
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGHER + "-tenants.ppm", fr)
 	}
 }

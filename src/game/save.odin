@@ -9,7 +9,7 @@ package game
 import "base:runtime"
 
 SAVE_MAGIC :: u32(0x4C42_5342) // "BSBL"
-SAVE_VERSION :: u32(3) // bump whenever Game changes shape or meaning
+SAVE_VERSION :: u32(4) // bump whenever Game changes shape or meaning (but see load_game: fields added at Game's end need no bump)
 SAVE_HEADER :: 12
 SAVE_CAP :: 2 * size_of(Game) + SAVE_HEADER // a packed save is never longer than this
 
@@ -78,10 +78,13 @@ save_game :: proc(g: ^Game, out: []u8) -> int {
 
 // Unpacks a save into `g`. False, with `g` untouched, when the save is not one this build wrote.
 load_game :: proc(g: ^Game, data: []u8) -> bool {
-	if len(data) < SAVE_HEADER || get_u32(data, 0) != SAVE_MAGIC || get_u32(data, 4) != SAVE_VERSION || get_u32(data, 8) != u32(size_of(Game)) {
+	// A save of this version may be shorter than Game: fields added at the end of Game since it was
+	// written load as zero. Anything else that changes Game's shape bumps SAVE_VERSION.
+	if len(data) < SAVE_HEADER || get_u32(data, 0) != SAVE_MAGIC || get_u32(data, 4) != SAVE_VERSION || get_u32(data, 8) > u32(size_of(Game)) {
 		return false
 	}
-	// First count what it unpacks to; only a save of exactly the right size is used.
+	saved := int(get_u32(data, 8))
+	// First count what it unpacks to; only a save of exactly its stated size is used.
 	total := 0
 	for i := SAVE_HEADER; i < len(data); {
 		if data[i] == 0 {
@@ -95,10 +98,13 @@ load_game :: proc(g: ^Game, data: []u8) -> bool {
 			i += 1
 		}
 	}
-	if total != size_of(Game) {
+	if total != saved {
 		return false
 	}
 	raw := ([^]u8)(g)[:size_of(Game)]
+	if saved < size_of(Game) {
+		runtime.memset(&raw[saved], 0, size_of(Game) - saved)
+	}
 	n := 0
 	for i := SAVE_HEADER; i < len(data); {
 		if data[i] == 0 {

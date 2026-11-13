@@ -17,6 +17,12 @@ Tenant_Kind :: enum u8 {
 	Carny,
 	Skeleton, // floor 4's boss, the Undead Horde (boss.odin)
 	Bones, // the rest of the Horde, propped up
+	// From floor 5 (slice 2 step 11).
+	Crow,
+	Ant, // placed in threes
+	Goblin,
+	Bear, // heavy: gusts do not move it; a maul can take a point of Strength
+	Bailiff, // does not fight: takes Jools from yer purse and runs
 }
 
 Tenant_Info :: struct {
@@ -34,6 +40,7 @@ Tenant_Info :: struct {
 	erratic:    bool, // flits about even when it means to bite
 	peaceful:   bool, // leaves you be until you strike it
 	prop:       bool, // never moves or fights; a gust or a push knocks it over
+	rare:       bool, // picked half as often when a floor is stocked
 	trophy:     Item_Kind,
 	chance:     int, // in 100, that it leaves its trophy
 	first:      int, // the lowest floor it lives on
@@ -51,6 +58,11 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Slime  = {name = "slime", a = "a slime", gfx = .Slime, color = 6, health = 12, hit = 50, dmin = 2, dmax = 4, speed = 5, xp = 5, first = 3, verb = "burns", line = "Owes three months. Nobody asks."},
 	.Skeleton = {name = "skeleton", a = "the Undead Horde", gfx = .Skeleton, color = COLOR_LIGHT, health = 20, hit = 55, dmin = 1, dmax = 5, defence = 5, speed = 10, xp = 15, first = 99, verb = "rattles at", line = "Nobody got round to burying it."},
 	.Bones    = {name = "skeleton", a = "a skeleton", gfx = .Skeleton, color = COLOR_LIGHT, health = 1, peaceful = true, prop = true, first = 99, line = "It stands very still."},
+	.Crow    = {name = "crow", a = "a crow", gfx = .Crow, color = COLOR_MID, health = 4, hit = 55, dmin = 1, dmax = 3, defence = 15, speed = 20, xp = 3, light = true, erratic = true, trophy = .Crow_Feather, chance = 50, first = 5, verb = "pecks", line = "Rents by the perch. Pays in shiny things."},
+	.Ant     = {name = "giant ant", a = "a giant ant", gfx = .Ant, color = COLOR_RED, health = 7, hit = 55, dmin = 1, dmax = 4, defence = 15, speed = 10, xp = 3, trophy = .Ant_Feeler, chance = 40, first = 5, verb = "bites", line = "Works for the colony. The colony owes the rent."},
+	.Goblin  = {name = "goblin", a = "a goblin", gfx = .Goblin, color = 6, health = 12, hit = 60, dmin = 2, dmax = 6, defence = 15, speed = 10, xp = 6, trophy = .Goblin_Ear, chance = 40, first = 5, verb = "slashes", line = "Hopes to be a landlord one day."},
+	.Bear    = {name = "cave bear", a = "a cave bear", gfx = .Bear, color = COLOR_BROWN, health = 26, hit = 55, dmin = 3, dmax = 8, defence = 10, speed = 5, xp = 12, rare = true, trophy = .Bear_Hide, chance = 60, first = 5, verb = "mauls", line = "Hibernates through rent day, every year."},
+	.Bailiff = {name = "bailiff", a = "a bailiff", gfx = .Bailiff, color = 9, health = 8, hit = 70, defence = 15, speed = 15, xp = 5, rare = true, trophy = .Eviction_Notice, chance = 50, first = 5, verb = "frisks", line = "\"Collecting His Lordship's rent.\""},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -72,6 +84,10 @@ TENANT_DARK_SIGHT :: 2 // and one in the dark
 PLAYER_HIT :: 60 // chance in 100 to land a blow, before Dexterity and the tenant's defence
 DEX_AIM :: 2 // chance in 100 to land a blow per point of Dexterity above 10 (was 4 until November 12, 2026)
 DEX_DODGE :: 1 // and taken off a tenant's chance to hit you (was 2)
+BEAR_DRAIN :: 10 // one maul in this many takes a point of Strength
+GOBLIN_DAGGER :: 4 // one goblin in this many drops a dagger
+ANT_GROUP :: 3
+RESTOCK_TURNS :: 150 // a floor you left gets a tenant back this often (the user's choice; proposed 300)
 WEAPON_WEAR :: 3 // a blow you land wears yer weapon one time in this many
 ARMOUR_WEAR :: 2 // a blow that lands on you wears a piece of armour one time in this many
 
@@ -123,23 +139,82 @@ populate_tenants :: proc(g: ^Game, index: int, r: ^Rng) {
 			n += 1
 		}
 	}
-	place :: proc(g: ^Game, f: ^Floor, r: ^Rng, index: int, kind: Tenant_Kind) {
-		for _ in 0 ..< 100 {
-			room := f.rooms[1 + rng_int(r, f.room_count - 1)]
-			x, y := room.x + rng_int(r, room.w), room.y + rng_int(r, room.h)
-			if f.cells[y][x] != .Floor || tenant_at_floor(g, index, x, y) != 0 {
-				continue
-			}
-			new_tenant(g, kind, index, x, y)
-			return
-		}
-	}
 	for _ in 0 ..< 4 + 2 * f.number {
-		place(g, f, r, index, kinds[rng_int(r, n)])
+		place_tenant(g, f, r, index, pick_kind(kinds[:n], r))
 	}
 	if f.number == 3 {
-		place(g, f, r, index, .Carny)
+		place_tenant(g, f, r, index, .Carny)
 	}
+	f.stock = count_tenants(g, index)
+}
+
+// One of the kinds that live on a floor; a rare one (the bear, the bailiff) half as often.
+pick_kind :: proc(kinds: []Tenant_Kind, r: ^Rng) -> Tenant_Kind {
+	k := kinds[rng_int(r, len(kinds))]
+	if TENANT[k].rare && rng_int(r, 2) == 0 {
+		k = kinds[rng_int(r, len(kinds))]
+	}
+	return k
+}
+
+// Puts a tenant in a random spot of a floor's rooms (not the first room, where the stairs down
+// are); giant ants come with two more beside them (not when restocking, one at a time).
+place_tenant :: proc(g: ^Game, f: ^Floor, r: ^Rng, index: int, kind: Tenant_Kind, group := true) {
+	for _ in 0 ..< 100 {
+		room := f.rooms[1 + rng_int(r, f.room_count - 1)]
+		x, y := room.x + rng_int(r, room.w), room.y + rng_int(r, room.h)
+		if f.cells[y][x] != .Floor || tenant_at_floor(g, index, x, y) != 0 {
+			continue
+		}
+		new_tenant(g, kind, index, x, y)
+		if kind == .Ant && group {
+			placed := 1
+			for d in DIRECTIONS {
+				if placed >= ANT_GROUP {
+					break
+				}
+				if f.cells[y + d.y][x + d.x] == .Floor && tenant_at_floor(g, index, x + d.x, y + d.y) == 0 {
+					new_tenant(g, kind, index, x + d.x, y + d.y)
+					placed += 1
+				}
+			}
+		}
+		return
+	}
+}
+
+count_tenants :: proc(g: ^Game, index: int) -> int {
+	n := 0
+	for i in 1 ..< MAX_TENANTS {
+		if g.tenants[i].kind != .None && int(g.tenants[i].floor) == index {
+			n += 1
+		}
+	}
+	return n
+}
+
+// A generated floor you come back to has had a tenant move in for every RESTOCK_TURNS you were
+// away, up to the number it started with (DESIGN.md "killed monsters slowly restock").
+restock :: proc(g: ^Game, index: int) {
+	f := &g.floors[index]
+	if g.no_tenants || f.stock == 0 || f.left_turn == 0 {
+		return
+	}
+	kinds: [len(Tenant_Kind)]Tenant_Kind
+	n := 0
+	for k in Tenant_Kind {
+		if k != .None && k != .Carny && TENANT[k].first <= f.number {
+			kinds[n] = k
+			n += 1
+		}
+	}
+	for _ in 0 ..< (g.turn - f.left_turn) / RESTOCK_TURNS {
+		if count_tenants(g, index) >= f.stock {
+			break
+		}
+		place_tenant(g, f, &g.rng, index, pick_kind(kinds[:n], &g.rng), false) // one at a time, never past the stock
+	}
+	f.left_turn = 0
 }
 
 tenant_at_floor :: proc(g: ^Game, index, x, y: int) -> int {
@@ -195,6 +270,20 @@ tenant_act :: proc(g: ^Game, id: int) {
 		t.awake = true
 		t.tx, t.ty = i16(g.x), i16(g.y)
 	}
+	// A bailiff with yer Jools runs from you.
+	if t.kind == .Bailiff && held_jools(g, id) > 0 {
+		best, best_d := [2]int{}, dist2(int(t.x), int(t.y), g.x, g.y)
+		for d in DIRECTIONS {
+			nd := dist2(int(t.x) + d.x, int(t.y) + d.y, g.x, g.y)
+			if nd > best_d && tenant_can_enter(g, int(t.x) + d.x, int(t.y) + d.y) {
+				best, best_d = d, nd
+			}
+		}
+		if best != {} {
+			tenant_step(g, id, best)
+		}
+		return
+	}
 	if !t.awake || (info.erratic && rng_int(&g.rng, 3) == 0) {
 		if rng_int(&g.rng, 2) == 0 {
 			tenant_step(g, id, DIRECTIONS[rng_int(&g.rng, 8)])
@@ -244,6 +333,10 @@ tenant_attack :: proc(g: ^Game, id: int) {
 		say(g, "The ", info.name, " misses.")
 		return
 	}
+	if t.kind == .Bailiff {
+		bailiff_takes(g, id)
+		return
+	}
 	say(g, "The ", info.name, " ", info.verb, " you.")
 	if rng_int(&g.rng, ARMOUR_WEAR) == 0 {
 		pieces: [len(Slot)]int
@@ -259,6 +352,51 @@ tenant_attack :: proc(g: ^Game, id: int) {
 		}
 	}
 	hurt(g, rng_range(&g.rng, info.dmin, info.dmax), info.a)
+	if t.kind == .Bear && g.mode != .Dead && g.attr[.Strength] > 3 && rng_int(&g.rng, BEAR_DRAIN) == 0 {
+		g.attr[.Strength] -= 1
+		g.drained[.Strength] += 1
+		say(g, "The maul leaves you weaker. Strength -1.")
+	}
+}
+
+// The bailiff takes half the Jools in yer purse (rounded up) and keeps them until it is caught.
+bailiff_takes :: proc(g: ^Game, id: int) {
+	purse := worn(g, .Purse)
+	coins := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].kind == .Jools && g.items[i].place == .Inside && int(g.items[i].parent) == purse && purse != 0 {
+			coins = i
+		}
+	}
+	if coins == 0 {
+		say(g, "The bailiff finds yer purse empty and writes you up.")
+		return
+	}
+	buf: [8]u8
+	take := (int(g.items[coins].count) + 1) / 2
+	if take >= int(g.items[coins].count) {
+		unplace(g, coins)
+		g.items[coins].place, g.items[coins].parent = .Held, i16(id)
+	} else {
+		g.items[coins].count -= i32(take)
+		got := new_item(g, .Jools, take)
+		if got == 0 {
+			return
+		}
+		g.items[got].place, g.items[got].parent = .Held, i16(id)
+	}
+	say(g, "The bailiff takes ", itoa(buf[:], take), " Jools. \"His Lordship's rent.\" It runs.")
+}
+
+// Jools a tenant has carried off.
+held_jools :: proc(g: ^Game, id: int) -> int {
+	n := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Held && int(g.items[i].parent) == id && g.items[i].kind == .Jools {
+			n += int(g.items[i].count)
+		}
+	}
+	return n
 }
 
 // Yer blow at a tenant (stepping into it). A turn passes.
@@ -313,6 +451,16 @@ kill_tenant :: proc(g: ^Game, id: int) {
 			it := &g.items[item]
 			it.place, it.floor, it.x, it.y = .Ground, t.floor, t.x, t.y
 		}
+	}
+	// What it carried off falls where it dies.
+	for i in 1 ..< MAX_ITEMS {
+		it := &g.items[i]
+		if it.place == .Held && int(it.parent) == id {
+			it.place, it.floor, it.x, it.y, it.parent = .Ground, t.floor, t.x, t.y, 0
+		}
+	}
+	if t.kind == .Goblin && rng_int(&g.rng, GOBLIN_DAGGER) == 0 {
+		drop_at(g, t, .Dagger, 1)
 	}
 	if t.kind == .Skeleton {
 		boss_falls(g, t)

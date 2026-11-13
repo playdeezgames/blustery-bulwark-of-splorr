@@ -88,8 +88,8 @@ test_looks_are_shuffled_per_character :: proc(t: ^testing.T) {
 		// Within a group every kind has its own look.
 		seen: [4]bool
 		for k in ([?]Item_Kind{.Potion_Healing, .Potion_Mana, .Potion_Blight, .Potion_Sight}) {
-			testing.expect(t, !seen[g.look[k]])
-			seen[g.look[k]] = true
+			testing.expect(t, !seen[g.look[int(k)]])
+			seen[g.look[int(k)]] = true
 		}
 		free(g)
 	}

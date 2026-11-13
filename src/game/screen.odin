@@ -92,6 +92,13 @@ Gfx :: enum {
 	Skull,
 	Bone_Pile,
 	Key,
+	Crow,
+	Ant,
+	Goblin,
+	Bear,
+	Bailiff,
+	Feather,
+	Hide,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

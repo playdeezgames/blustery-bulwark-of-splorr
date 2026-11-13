@@ -52,6 +52,12 @@ Item_Kind :: enum u8 {
 	Key,
 	// Sold in town (playtest round 4): appended so saved kinds keep their numbers.
 	Big_Pack,
+	// Trophies of the tenants from floor 5 (slice 2 step 11).
+	Crow_Feather,
+	Ant_Feeler,
+	Goblin_Ear,
+	Bear_Hide,
+	Eviction_Notice,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -142,6 +148,11 @@ KIND := [Item_Kind]Kind_Info {
 	.Bread         = {name = "Bread", gfx = .Bread, color = COLOR_BROWN, weight = 300, bulk = 800, food = 400},
 	.Pack          = {name = "Pack", gfx = .Pack, color = COLOR_BROWN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 12000, cap_bulk = 25000},
 	.Big_Pack      = {name = "Big pack", gfx = .Pack, color = COLOR_RED, weight = 1500, bulk = 7000, slot = .Pack, cap_weight = 20000, cap_bulk = 40000},
+	.Crow_Feather  = {name = "Crow feather", gfx = .Feather, color = COLOR_MID, weight = 5, bulk = 20, trophy = true},
+	.Ant_Feeler    = {name = "Ant feeler", gfx = .Spider_Leg, color = COLOR_RED, weight = 5, bulk = 10, trophy = true},
+	.Goblin_Ear    = {name = "Goblin ear", gfx = .Kobold_Ear, color = 6, weight = 15, bulk = 20, trophy = true},
+	.Bear_Hide     = {name = "Bear hide", gfx = .Hide, color = COLOR_BROWN, weight = 3000, bulk = 6000, trophy = true},
+	.Eviction_Notice = {name = "Eviction notice", gfx = .Scroll, color = COLOR_WHITE, weight = 20, bulk = 50, trophy = true},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
@@ -176,6 +187,7 @@ Place :: enum u8 {
 	Ground,
 	Worn,
 	Inside,
+	Held, // carried off by a tenant (parent: the tenant's id): the bailiff's takings
 }
 
 Item :: struct {
@@ -192,7 +204,9 @@ Item :: struct {
 	cursed: bool, // from its kind; an Uncurse scroll clears it
 }
 
-MAX_ITEMS :: 640 // id 0 is never used, so 0 means "no item"
+MAX_ITEMS :: 640
+MAX_KINDS :: 128 // room for this many item kinds in a save
+#assert(len(Item_Kind) <= MAX_KINDS) // id 0 is never used, so 0 means "no item"
 
 is_container :: proc(k: Item_Kind) -> bool {
 	return KIND[k].cap_weight > 0 || KIND[k].belt_slots > 0
@@ -328,7 +342,7 @@ is_carried :: proc(g: ^Game, id: int) -> bool {
 			return true
 		case .Inside:
 			c = int(it.parent)
-		case .Ground, .Nowhere:
+		case .Ground, .Nowhere, .Held:
 			return false
 		}
 	}

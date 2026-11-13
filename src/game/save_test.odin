@@ -58,3 +58,33 @@ test_a_bad_save_is_ignored :: proc(t: ^testing.T) {
 	testing.expect(t, runtime.memory_compare(&before, h, size_of(Game)) == 0)
 	testing.expect(t, load_game(h, buf[:n]))
 }
+
+// A save written before fields were added at the end of Game loads, with those fields zero.
+@(test)
+test_a_save_from_before_new_end_fields_loads :: proc(t: ^testing.T) {
+	g := new_game_with_tenants(78)
+	defer free(g)
+	command(g, .East)
+	buf := make([]u8, SAVE_CAP)
+	defer delete(buf)
+	n := save_game(g, buf)
+	// Make it the save an older build wrote: Game stopped before `drained` (zero here, so the
+	// packed save ends in a run of zeros that covers it; shorten that run and the stated size).
+	tail := size_of(Game) - int(offset_of(Game, drained))
+	testing.expect_value(t, buf[n - 3], 0)
+	run := int(buf[n - 2]) | int(buf[n - 1]) << 8
+	testing.expect(t, run >= tail)
+	run -= tail
+	buf[n - 2], buf[n - 1] = u8(run), u8(run >> 8)
+	size := u32(int(offset_of(Game, drained)))
+	buf[8], buf[9], buf[10], buf[11] = u8(size), u8(size >> 8), u8(size >> 16), u8(size >> 24)
+	h := new(Game)
+	defer free(h)
+	h.drained[.Strength] = 5 // junk that loading must clear
+	testing.expect(t, load_game(h, buf[:n]))
+	testing.expect(t, same_game(g, h))
+	// A save that claims to be longer than Game is refused.
+	size = u32(size_of(Game) + 2)
+	buf[8], buf[9], buf[10], buf[11] = u8(size), u8(size >> 8), u8(size >> 16), u8(size >> 24)
+	testing.expect(t, !load_game(h, buf[:n]))
+}

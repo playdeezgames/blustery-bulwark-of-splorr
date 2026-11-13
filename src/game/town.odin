@@ -103,6 +103,11 @@ VALUE := #partial [Item_Kind]int {
 	.Spellbook       = 60,
 	.Wind_Charm      = 5,
 	.Skull           = 3,
+	.Crow_Feather    = 3,
+	.Ant_Feeler      = 3,
+	.Goblin_Ear      = 6,
+	.Bear_Hide       = 15,
+	.Eviction_Notice = 4,
 	.Old_Bones       = 1,
 }
 
@@ -209,6 +214,9 @@ Town_Arrival :: enum u8 {
 enter_town :: proc(g: ^Game, how: Town_Arrival) {
 	if !g.town.made {
 		build_town(&g.town)
+	}
+	if g.current >= 0 {
+		g.floors[g.current].left_turn = max(g.turn, 1) // restocking counts from here
 	}
 	g.current = TOWN
 	at := how == .Temple ? g.town.down : g.town.up + {0, 1}

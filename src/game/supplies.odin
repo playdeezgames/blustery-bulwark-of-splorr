@@ -48,13 +48,13 @@ shuffle_looks :: proc(g: ^Game) {
 			order[i], order[j] = order[j], order[i]
 		}
 		for i in 0 ..< n {
-			g.look[kinds[i]] = order[i]
+			g.look[int(kinds[i])] = order[i]
 		}
 	}
 }
 
 kind_look :: proc(g: ^Game, k: Item_Kind) -> Look {
-	i := int(g.look[k])
+	i := int(g.look[int(k)])
 	#partial switch KIND[k].group {
 	case .Potion:
 		return POTION_LOOKS[i]

@@ -36,6 +36,8 @@ Floor :: struct {
 	room_count: int,
 	up, down:   [2]int, // stairs
 	wind_from:  int, // index into DIRECTIONS and COMPASS: where this floor's wind comes from
+	stock:      int, // tenants it was made with (restocking refills up to this)
+	left_turn:  int, // the turn you last left it (restocking counts from here)
 }
 
 passable :: proc(c: Cell) -> bool {

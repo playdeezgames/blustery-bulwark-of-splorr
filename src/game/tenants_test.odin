@@ -12,7 +12,7 @@ new_game_with_tenants :: proc(seed: u64 = 12345) -> ^Game {
 	return g
 }
 
-count_tenants :: proc(g: ^Game, index: int) -> (n: int, carnies: int) {
+count_on_floor :: proc(g: ^Game, index: int) -> (n: int, carnies: int) {
 	for &t in g.tenants {
 		if t.kind != .None && int(t.floor) == index {
 			n += 1
@@ -61,7 +61,7 @@ test_floors_get_tenants :: proc(t: ^testing.T) {
 		for i in 0 ..< SLICE1_GENERATED {
 			enter_floor(g, i, .Stairs_Down)
 			f := floor_of(g)
-			n, carnies := count_tenants(g, i)
+			n, carnies := count_on_floor(g, i)
 			testing.expect(t, n >= 4, "a floor has a handful of tenants")
 			testing.expect_value(t, carnies, f.number == 3 ? 1 : 0)
 			first := f.rooms[0]
@@ -241,4 +241,122 @@ test_mouse_route_goes_one_step_with_a_tenant_in_view :: proc(t: ^testing.T) {
 	sy := MAP_Y + (VIEW_H / 2) * TILE + 2
 	pointer(g, sx, sy, .Mouse_Primary)
 	testing.expect_value(t, g.path_len, 1)
+}
+
+// Floor 5 and up (slice 2): crows, giant ants in threes, goblins, cave bears and bailiffs; none
+// of them lower down.
+@(test)
+test_floors_five_and_up_have_the_new_tenants :: proc(t: ^testing.T) {
+	seen: [Tenant_Kind]int
+	for seed in u64(1) ..= 20 {
+		g := new_game_with_tenants(seed)
+		for i in ([?]int{1, 2, 4, 5, 6}) {
+			enter_floor(g, i, .Stairs_Down)
+		}
+		for &tn in g.tenants {
+			if tn.kind == .None {
+				continue
+			}
+			number := g.floors[tn.floor].number
+			if TENANT[tn.kind].first >= 5 && tn.kind != .Bones && tn.kind != .Skeleton {
+				testing.expectf(t, number >= 5, "%v on floor %v", tn.kind, number)
+			}
+			if number >= 5 {
+				seen[tn.kind] += 1
+			}
+			// An ant always has another ant beside it.
+			if tn.kind == .Ant {
+				near := 0
+				for &o in g.tenants {
+					if o.kind == .Ant && o.floor == tn.floor && max(abs(int(o.x) - int(tn.x)), abs(int(o.y) - int(tn.y))) == 1 {
+						near += 1
+					}
+				}
+				testing.expect(t, near >= 1)
+			}
+		}
+		free(g)
+	}
+	for k in ([?]Tenant_Kind{.Crow, .Ant, .Goblin, .Bear, .Bailiff}) {
+		testing.expectf(t, seen[k] > 0, "no %v on floors 5 to 7 in 20 seeds", k)
+	}
+	// Rare ones are rarer.
+	testing.expect(t, seen[.Bear] < seen[.Goblin])
+}
+
+@(test)
+test_the_bailiff_takes_half_and_runs :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	g.no_tenants = false
+	before := carried_jools(g)
+	id := new_tenant(g, .Bailiff, g.current, g.x + 1, g.y)
+	for _ in 0 ..< 50 {
+		if held_jools(g, id) > 0 {
+			break
+		}
+		tenant_attack(g, id)
+	}
+	took := held_jools(g, id)
+	testing.expect_value(t, took, (before + 1) / 2)
+	testing.expect_value(t, carried_jools(g), before - took)
+	// It runs: after a few turns it is farther away.
+	start := dist2(int(g.tenants[id].x), int(g.tenants[id].y), g.x, g.y)
+	g.tenants[id].awake = true
+	for _ in 0 ..< 3 {
+		tenant_act(g, id)
+	}
+	testing.expect(t, dist2(int(g.tenants[id].x), int(g.tenants[id].y), g.x, g.y) >= start)
+	// Caught, it drops them.
+	x, y := int(g.tenants[id].x), int(g.tenants[id].y)
+	kill_tenant(g, id)
+	got := 0
+	for i in 1 ..< MAX_ITEMS {
+		it := &g.items[i]
+		if it.kind == .Jools && it.place == .Ground && int(it.x) == x && int(it.y) == y {
+			got += int(it.count)
+		}
+	}
+	testing.expect_value(t, got, took)
+}
+
+@(test)
+test_a_cave_bear_can_take_strength :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	id := new_tenant(g, .Bear, g.current, g.x + 1, g.y)
+	st := g.attr[.Strength]
+	for _ in 0 ..< 500 {
+		if g.drained[.Strength] > 0 {
+			break
+		}
+		g.health = max_health(g)
+		tenant_attack(g, id)
+	}
+	testing.expect_value(t, int(g.drained[.Strength]), 1)
+	testing.expect_value(t, g.attr[.Strength], st - 1)
+}
+
+@(test)
+test_a_floor_you_left_restocks_slowly :: proc(t: ^testing.T) {
+	g := new_game_with_tenants(31)
+	defer free(g)
+	stock := g.floors[0].stock
+	testing.expect(t, stock > 0)
+	for &tn in g.tenants {
+		if int(tn.floor) == 0 {
+			tn = {}
+		}
+	}
+	enter_floor(g, 1, .Stairs_Down)
+	g.turn += 2 * RESTOCK_TURNS + 10
+	enter_floor(g, 0, .Stairs_Up)
+	n, _ := count_on_floor(g, 0)
+	testing.expect_value(t, n, 2)
+	// Never past what it started with.
+	enter_floor(g, 1, .Stairs_Down)
+	g.turn += 1000 * RESTOCK_TURNS
+	enter_floor(g, 0, .Stairs_Up)
+	n, _ = count_on_floor(g, 0)
+	testing.expect_value(t, n, stock)
 }

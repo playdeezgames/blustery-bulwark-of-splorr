@@ -65,6 +65,14 @@ PICKS = [
     ('Skull',        1, 38),
     ('Bone_Pile',    4, 38),
     ('Key',          6, 45),
+    # Tenants from floor 5 and their trophies (slice 2 step 11).
+    ('Crow',         6, 14),  # the swooping bird
+    ('Ant',          3, 15),  # a yellow insect (painted red)
+    ('Goblin',     128, 40),  # green goblin
+    ('Bear',        14, 14),
+    ('Bailiff',    123, 0),   # a figure holding a ledger
+    ('Feather',     26, 26),
+    ('Hide',         2, 23),
 ]
 
 def tile(col, row):

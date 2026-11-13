@@ -21,7 +21,9 @@ open_room :: proc() -> ^Game {
 	}
 	f.wind_from = 2 // W, so it blows east
 	g.gust_in = 1000
-	g.known = ~bit_set[Spell]{}
+	for s in Spell {
+		g.known += {s}
+	}
 	teleport(g, {20, 20})
 	return g
 }
@@ -39,7 +41,7 @@ test_first_spell_is_chosen_after_creation :: proc(t: ^testing.T) {
 	command(g, .South)
 	command(g, .Confirm)
 	testing.expect_value(t, g.mode, Mode.Play)
-	testing.expect_value(t, g.known, bit_set[Spell]{.Gust_Ball})
+	testing.expect_value(t, g.known, Spells{.Gust_Ball})
 	testing.expect_value(t, g.mana, max_mana(g))
 }
 
@@ -225,7 +227,9 @@ test_return_hop_mend_and_sense :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	enter_floor(g, 2, .Stairs_Down)
-	g.known = ~bit_set[Spell]{}
+	for s in Spell {
+		g.known += {s}
+	}
 	g.mana = 100
 	start := [2]int{g.x, g.y}
 	cast_spell(g, .Hop, {0, 0})

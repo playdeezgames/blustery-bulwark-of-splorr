@@ -22,7 +22,7 @@ test_balance_duels :: proc(t: ^testing.T) {
 			if kind == .None || TENANT[kind].prop {
 				continue
 			}
-			for level in 1 ..= 4 {
+			for level in ([?]int{1, 4, 6, 8}) {
 				wins, lost, turns := 0, 0, 0
 				hp := 0
 				for trial in 0 ..< TRIALS {

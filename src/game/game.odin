@@ -65,6 +65,9 @@ Message :: struct {
 
 TRAVEL_FRAMES :: 4 // frames between steps when walking a mouse route
 
+Spells :: bit_set[Spell; u64]
+Kinds :: bit_set[Item_Kind; u128]
+
 Game :: struct {
 	seed:        u64,
 	floors:      [FLOOR_COUNT]Floor,
@@ -97,7 +100,7 @@ Game :: struct {
 	no_tenants:  bool, // tests set this to check other rules without tenants about
 	level:       int,
 	mana:        int,
-	known:       bit_set[Spell],
+	known:       Spells, // fixed size, so new spells keep saves loading
 	learns:      int, // spell choices owed
 	menu_row:    int, // the learn and cast lists
 	aim_spell:   Spell,
@@ -109,8 +112,8 @@ Game :: struct {
 	fx_blast:    bool,
 	fx_at:       [2]int,
 	hunger:      int, // rises a point a turn; food takes it down (supplies.odin)
-	ident:       bit_set[Item_Kind], // kinds known by name
-	look:        [Item_Kind]u8, // which look each potion, scroll, ring and amulet kind wears
+	ident:       Kinds, // kinds known by name (fixed size: up to MAX_KINDS kinds)
+	look:        [MAX_KINDS]u8, // which look each potion, scroll, ring and amulet kind wears, by int(kind)
 	town:        Floor, // the town (town.odin); g.current is TOWN while there
 	shop:        Shop,
 	shop_scroll: int,
@@ -128,6 +131,8 @@ Game :: struct {
 	boss_dead:   bool,
 	slice_done:  bool, // the end-of-slice notice has been shown
 	unlocked:    bit_set[0 ..< FLOOR_COUNT], // boss floors (by index) whose door up has been opened: it stays open
+	// New fields go here, at the end: a save from before them loads with them zero (save.odin).
+	drained:     [Attr]i8, // attribute points a cave bear took (the temple gives them back)
 }
 
 Told :: struct {
@@ -164,6 +169,9 @@ init_game :: proc(g: ^Game, seed: u64) {
 // Moves to floor index `i`, standing on its stairs of kind `arrive`. A floor is generated the first
 // time it is entered and kept after that.
 enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
+	if g.current >= 0 && g.current != i {
+		g.floors[g.current].left_turn = max(g.turn, 1) // restocking counts from here
+	}
 	g.current = i
 	f := floor_of(g)
 	if !f.made && i == BOSS_INDEX {
@@ -175,6 +183,9 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 			r := Rng{floor_seed(g.seed, f.number) ~ 0x7E4A_47_5EED}
 			populate_tenants(g, i, &r)
 		}
+	}
+	if i != BOSS_INDEX {
+		restock(g, i)
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
 	g.x, g.y = at.x, at.y
