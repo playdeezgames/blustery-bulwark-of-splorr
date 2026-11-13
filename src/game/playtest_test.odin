@@ -21,8 +21,9 @@ BOT_DEBUG :: #config(BOT_DEBUG, false)
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // picked up the key
+	won:             bool, // reached the top of what is built (floor 7's stairs up, slice 2 step 10)
 	turn_won:        int,
+	key_turn:        int, // when the key to floor 5 was picked up (0: never)
 	turns:           int,
 	deaths:          int,
 	death_by:        [16][40]u8, // copies: the game is gone when they are counted
@@ -331,9 +332,8 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		shop_town(g, s)
 		return true
 	case .Notice:
-		s.won = true
-		s.turn_won = g.turn
-		return false
+		command(g, .Confirm)
+		return true
 	case .Shop:
 		if g.shop == .Admission {
 			if carried_jools(g) >= ADMISSION {
@@ -442,12 +442,17 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	if !plan.ok {
 		if cell_at(g, g.x, g.y) == .Stairs_Up {
-			if g.current + 1 < FLOOR_COUNT {
-				command(g, .Confirm)
-				return true
+			if g.current == BOSS_INDEX && !has_key(g) && BOSS_INDEX not_in g.unlocked {
+				s.stuck = true // explored floor 4 without the key
+				return false
 			}
-			s.stuck = true // explored floor 4 without the key
-			return false
+			if g.current == BUILT_FLOORS - 1 {
+				s.won = true // the top of what is built
+				s.turn_won = g.turn
+				return false
+			}
+			command(g, .Confirm)
+			return true
 		}
 		plan = bfs(g, .Stairs_Up)
 	}
@@ -559,6 +564,9 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if overloaded(g) {
 			s.overloaded += 1
 		}
+		if s.key_turn == 0 && has_key(g) {
+			s.key_turn = g.turn
+		}
 		s.jools_max = max(s.jools_max, carried_jools(g) + g.bank)
 		s.weight_max = max(s.weight_max, carried_weight(g))
 		if torch_fuel(g) == 0 && spare_torches(g) == 0 && !in_town(g) {
@@ -643,6 +651,7 @@ test_playtest :: proc(t: ^testing.T) {
 		}
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
+			keys, key_turns := 0, 0
 			starving, hungry, dark, anchored, out_torch, overload := 0, 0, 0, 0, 0, 0
 			level, kills, jools, eaten, drunk, spent := 0, 0, 0, 0, 0, 0
 			wmax := 0
@@ -657,6 +666,10 @@ test_playtest :: proc(t: ^testing.T) {
 				if s.won {
 					won += 1
 					turns_won += s.turn_won
+				}
+				if s.key_turn > 0 {
+					keys += 1
+					key_turns += s.key_turn
 				}
 				if s.stuck {
 					stuck += 1
@@ -690,15 +703,20 @@ test_playtest :: proc(t: ^testing.T) {
 				}
 			}
 			fmt.printfln("\n== %s, %d runs ==", b.name, runs)
-			fmt.printfln("got the key: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
-			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors)
+			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
+			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
 			fmt.printf("causes:")
 			for k, v in causes {
 				fmt.printf(" %s %d;", k, v)
 			}
 			fmt.println()
-			fmt.printfln("deepest floor reached %v (index = floor)", deepest_hist)
-			fmt.printfln("turns per floor (avg) %d %d %d %d", floor_turns[0] / runs, floor_turns[1] / runs, floor_turns[2] / runs, floor_turns[3] / runs)
+			fmt.printfln("deepest floor reached %v (index = floor)", deepest_hist[:BUILT_FLOORS + 1])
+			fmt.printf("turns per floor (avg)")
+			for i in 0 ..< BUILT_FLOORS {
+				fmt.printf(" %d", floor_turns[i] / runs)
+			}
+			fmt.println()
 			fmt.printfln("end level %.1f, kills %.1f, Jools at end %d, spent in town %d, max load %.1f kg", f64(level) / f64(runs), f64(kills) / f64(runs), jools / runs, spent / runs, f64(wmax) / f64(runs) / 1000)
 			fmt.printfln("food eaten %.1f; potions drunk %.1f; turns hungry %d, starving %d; turns in the dark %d; anchored %d; ran out of torches %d%%; ever overloaded %d%%", f64(eaten) / f64(runs), f64(drunk) / f64(runs), hungry / runs, starving / runs, dark / runs, anchored / runs, out_torch * 100 / runs, overload * 100 / runs)
 		}

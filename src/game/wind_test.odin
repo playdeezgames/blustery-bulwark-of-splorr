@@ -165,10 +165,14 @@ test_each_floor_has_its_own_wind_and_higher_floors_gust_more :: proc(t: ^testing
 		free(b)
 	}
 	testing.expect(t, differs)
-	for n in 1 ..< len(GUST_PERIOD) {
-		testing.expect(t, gust_period(n + 1) <= gust_period(n))
-		testing.expect(t, snuff_chance(n + 1) >= snuff_chance(n))
+	// Windier going up, among the generated floors (1 to 3, then 5 to 7) and among the boss
+	// floors (4, 8); a boss hall is windier than the floor above it (decided November 13, 2026).
+	for pair in ([?][2]int{{1, 2}, {2, 3}, {3, 5}, {5, 6}, {6, 7}, {4, 8}}) {
+		testing.expect(t, gust_period(pair[1]) <= gust_period(pair[0]))
+		testing.expect(t, snuff_chance(pair[1]) >= snuff_chance(pair[0]))
 	}
+	testing.expect_value(t, gust_push(4), 1)
+	testing.expect_value(t, gust_push(5), 2)
 }
 
 @(test)
@@ -189,4 +193,53 @@ test_streaks_drawn_only_while_warning :: proc(t: ^testing.T) {
 		}
 	}
 	testing.expect(t, changed > 20)
+}
+
+@(test)
+test_gusts_push_two_cells_from_floor_five :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+	f := floor_of(g)
+	d := wind_blow(f)
+	// Find a cell with two open cells downwind of it, and a wall-free cell to start from.
+	found := false
+	for y in 2 ..< f.h - 2 {
+		for x in 2 ..< f.w - 2 {
+			if f.cells[y][x] == .Floor && f.cells[y + d.y][x + d.x] == .Floor && f.cells[y + 2 * d.y][x + 2 * d.x] == .Floor {
+				teleport(g, {x, y})
+				found = true
+				break
+			}
+		}
+		if found {
+			break
+		}
+	}
+	testing.expect(t, found)
+	start := [2]int{g.x, g.y}
+	gust(g)
+	testing.expect_value(t, [2]int{g.x, g.y}, start + 2 * d)
+}
+
+@(test)
+test_a_gust_slams_you_into_a_tenant_not_onto_it :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	f := floor_of(g)
+	d := wind_blow(f)
+	for y in 2 ..< f.h - 2 {
+		for x in 2 ..< f.w - 2 {
+			if f.cells[y][x] == .Floor && f.cells[y + d.y][x + d.x] == .Floor && g.x == f.down.x && g.y == f.down.y {
+				teleport(g, {x, y})
+			}
+		}
+	}
+	id := new_tenant(g, .Beetle, g.current, g.x + d.x, g.y + d.y)
+	testing.expect(t, id != 0)
+	start := [2]int{g.x, g.y}
+	hp := g.health
+	gust(g)
+	testing.expect_value(t, [2]int{g.x, g.y}, start)
+	testing.expect_value(t, g.health, hp - 1)
 }

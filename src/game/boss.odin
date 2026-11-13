@@ -35,6 +35,7 @@ build_boss_floor :: proc(g: ^Game) {
 	f^ = {}
 	f.number = BOSS_INDEX + 1
 	f.made = true
+	f.w, f.h = 60, 40
 	f.wind_from = 2 // from the west: the gusts blow east across the hall
 	boss_cells(f)
 	for row, y in BOSS_MAP {
@@ -140,8 +141,14 @@ has_key :: proc(g: ^Game) -> bool {
 
 // The stairs up on floor 4.
 door_to_floor_five :: proc(g: ^Game) {
-	if has_key(g) {
-		say(g, "The key fits. Beyond the door: scaffolding, and a sign. \"Floor 5. Coming soon, by order of His Lordship.\"")
+	if BOSS_INDEX in g.unlocked {
+		enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+		say(g, "You climb to floor 5. The wind is stronger.")
+	} else if has_key(g) {
+		// Once opened it stays open: a key lost in a fall up there cannot lock you out.
+		g.unlocked += {BOSS_INDEX}
+		enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+		say(g, "The key turns. The door stays open. You climb to floor 5. The wind is stronger.")
 	} else {
 		say(g, "The door to floor 5 is locked. The Horde has the key, they say.")
 	}

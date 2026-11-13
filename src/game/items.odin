@@ -192,7 +192,7 @@ Item :: struct {
 	cursed: bool, // from its kind; an Uncurse scroll clears it
 }
 
-MAX_ITEMS :: 256 // id 0 is never used, so 0 means "no item"
+MAX_ITEMS :: 640 // id 0 is never used, so 0 means "no item"
 
 is_container :: proc(k: Item_Kind) -> bool {
 	return KIND[k].cap_weight > 0 || KIND[k].belt_slots > 0
@@ -504,10 +504,8 @@ pick_up :: proc(g: ^Game, id: int) {
 	name := string(name_buf[:n])
 	if !stow(g, id) {
 		say(g, "No room to carry ", name, ".")
-	} else if g.items[id].kind == .Key && !g.slice_done {
+	} else if g.items[id].kind == .Key {
 		say(g, "You pick up the ", name, ".")
-		g.slice_done = true
-		g.mode = .Notice
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {
@@ -612,8 +610,11 @@ blow_items :: proc(g: ^Game) {
 		if it.place != .Ground || int(it.floor) != g.current || weight_of(g, i) > LIGHT_ITEM {
 			continue
 		}
-		nx, ny := int(it.x) + d.x, int(it.y) + d.y
-		if passable(floor_cell(f, nx, ny)) {
+		for _ in 0 ..< gust_push(f.number) {
+			nx, ny := int(it.x) + d.x, int(it.y) + d.y
+			if !passable(floor_cell(f, nx, ny)) {
+				break
+			}
 			it.x, it.y = i16(nx), i16(ny)
 		}
 	}

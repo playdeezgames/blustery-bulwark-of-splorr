@@ -124,18 +124,24 @@ draw_streaks :: proc(f: ^Frame, g: ^Game) {
 	}
 }
 
-AUTOMAP_CELL :: 4
-AUTOMAP_X :: MAP_X + (VIEW_W * TILE - FLOOR_W * AUTOMAP_CELL) / 2
 AUTOMAP_Y :: MAP_Y + 12
+
+// The automap's cell size and left edge for a floor: 4 pixels a cell where the floor fits the view
+// at that size (floors 1 to 4), else 3.
+automap_layout :: proc(fl: ^Floor) -> (cell, left: int) {
+	cell = fl.w * 4 <= VIEW_W * TILE && fl.h * 4 <= VIEW_H * TILE - 12 ? 4 : 3
+	return cell, MAP_X + (VIEW_W * TILE - fl.w * cell) / 2
+}
 
 draw_automap :: proc(f: ^Frame, g: ^Game) {
 	fl := floor_of(g)
+	AUTOMAP_CELL, AUTOMAP_X := automap_layout(fl)
 	buf: [8]u8
 	x := print(f, "Floor ", AUTOMAP_X, 2, COLOR_CYAN)
 	x += print(f, itoa(buf[:], fl.number), AUTOMAP_X + x, 2, COLOR_CYAN)
 	print(f, " - any key or click to close", AUTOMAP_X + x, 2, COLOR_MID)
-	for y in 0 ..< FLOOR_H {
-		for xx in 0 ..< FLOOR_W {
+	for y in 0 ..< fl.h {
+		for xx in 0 ..< fl.w {
 			if !fl.seen[y][xx] {
 				continue
 			}
@@ -278,7 +284,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 1", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 2, step 10", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

@@ -1,6 +1,8 @@
 #+build !js
 package game
 
+SLICE1_GENERATED :: 3 // floors 1 to 3, generated since slice 1
+
 import "core:testing"
 
 new_game :: proc(seed: u64 = 12345) -> ^Game {
@@ -31,8 +33,11 @@ test_floors_are_connected_over_many_seeds :: proc(t: ^testing.T) {
 	path: ^[MAX_PATH][2]int = new([MAX_PATH][2]int)
 	defer free(path)
 	for seed in u64(1) ..= 300 {
-		for number in 1 ..= GENERATED_FLOORS {
+		for number in ([?]int{1, 2, 3, 5, 6, 7}) {
 			generate_floor(f, floor_seed(seed, number), number)
+			w, h := floor_size(number)
+			testing.expect_value(t, f.w, w)
+			testing.expect_value(t, f.h, h)
 			testing.expect(t, f.room_count >= 6)
 			testing.expect_value(t, f.cells[f.up.y][f.up.x], Cell.Stairs_Up)
 			testing.expect_value(t, f.cells[f.down.y][f.down.x], Cell.Stairs_Down)
@@ -43,14 +48,13 @@ test_floors_are_connected_over_many_seeds :: proc(t: ^testing.T) {
 				}
 			}
 			testing.expectf(t, reachable(f, f.down, f.up), "seed %v floor %v: stairs not connected", seed, number)
-			// The border is always wall.
-			for x in 0 ..< FLOOR_W {
-				testing.expect_value(t, f.cells[0][x], Cell.Wall)
-				testing.expect_value(t, f.cells[FLOOR_H - 1][x], Cell.Wall)
-			}
+			// The border of the floor's own size is always wall, and nothing lies beyond it.
 			for y in 0 ..< FLOOR_H {
-				testing.expect_value(t, f.cells[y][0], Cell.Wall)
-				testing.expect_value(t, f.cells[y][FLOOR_W - 1], Cell.Wall)
+				for x in 0 ..< FLOOR_W {
+					if x == 0 || y == 0 || x >= f.w - 1 || y >= f.h - 1 {
+						testing.expect_value(t, f.cells[y][x], Cell.Wall)
+					}
+				}
 			}
 		}
 	}
@@ -276,7 +280,8 @@ test_frames_draw :: proc(t: ^testing.T) {
 	testing.expect(t, lit > 10)
 	command(g, .Map)
 	draw_game(f, g)
-	testing.expect_value(t, get_px(f, AUTOMAP_X + g.x * AUTOMAP_CELL + 1, AUTOMAP_Y + g.y * AUTOMAP_CELL + 1), COLOR_WHITE)
+	cell, left := automap_layout(floor_of(g))
+	testing.expect_value(t, get_px(f, left + g.x * cell + 1, AUTOMAP_Y + g.y * cell + 1), COLOR_WHITE)
 }
 
 @(test)
@@ -298,4 +303,36 @@ test_a_repeated_line_shows_once_with_a_count :: proc(t: ^testing.T) {
 	say(g, long)
 	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), message(&g.log[LOG_LINES - 3])) // both copies, in full
 	testing.expect_value(t, message(&g.log[LOG_LINES - 2]), message(&g.log[LOG_LINES - 4]))
+}
+
+@(test)
+test_floors_five_to_seven_climb_to_a_sign :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+	for number in 5 ..= BUILT_FLOORS {
+		testing.expect_value(t, floor_of(g).number, number)
+		testing.expect_value(t, floor_of(g).w, 64)
+		teleport(g, floor_of(g).up)
+		command(g, .Confirm)
+	}
+	// Floor 7's stairs up: floor 8 is still being built.
+	testing.expect_value(t, floor_of(g).number, 7)
+	testing.expect_value(t, g.deepest, 7)
+	// Floor 5's stairs down lead to floor 4's door.
+	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 4)
+}
+
+// Floors 1 to 3 keep the layouts they had in slice 1 (the grid grew, their size did not).
+@(test)
+test_floors_one_to_three_keep_their_size :: proc(t: ^testing.T) {
+	f := new(Floor)
+	defer free(f)
+	for number in 1 ..= 3 {
+		generate_floor(f, floor_seed(7, number), number)
+		testing.expect_value(t, f.w, 60)
+		testing.expect_value(t, f.h, 40)
+	}
 }

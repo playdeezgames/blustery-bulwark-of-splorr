@@ -58,7 +58,7 @@ test_creation_spends_points :: proc(t: ^testing.T) {
 test_floors_get_tenants :: proc(t: ^testing.T) {
 	for seed in u64(1) ..= 30 {
 		g := new_game_with_tenants(seed)
-		for i in 0 ..< GENERATED_FLOORS {
+		for i in 0 ..< SLICE1_GENERATED {
 			enter_floor(g, i, .Stairs_Down)
 			f := floor_of(g)
 			n, carnies := count_tenants(g, i)

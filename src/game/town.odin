@@ -139,6 +139,7 @@ build_town :: proc(f: ^Floor) {
 	f^ = {}
 	f.number = 0
 	f.made = true
+	f.w, f.h = 60, 40
 	town_cells(f)
 	f.down = door_of(.Temple) + {0, 1} // where you wake: outside the temple
 }

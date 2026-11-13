@@ -3,8 +3,13 @@ package game
 // One floor of the bulwark: generated from a seed (rooms joined by corridors), remembered as seen,
 // and kept for the character's whole life (floors persist; DESIGN.md).
 
-FLOOR_W :: 60
-FLOOR_H :: 40
+FLOOR_W :: 64 // the grid every floor is kept in; a floor uses its own w by h of it, walls beyond
+FLOOR_H :: 44
+
+// A generated floor's size by its number: 60 by 40 up to floor 4, 64 by 44 from floor 5 (slice 2).
+floor_size :: proc(number: int) -> (w, h: int) {
+	return number <= 4 ? 60 : 64, number <= 4 ? 40 : 44
+}
 
 Cell :: enum u8 {
 	Wall,
@@ -23,6 +28,7 @@ MAX_ROOMS :: 14
 
 Floor :: struct {
 	number:     int, // 1 is the lowest floor, above the town
+	w, h:       int, // the part of the grid in use
 	made:       bool,
 	cells:      [FLOOR_H][FLOOR_W]Cell,
 	seen:       [FLOOR_H][FLOOR_W]bool, // remembered (fog of war)
@@ -53,11 +59,12 @@ room_centre :: proc(r: Room) -> [2]int {
 generate_floor :: proc(f: ^Floor, seed: u64, number: int) {
 	f^ = {}
 	f.number = number
+	f.w, f.h = floor_size(number)
 	r := Rng{seed}
 	for attempt := 0; attempt < 400 && f.room_count < MAX_ROOMS; attempt += 1 {
 		room := Room{w = rng_range(&r, 4, 11), h = rng_range(&r, 3, 7)}
-		room.x = rng_range(&r, 1, FLOOR_W - room.w - 2)
-		room.y = rng_range(&r, 1, FLOOR_H - room.h - 2)
+		room.x = rng_range(&r, 1, f.w - room.w - 2)
+		room.y = rng_range(&r, 1, f.h - room.h - 2)
 		clear := true
 		for other in f.rooms[:f.room_count] {
 			// Keep a wall of at least one cell between rooms.

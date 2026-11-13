@@ -66,7 +66,7 @@ Tenant :: struct {
 	tx, ty:   i16, // where it last saw you
 }
 
-MAX_TENANTS :: 160 // id 0 is never used
+MAX_TENANTS :: 320 // id 0 is never used
 TENANT_SIGHT :: 8 // how far a tenant sees a lit climber
 TENANT_DARK_SIGHT :: 2 // and one in the dark
 PLAYER_HIT :: 60 // chance in 100 to land a blow, before Dexterity and the tenant's defence
@@ -351,7 +351,9 @@ blow_tenants :: proc(g: ^Game) {
 	for i in 1 ..< MAX_TENANTS {
 		t := &g.tenants[i]
 		if t.kind != .None && int(t.floor) == g.current && TENANT[t.kind].light {
-			tenant_step(g, i, d)
+			for _ in 0 ..< gust_push(floor_of(g).number) {
+				tenant_step(g, i, d)
+			}
 		}
 		if t.kind != .None && int(t.floor) == g.current && TENANT[t.kind].prop && rng_int(&g.rng, TOPPLE_CHANCE) == 0 {
 			topple(g, i, true)

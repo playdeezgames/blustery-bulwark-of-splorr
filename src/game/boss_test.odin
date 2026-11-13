@@ -100,7 +100,7 @@ test_the_bones_are_only_propped_up :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_the_skeleton_drops_the_key_and_the_slice_ends :: proc(t: ^testing.T) {
+test_the_skeleton_drops_the_key_to_floor_five :: proc(t: ^testing.T) {
 	g := boss_game()
 	defer free(g)
 	id := find_kind(g, .Skeleton)
@@ -136,13 +136,15 @@ test_the_skeleton_drops_the_key_and_the_slice_ends :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.items[ground_item_at(g, g.x, g.y)].kind, Item_Kind.Key)
 	command(g, .Confirm)
 	testing.expect(t, has_key(g))
-	testing.expect_value(t, g.mode, Mode.Notice)
-	command(g, .Confirm)
-	testing.expect_value(t, g.mode, Mode.Play)
-	// The door to floor 5 opens on scaffolding.
+	testing.expect_value(t, g.mode, Mode.Play) // the end-of-slice notice moved to the key to floor 9
+	// The door opens on floor 5 (slice 2), and its stairs down lead back to the door.
 	teleport(g, floor_of(g).up)
 	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 5)
+	testing.expect_value(t, floor_of(g).w, 64)
+	command(g, .Confirm) // on floor 5's stairs down
 	testing.expect_value(t, floor_of(g).number, 4)
+	testing.expect_value(t, [2]int{g.x, g.y}, floor_of(g).up)
 	// Back in town the herald claims it.
 	cast_spell(g, .Return, {0, 0})
 	testing.expect_value(t, string(g.proclamation[:g.proclamation_n]), "His Lordship has destroyed the Undead Horde, as foretold.")
@@ -163,4 +165,20 @@ test_the_windchute_opens_once_floor_four_is_reached :: proc(t: ^testing.T) {
 	testing.expect(t, choose(g, .Chute))
 	testing.expect_value(t, g.current, BOSS_INDEX)
 	testing.expect_value(t, cell_at(g, g.x, g.y), Cell.Stairs_Down)
+}
+
+// A key lost in a fall above floor 4 must not lock you out: the door stays open once opened.
+@(test)
+test_the_door_to_floor_five_stays_open :: proc(t: ^testing.T) {
+	g := boss_game()
+	defer free(g)
+	id := new_item(g, .Key)
+	testing.expect(t, stow(g, id))
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 5)
+	free_item(g, id) // lost
+	enter_floor(g, BOSS_INDEX, .Stairs_Up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 5)
 }

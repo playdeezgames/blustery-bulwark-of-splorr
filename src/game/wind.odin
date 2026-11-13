@@ -9,12 +9,17 @@ package game
 
 COMPASS := [8]string{"N", "S", "W", "E", "NW", "NE", "SW", "SE"} // same order as DIRECTIONS
 
-// Turns between gusts, by floor number (1 to 4; floor 4 arrives in step 8). Higher is windier.
-GUST_PERIOD := [4]int{12, 11, 10, 8}
+// Turns between gusts, by floor number (1 to 8; floors 5 to 8 from slice 2). Higher is windier.
+GUST_PERIOD := [8]int{12, 11, 10, 8, 9, 8, 8, 8}
 GUST_WARNING :: 2 // turns of warning before a gust
 
 // Chance in 100 that a gust blows out a lit torch, by floor number.
-SNUFF_CHANCE := [4]int{25, 35, 45, 60}
+SNUFF_CHANCE := [8]int{25, 35, 45, 60, 50, 55, 60, 65}
+
+// Cells a gust pushes you (and light things and tenants), by floor number: 2 from floor 5.
+gust_push :: proc(number: int) -> int {
+	return number >= 5 ? 2 : 1
+}
 
 TORCH_TURNS :: 300 // a fresh torch
 DARK_SIGHT :: 1
@@ -113,16 +118,32 @@ gust :: proc(g: ^Game) {
 	if anchored(g) {
 		say(g, "A gust tugs at you. ", load_anchors(g) ? "Yer load" : "Yer spell", " holds you down.")
 		g.anchor_spell = false
-	} else if passable(floor_cell(f, g.x + d.x, g.y + d.y)) {
-		g.x += d.x
-		g.y += d.y
-		say(g, "A gust shoves you ", COMPASS[direction_index(d)], ".")
 	} else {
-		// "Costs a little" (DESIGN.md).
-		say(g, "A gust slams you into the wall.")
-		hurt(g, 1, "the wind")
-		if g.mode == .Dead {
-			return
+		// Pushed cell by cell; a wall or a tenant in the way stops you, and "costs a little"
+		// (DESIGN.md).
+		moved := 0
+		blocked := ""
+		for _ in 0 ..< gust_push(f.number) {
+			nx, ny := g.x + d.x, g.y + d.y
+			if !passable(floor_cell(f, nx, ny)) {
+				blocked = "the wall"
+				break
+			}
+			if id := tenant_at(g, nx, ny); id != 0 {
+				blocked = TENANT[g.tenants[id].kind].a
+				break
+			}
+			g.x, g.y = nx, ny
+			moved += 1
+		}
+		if blocked != "" {
+			say(g, moved > 0 ? "A gust shoves you along and slams you into " : "A gust slams you into ", blocked, ".")
+			hurt(g, 1, "the wind")
+			if g.mode == .Dead {
+				return
+			}
+		} else {
+			say(g, moved > 1 ? "A gust hurls you " : "A gust shoves you ", COMPASS[direction_index(d)], ".")
 		}
 	}
 	if g.lit && rng_int(&g.rng, 100) < snuff_chance(f.number) {

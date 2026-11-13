@@ -40,8 +40,8 @@ DIRECTION := [Command][2]int {
 	.Cast       = {0, 0},
 }
 
-FLOOR_COUNT :: 4 // floors in slice 1: three generated, then floor 4 (the first boss) built by hand
-GENERATED_FLOORS :: 3
+FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
+BUILT_FLOORS :: 7 // floors that exist so far (slice 2 step 10): floor 8 is still being built
 
 Mode :: enum u8 {
 	Play,
@@ -127,6 +127,7 @@ Game :: struct {
 	admitted:    bool, // paid to see the Horde
 	boss_dead:   bool,
 	slice_done:  bool, // the end-of-slice notice has been shown
+	unlocked:    bit_set[0 ..< FLOOR_COUNT], // boss floors (by index) whose door up has been opened: it stays open
 }
 
 Told :: struct {
@@ -407,11 +408,13 @@ use_here :: proc(g: ^Game) {
 	case .Stairs_Up:
 		if in_town(g) {
 			gate(g)
-		} else if g.current + 1 < FLOOR_COUNT {
+		} else if g.current == BOSS_INDEX {
+			door_to_floor_five(g)
+		} else if g.current + 1 < BUILT_FLOORS {
 			enter_floor(g, g.current + 1, .Stairs_Down)
 			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")
 		} else {
-			door_to_floor_five(g)
+			say(g, "Above: scaffolding, and a sign. \"Floor 8. Coming soon, by order of His Lordship.\"")
 		}
 	case .Stairs_Down:
 		if g.current > 0 {

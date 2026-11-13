@@ -244,3 +244,33 @@ test_dump_boss :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_BOSS + "-notice.ppm")
 	}
 }
+
+// Floor 5 by eye (-define:DUMP_HIGHER=<prefix>): <prefix>-view.ppm (arriving), <prefix>-map.ppm
+// (the automap of the bigger floor, all of it seen).
+DUMP_HIGHER :: #config(DUMP_HIGHER, "")
+
+@(test)
+test_dump_higher :: proc(t: ^testing.T) {
+	when DUMP_HIGHER != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
+		say(g, "You climb to floor 5. The wind is stronger.")
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGHER + "-view.ppm", fr)
+		f := floor_of(g)
+		for y in 0 ..< FLOOR_H {
+			for x in 0 ..< FLOOR_W {
+				f.seen[y][x] = true
+			}
+		}
+		command(g, .Map)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGHER + "-map.ppm", fr)
+	}
+}
