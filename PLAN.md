@@ -64,3 +64,38 @@ Drafted November 9, 2026. `DESIGN.md` is the specification; this file is how it 
 - The shop price list: set in step 7, for review. The point-buy pool was confirmed in step 4.
 - Tenants restocking on floors you left (DESIGN.md "killed monsters slowly restock"): not built yet.
 - Carnies selling rigged games and charms on the floors: built in step 7 (a stall when bumped); admission to the boss floor built in step 8.
+
+## Slice 2: the second stretch (proposed November 13, 2026)
+
+Everything in this section is Claude's proposal for the user to decide, item by item, as slice 1's was. Nothing is built.
+
+**Goal:** the key to floor 5 opens the next stretch: three more generated floors, windier and more crowded, then floor 8, the second boss floor, "an army of a thousand". On the way you meet the traces of earlier climbers, and the town gives you reasons to come back with yer Jools (the playtest found that money had little use and the town was visited once). When the army is routed, the herald proclaims it, the windchute reaches floor 8, and the slice ends with the key to floor 9 and the same kind of notice as slice 1.
+
+**In the slice**
+- **The floor count settled:** 16 floors, bosses on floors 4, 8 and 12, the champion on 15 and the lord on 16 (DESIGN.md says 12 to 16 floors, with a boss every three or four). Slice 2 builds floors 5 to 8; slice 3 builds 9 to 12; slice 4 builds 13 to 16 and the ending.
+- **Floors 5 to 7:** generated as before, a little bigger (64 by 44), with gusts every 9, 8, 8 turns, an 8-turn gust on floor 8, and a 50, 55, 60 % chance to snuff a lit torch (65 on floor 8). The gust pushes 2 cells from floor 5 on (DESIGN.md: "higher floors have a shorter N and a stronger push").
+- **New tenants**, from floor 5: crows (light and fast; gusts carry them), giant ants (come in threes), goblins (a tougher kobold, sometimes with a dagger to drop), a cave bear (slow and heavy: gusts do not move it, it hits hard, and one maul in ten takes a point of Strength until the temple restores it), and a **bailiff** (does not fight; it takes Jools from yer purse and runs: "Collecting His Lordship's rent." Kill it to get them back). The bailiff is a reason to bank.
+- **Tenants restock** (DESIGN.md "killed monsters slowly restock", open since slice 1): a floor you left gets a new tenant every 300 turns, up to its starting number.
+- **Earlier climbers** (DESIGN.md beat 3): each of floors 5 to 7 has a camp: a cold fire, a bedroll and a note ("Day 40. The wind is louder up here. Nobody is louder than His Lordship.") and heavy gear (worth taking, costly to carry). The notes hint at the top without saying. On floor 6 a climber who stopped there lives in her camp, a **hermit** who trades: food and torches at twice the town's price, and she buys trophies. She knew the mentor ("Tell them I still have their kettle.").
+- **The town after the Horde:** once the Horde is destroyed the shops stock more (Castle of the Winds' "time changes shop stock"). The smith adds a mace, leather armour and a cloak; the general store adds a lantern, oil and a tinderbox; the sage starts selling scrolls and potions you have already named. The temple restores a point of a drained attribute (see the cave bear). Things that cost real Jools: a lantern 60, leather armour 60.
+- **Light, the second clock:** the **lantern** burns oil (a flask lasts 600 turns), and a gust snuffs it a third as often as a torch. The tinderbox relights without a turn.
+- **Levels 5 to 8** and four new spells: **Gale** (aimed: shoves every tenant in a line 3 cells, the wind adding to it or taking away), **Calm** (gusts pass you by for 30 turns), **Sense Things** (shows every item on the floor for 30 turns) and **Blink** (aimed: 4 cells in a line, bent by the wind like a bolt).
+- **Floor 8, "an army of a thousand":** a hand-built hall, a carny at the door ("See the Army of a Thousand! Three Jools! Count them yerself!"), and in the hall about forty rats and a **sergeant** rat in a tiny hat, which carries the key to floor 9. Gust balls and Gale matter here; gusts sweep the rats down the hall. When the sergeant falls the rest scatter. The herald: "His Lordship has routed an army of a thousand, as foretold." You get one Medal (a trophy, 5 Jools).
+- **The windchute** gains floor 8.
+- **The bot** learns to go back to town (Return when its bags are full and it has money to spend) so that the shops show up in the numbers, and climbs to floor 8.
+
+**Not in the slice:** floors 9 and up, bosses 3 and 4, the champion, the lord and the ending, elemental damage and resistances, packs of holding, a second ring slot, LootLocker scores, sound.
+
+**Saves:** a game with eight floors does not fit the slice 1 save, so saves made before slice 2's first step start over once (as with save version 2). Making room for all 16 floors at once would avoid it happening again in slices 3 and 4.
+
+### Proposed build order
+
+10. **Floors 5 to 7 and the door:** the key opens the door on floor 4 onto floor 5; the floors are generated, bigger and windier, and the gust pushes 2 cells; room for all 16 floors in the save. The end-of-slice notice moves to the key to floor 9.
+11. **New tenants and restocking:** crows, giant ants, goblins, the cave bear and the bailiff, with their trophies and lines; restocking on floors you left.
+12. **Earlier climbers:** the camps, notes and heavy gear on floors 5 to 7; the hermit on floor 6 and her trades.
+13. **The town after the Horde:** the new stock, the sage's shelf, the lantern, oil and tinderbox, the temple's restoring.
+14. **Levels 5 to 8 and the four spells.**
+15. **Floor 8, the Army of a Thousand:** the hall, the carny, the rats and the sergeant, the key, the herald, the windchute.
+16. **Balance and polish:** the bot goes back to town and climbs to floor 8; a playtest round as for slice 1; screenshots; Pages when the user says so.
+
+Every number above (tenant stats, prices, oil, spell costs, gust strength) is a starting value for the user to review step by step, as in slice 1.
