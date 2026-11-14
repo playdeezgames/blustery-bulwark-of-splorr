@@ -134,6 +134,8 @@ Game :: struct {
 	// New fields go here, at the end: a save from before them loads with them zero (save.odin).
 	drained:     [Attr]i8, // attribute points a cave bear took (the temple gives them back)
 	met_hermit:  bool, // talked to the hermit: the mentor has a line about her
+	calm_turns:  int, // Calm: gusts pass you by
+	sense_items: int, // Sense Things: every item on the floor shows
 }
 
 Told :: struct {

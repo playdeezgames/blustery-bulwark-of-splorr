@@ -380,3 +380,48 @@ test_dump_later :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_LATER + "-lantern.ppm")
 	}
 }
+
+// Slice 2's spells by eye (-define:DUMP_SPELLS=<prefix>): <prefix>-cast.ppm (all fourteen in the
+// cast list), <prefix>-gale.ppm (a gale's line, tenants shoved) and <prefix>-panel.ppm (Calm and
+// Sense Things running, sensed items dimmed).
+DUMP_SPELLS :: #config(DUMP_SPELLS, "")
+
+@(test)
+test_dump_spells :: proc(t: ^testing.T) {
+	when DUMP_SPELLS != "" {
+		g := open_room()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		g.level = 8
+		g.mana = max_mana(g)
+		command(g, .Cast)
+		g.menu_row = 13
+		shot(g, fr, DUMP_SPELLS + "-cast.ppm")
+		command(g, .Cancel)
+		new_tenant(g, .Ant, g.current, g.x + 1, g.y)
+		new_tenant(g, .Ant, g.current, g.x + 2, g.y)
+		new_tenant(g, .Goblin, g.current, g.x + 4, g.y)
+		cast_gale(g, {1, 0})
+		shot(g, fr, DUMP_SPELLS + "-gale.ppm")
+		for i in 1 ..< MAX_TENANTS {
+			g.tenants[i] = {}
+		}
+		g.fx_len = 0
+		for k, i in ([?]Item_Kind{.Bread, .Potion_Healing, .Torch}) {
+			id := new_item(g, k)
+			g.items[id].place, g.items[id].floor = .Ground, i8(g.current)
+			g.items[id].x, g.items[id].y = i16(g.x - 9 + 2 * i), i16(g.y + 5)
+		}
+		g.calm_turns = CALM_TURNS
+		g.sense_items = SENSE_THINGS_TURNS
+		g.lit = false
+		refresh_view(g)
+		shot(g, fr, DUMP_SPELLS + "-panel.ppm")
+	}
+}

@@ -18,6 +18,11 @@ Spell :: enum u8 {
 	Identify,
 	Kindle,
 	Anchor,
+	// From level 5 (slice 2 step 14).
+	Gale,
+	Calm,
+	Sense_Things,
+	Blink,
 }
 
 Spell_Info :: struct {
@@ -39,6 +44,19 @@ SPELL := [Spell]Spell_Info {
 	.Identify      = {"Identify", 5, false, true, "name one thing carried"},
 	.Kindle        = {"Kindle", 1, false, true, "light torch, no turn"},
 	.Anchor        = {"Anchor", 2, false, true, "hold fast, one gust"},
+	.Gale          = {"Gale", 5, true, true, "shove tenants in a line"},
+	.Calm          = {"Calm", 4, false, true, "no gusts, 30 turns"},
+	.Sense_Things  = {"Sense Things", 3, false, true, "show items, 30 turns"},
+	.Blink         = {"Blink", 4, true, true, "jump 4; wind bends it"},
+}
+
+// The level a spell can first be chosen at: slice 2's four from level 5.
+spell_level :: proc(s: Spell) -> int {
+	#partial switch s {
+	case .Gale, .Calm, .Sense_Things, .Blink:
+		return SLICE2_SPELL_LEVEL
+	}
+	return 1
 }
 
 // Tuning (PLAN.md step 5; to review).
@@ -49,6 +67,12 @@ BALL_DRIFT :: 2 // a gust ball is lighter: it drifts every second cell
 WARD_TURNS :: 40
 WARD_ARMOUR :: 3
 SENSE_TURNS :: 30
+SLICE2_SPELL_LEVEL :: 5
+GALE_RANGE :: 6 // cells along the line it shoves
+GALE_SHOVE :: 3 // cells a tenant is shoved, plus how much the wind is behind it (-2 to +2)
+CALM_TURNS :: 30
+SENSE_THINGS_TURNS :: 30
+BLINK_RANGE :: 4 // cells, plus how much the wind is behind it; drifts like a bolt
 HOP_MIN :: 2
 HOP_MAX :: 6
 LEVEL_HEALTH :: 2 // more health per level after the first
@@ -95,7 +119,7 @@ check_level :: proc(g: ^Game) {
 learnable :: proc(g: ^Game, out: ^[len(Spell)]Spell) -> int {
 	n := 0
 	for s in Spell {
-		if SPELL[s].ready && s not_in g.known {
+		if SPELL[s].ready && s not_in g.known && spell_level(s) <= g.level {
 			out[n] = s
 			n += 1
 		}
@@ -263,6 +287,16 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	case .Anchor:
 		g.anchor_spell = true
 		say(g, "You feel heavy until the next gust has passed.")
+	case .Gale:
+		cast_gale(g, d)
+	case .Calm:
+		g.calm_turns = CALM_TURNS
+		say(g, "The air goes still round you.")
+	case .Sense_Things:
+		g.sense_items = SENSE_THINGS_TURNS
+		say(g, "You feel what lies about on this floor.")
+	case .Blink:
+		blink(g, d)
 	}
 	if turn {
 		end_turn(g)
@@ -350,6 +384,99 @@ cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool) {
 	}
 }
 
+// Gale: a blast along one of eight lines. Every tenant within GALE_RANGE on it is shoved away from
+// you GALE_SHOVE cells, more with the wind behind the blast and less against it; one stopped by a
+// wall or another tenant is slammed (1 to 3). Propped-up bones fall over. The line does not bend.
+cast_gale :: proc(g: ^Game, d: [2]int) {
+	f := floor_of(g)
+	w := wind_blow(f)
+	shove := max(1, GALE_SHOVE + d.x * w.x + d.y * w.y)
+	g.fx_len, g.fx_blast = 0, false
+	// Who stands on the line, farthest first (so the far ones move out of the near ones' way).
+	ids: [GALE_RANGE]int
+	n := 0
+	for step in 1 ..= GALE_RANGE {
+		c := [2]int{g.x, g.y} + step * d
+		if !passable(floor_cell(f, c.x, c.y)) {
+			break
+		}
+		if g.fx_len < MAX_FX {
+			g.fx[g.fx_len] = c
+			g.fx_len += 1
+		}
+		if id := tenant_at(g, c.x, c.y); id != 0 {
+			ids[n] = id
+			n += 1
+		}
+	}
+	say(g, "A gale tears out of yer hands.")
+	for i := n - 1; i >= 0; i -= 1 {
+		id := ids[i]
+		t := &g.tenants[id]
+		if TENANT[t.kind].prop {
+			topple(g, id, false)
+			continue
+		}
+		if !hostile(t) {
+			t.angry = true
+			say(g, "The ", TENANT[t.kind].name, " shouts for the law. There is none.")
+		}
+		t.awake = true
+		t.tx, t.ty = i16(g.x), i16(g.y)
+		moved := 0
+		for _ in 0 ..< shove {
+			nx, ny := int(t.x) + d.x, int(t.y) + d.y
+			if !tenant_can_enter(g, nx, ny) {
+				break
+			}
+			t.x, t.y = i16(nx), i16(ny)
+			moved += 1
+		}
+		if moved < shove {
+			spell_hit(g, id, rng_range(&g.rng, 1, 3), "gale")
+		}
+	}
+}
+
+// Blink: up to BLINK_RANGE cells (with the wind's help or hindrance) along one of eight lines,
+// drifting downwind like a bolt; it stops short of a wall or a tenant.
+blink :: proc(g: ^Game, d: [2]int) {
+	f := floor_of(g)
+	w := wind_blow(f)
+	along := w == d || w == -d
+	reach := max(1, BLINK_RANGE + d.x * w.x + d.y * w.y)
+	g.fx_len, g.fx_blast = 0, false
+	pos := [2]int{g.x, g.y}
+	try :: proc(g: ^Game, f: ^Floor, pos: ^[2]int, by: [2]int) -> bool {
+		next := pos^ + by
+		if !passable(floor_cell(f, next.x, next.y)) || tenant_at(g, next.x, next.y) != 0 {
+			return false
+		}
+		pos^ = next
+		if g.fx_len < MAX_FX {
+			g.fx[g.fx_len] = next
+			g.fx_len += 1
+		}
+		return true
+	}
+	for step in 1 ..= reach {
+		if !try(g, f, &pos, d) {
+			break
+		}
+		if !along && step % BOLT_DRIFT == 0 && !try(g, f, &pos, w) {
+			break
+		}
+	}
+	if pos == {g.x, g.y} {
+		say(g, "The spell finds nowhere to put you.")
+		return
+	}
+	g.x, g.y = pos.x, pos.y
+	stop_travel(g)
+	refresh_view(g)
+	say(g, "You blink.")
+}
+
 spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 	t := &g.tenants[id]
 	info := TENANT[t.kind]
@@ -382,6 +509,15 @@ magic_turn :: proc(g: ^Game) {
 	if g.sense_turns > 0 {
 		g.sense_turns -= 1
 	}
+	if g.sense_items > 0 {
+		g.sense_items -= 1
+	}
+	if g.calm_turns > 0 {
+		g.calm_turns -= 1
+		if g.calm_turns == 0 {
+			say(g, "The calm round you lifts.")
+		}
+	}
 	if g.turn % mana_period(g) == 0 && g.mana < max_mana(g) {
 		g.mana += 1
 	}
@@ -389,7 +525,7 @@ magic_turn :: proc(g: ^Game) {
 
 // Screens: choosing a spell at a level, and casting one. Rows in the map area.
 MENU_TOP :: 30
-MENU_ROW_H :: 14
+MENU_ROW_H :: 10 // 14 rows fit (every spell) above the hint line; 14 px until slice 2 step 14
 MENU_COST_X :: 96
 MENU_USE_X :: 112
 

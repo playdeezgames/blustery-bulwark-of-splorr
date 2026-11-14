@@ -71,14 +71,15 @@ draw_map :: proc(f: ^Frame, g: ^Game) {
 	for vy in 0 ..< VIEW_H {
 		for vx in 0 ..< VIEW_W {
 			x, y := ox + vx, oy + vy
-			if x < 0 || y < 0 || x >= FLOOR_W || y >= FLOOR_H || !g.vis[y][x] {
+			if x < 0 || y < 0 || x >= FLOOR_W || y >= FLOOR_H || (!g.vis[y][x] && g.sense_items <= 0) {
 				continue
 			}
 			if id := ground_item_at(g, x, y); id != 0 {
 				k := KIND[g.items[id].kind]
 				sx, sy := MAP_X + vx * TILE, MAP_Y + vy * TILE
 				fill_rect(f, sx, sy, TILE, TILE, COLOR_BLACK)
-				draw_gfx(f, k.gfx, sx, sy, item_color(g, id))
+				// Out of sight but sensed (Sense Things): dimmed.
+				draw_gfx(f, k.gfx, sx, sy, g.vis[y][x] ? item_color(g, id) : COLOR_DARK)
 			}
 		}
 	}
@@ -271,6 +272,16 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		y += 9
 		print(f, "Anchor  till gust", x, y, COLOR_CYAN)
 	}
+	if g.calm_turns > 0 {
+		y += 9
+		w = print(f, "Calm    ", x, y, COLOR_CYAN)
+		print(f, itoa(buf[:], g.calm_turns), x + w, y, COLOR_CYAN)
+	}
+	if g.sense_items > 0 {
+		y += 9
+		w = print(f, "Things  ", x, y, COLOR_CYAN)
+		print(f, itoa(buf[:], g.sense_items), x + w, y, COLOR_CYAN)
+	}
 	if g.mode == .Inventory {
 		hints := [?]string{"Enter: take/put/use", "Right: open", "Left: back", "Esc/I: close"}
 		for h, i in hints {
@@ -284,7 +295,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 2, step 13", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 2, step 14", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

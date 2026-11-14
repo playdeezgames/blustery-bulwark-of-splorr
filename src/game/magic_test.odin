@@ -50,7 +50,87 @@ test_every_spell_is_offered :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	list: [len(Spell)]Spell
+	testing.expect_value(t, learnable(g, &list), len(Spell) - 4) // slice 2's four wait for level 5
+	g.level = SLICE2_SPELL_LEVEL
 	testing.expect_value(t, learnable(g, &list), len(Spell))
+}
+
+@(test)
+test_gale_shoves_tenants_down_the_line :: proc(t: ^testing.T) {
+	g := open_room() // an east wind, every spell known
+	defer free(g)
+	near := new_tenant(g, .Rat, g.current, g.x + 1, g.y)
+	far := new_tenant(g, .Kobold, g.current, g.x + 3, g.y)
+	cast_gale(g, {1, 0}) // with the wind: shoved 3 + 1 cells (no turn passes here)
+	testing.expect_value(t, int(g.tenants[far].x), g.x + 3 + GALE_SHOVE + 1)
+	testing.expect_value(t, int(g.tenants[near].x), g.x + 1 + GALE_SHOVE + 1)
+	testing.expect(t, g.tenants[far].awake)
+	// Against a wall: slammed. Stand two below the north wall with a slime between.
+	f := floor_of(g)
+	top := g.y
+	for floor_cell(f, g.x, top - 1) != .Wall {
+		top -= 1
+	}
+	teleport(g, {g.x, top + 1})
+	h := new_tenant(g, .Slime, g.current, g.x, top)
+	cast_gale(g, {0, -1})
+	testing.expect(t, g.tenants[h].kind == .None || int(g.tenants[h].health) < TENANT[.Slime].health)
+}
+
+@(test)
+test_calm_lets_gusts_pass :: proc(t: ^testing.T) {
+	g := open_room()
+	defer free(g)
+	g.mana = 50
+	cast_spell(g, .Calm, {0, 0})
+	testing.expect(t, g.calm_turns > 0)
+	start := [2]int{g.x, g.y}
+	g.lit = true
+	for _ in 0 ..< 20 {
+		gust(g)
+	}
+	testing.expect_value(t, [2]int{g.x, g.y}, start)
+	testing.expect(t, g.lit)
+}
+
+@(test)
+test_blink_jumps_along_the_line :: proc(t: ^testing.T) {
+	g := open_room() // east wind
+	defer free(g)
+	g.mana = 50
+	start := [2]int{g.x, g.y}
+	cast_spell(g, .Blink, {1, 0}) // with the wind: 4 + 1
+	testing.expect_value(t, [2]int{g.x, g.y}, start + {BLINK_RANGE + 1, 0})
+	// Into the wind it goes less far.
+	start = {g.x, g.y}
+	cast_spell(g, .Blink, {-1, 0})
+	testing.expect_value(t, [2]int{g.x, g.y}, start - {BLINK_RANGE - 1, 0})
+}
+
+@(test)
+test_sense_things_shows_unseen_items :: proc(t: ^testing.T) {
+	g := open_room()
+	defer free(g)
+	g.mana = 50
+	id := new_item(g, .Bread)
+	far := [2]int{g.x + SIGHT + 4, g.y}
+	g.items[id].place, g.items[id].floor, g.items[id].x, g.items[id].y = .Ground, i8(g.current), i16(far.x), i16(far.y)
+	f := new(Frame)
+	defer free(f)
+	cast_spell(g, .Sense_Things, {0, 0})
+	testing.expect(t, g.sense_items > 0)
+	draw_game(f, g)
+	ox, oy := view_origin(g)
+	sx, sy := MAP_X + (far.x - ox) * TILE, MAP_Y + (far.y - oy) * TILE
+	lit := 0
+	for yy in 0 ..< TILE {
+		for xx in 0 ..< TILE {
+			if get_px(f, sx + xx, sy + yy) == COLOR_DARK {
+				lit += 1
+			}
+		}
+	}
+	testing.expect(t, lit > 5)
 }
 
 @(test)

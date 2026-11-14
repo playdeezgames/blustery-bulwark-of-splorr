@@ -125,6 +125,10 @@ gust :: proc(g: ^Game) {
 	d := wind_blow(f)
 	blow_items(g)
 	blow_tenants(g)
+	if g.calm_turns > 0 {
+		say(g, "A gust passes you by.")
+		return // Calm: no push, and yer light stays lit
+	}
 	if anchored(g) {
 		say(g, "A gust tugs at you. ", load_anchors(g) ? "Yer load" : "Yer spell", " holds you down.")
 		g.anchor_spell = false
