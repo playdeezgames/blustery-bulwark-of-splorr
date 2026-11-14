@@ -31,6 +31,8 @@ HERMIT_LINES := [?]string {
 	"\"The wind never stops up here. So I did.\"",
 }
 
+MENTOR_KETTLE :: "\"She kept the kettle? Of course she did.\"" // the mentor, once you have talked to the hermit
+
 HERMIT_MARKUP :: 2 // she sells at twice the town's price
 
 fixed_line :: proc(k: Item_Kind) -> string {

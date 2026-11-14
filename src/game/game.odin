@@ -133,6 +133,7 @@ Game :: struct {
 	unlocked:    bit_set[0 ..< FLOOR_COUNT], // boss floors (by index) whose door up has been opened: it stays open
 	// New fields go here, at the end: a save from before them loads with them zero (save.odin).
 	drained:     [Attr]i8, // attribute points a cave bear took (the temple gives them back)
+	met_hermit:  bool, // talked to the hermit: the mentor has a line about her
 }
 
 Told :: struct {

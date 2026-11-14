@@ -632,13 +632,20 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 	case .Talk:
 		switch g.shop {
 		case .Tavern:
-			say(g, "The mentor: ", MENTOR_LINES[g.talk % len(MENTOR_LINES)])
+			// Once you have talked to the hermit, the mentor has one more line (the user's choice).
+			count := len(MENTOR_LINES) + (g.met_hermit ? 1 : 0)
+			if i := g.talk % count; i < len(MENTOR_LINES) {
+				say(g, "The mentor: ", MENTOR_LINES[i])
+			} else {
+				say(g, "The mentor: ", MENTOR_KETTLE)
+			}
 		case .Sage:
 			say(g, "\"The wind is His Lordship's breath. I have identified it.\"")
 		case .Temple:
 			say(g, "You pray for calm. The priest prays for His Lordship's health.")
 		case .Hermit:
 			say(g, "The hermit: ", HERMIT_LINES[g.talk % len(HERMIT_LINES)])
+			g.met_hermit = true
 		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate:
 		}
 		g.talk += 1

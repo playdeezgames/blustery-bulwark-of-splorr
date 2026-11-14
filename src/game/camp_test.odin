@@ -116,5 +116,19 @@ test_the_hermit_trades_on_floor_six :: proc(t: ^testing.T) {
 	before = carried_jools(g)
 	testing.expect(t, choose(g, .Sell, tail))
 	testing.expect_value(t, carried_jools(g), before + VALUE[.Rat_Tail])
+	testing.expect(t, !g.met_hermit)
 	testing.expect(t, choose(g, .Talk))
+	testing.expect(t, g.met_hermit)
+	// Back in town, the mentor answers her, among the usual lines.
+	command(g, .Cancel)
+	enter_town(g, .Gate)
+	go_in(g, .Tavern)
+	heard := false
+	for _ in 0 ..< len(MENTOR_LINES) + 1 {
+		choose(g, .Talk)
+		if message(&g.last_said) == "The mentor: \"She kept the kettle? Of course she did.\"" {
+			heard = true
+		}
+	}
+	testing.expect(t, heard)
 }
