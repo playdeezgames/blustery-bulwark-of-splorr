@@ -122,7 +122,7 @@ supplies_turn :: proc(g: ^Game) {
 	}
 	if ring := worn_kind(g, .Ring_Draught); ring != 0 && g.lit && rng_int(&g.rng, DRAUGHT_CHANCE) == 0 {
 		g.lit = false
-		say(g, "A draught from yer ", item_name(g, ring), " blows out yer torch.")
+		say(g, "A draught from yer ", item_name(g, ring), " blows out yer ", light_name(g), ".")
 		identify_kind(g, .Ring_Draught)
 		refresh_view(g)
 	}

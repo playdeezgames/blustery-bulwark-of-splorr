@@ -2,10 +2,10 @@
 // Urizen 1-bit tileset by vurmux, https://vurmux.itch.io/urizen-onebit-tileset, CC0 1.0.
 package game
 
-GFX_COUNT :: 59
+GFX_COUNT :: 65
 
 // One 12x12 mask per picture, one bit per pixel: bit (y*12 + x) of the three u64s, 48 bits each.
-GFX := [59][3]u64{
+GFX := [65][3]u64{
 	{0xF1EEDE6EC000, 0x7CE3ACC62F66, 0x5ECCEEC1E9DE}, // Wall (0, 2)
 	{0x222888222888, 0x222888222888, 0x222888222888}, // Floor (2, 5)
 	{0x802802FFE000, 0xB62B62B02B02, 0x000FFEB6EB6E}, // Stairs_Down (23, 0)
@@ -65,4 +65,10 @@ GFX := [59][3]u64{
 	{0x7FC4043F8000, 0x5F47FC60C5F4, 0x0000F0358554}, // Iron_Helm (41, 12)
 	{0x2F42043FC000, 0x2642F42F4264, 0x0000F01082F4}, // Tower_Shield (27, 12)
 	{0x13C514238000, 0x2BA23C200238, 0x27823823823A}, // Hermit (169, 0)
+	{0x3F01E04C0000, 0x1903C07E07F0, 0x000002004008}, // Mace (26, 7)
+	{0xEEE5140E0000, 0x1F01F08E2D16, 0x0000E01100E0}, // Leather_Armour (29, 11)
+	{0x1101B00E0000, 0xDB6FFE7BC318, 0x1B01B05B4DB6}, // Cloak (12, 28)
+	{0x2042940F0000, 0x1281481083FC, 0x1F830C36C168}, // Lantern (5, 42)
+	{0x060000060000, 0x0F00F00F0060, 0x0000F00F00F0}, // Oil_Flask (2, 21)
+	{0x000000000000, 0xF76004F7E6FC, 0x000F7EF7EF72}, // Tinderbox (33, 19)
 }

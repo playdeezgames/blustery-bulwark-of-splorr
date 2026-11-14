@@ -335,3 +335,48 @@ test_dump_camp :: proc(t: ^testing.T) {
 		write_ppm(DUMP_CAMP + "-hermit.ppm", fr)
 	}
 }
+
+// The town after the Horde by eye (-define:DUMP_LATER=<prefix>): <prefix>-smith.ppm,
+// <prefix>-general.ppm, <prefix>-sage.ppm and <prefix>-temple.ppm with the new stock and services,
+// and <prefix>-lantern.ppm (floor 1 by lantern light, the panel showing it).
+DUMP_LATER :: #config(DUMP_LATER, "")
+
+@(test)
+test_dump_later :: proc(t: ^testing.T) {
+	when DUMP_LATER != "" {
+		g := town_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		g.boss_dead = true
+		receive_jools(g, 175)
+		go_in(g, .Smith)
+		shot(g, fr, DUMP_LATER + "-smith.ppm")
+		command(g, .Cancel)
+		go_in(g, .General)
+		shot(g, fr, DUMP_LATER + "-general.ppm")
+		command(g, .Cancel)
+		identify_kind(g, .Potion_Healing)
+		identify_kind(g, .Scroll_Return)
+		go_in(g, .Sage)
+		shot(g, fr, DUMP_LATER + "-sage.ppm")
+		command(g, .Cancel)
+		g.attr[.Strength] -= 1
+		g.drained[.Strength] = 1
+		go_in(g, .Temple)
+		shot(g, fr, DUMP_LATER + "-temple.ppm")
+		command(g, .Cancel)
+		torch := worn(g, .Light)
+		free_item(g, torch)
+		wear(g, new_item(g, .Lantern), .Light)
+		give(g, .Oil_Flask)
+		enter_floor(g, 0, .Stairs_Down)
+		light_torch(g)
+		shot(g, fr, DUMP_LATER + "-lantern.ppm")
+	}
+}

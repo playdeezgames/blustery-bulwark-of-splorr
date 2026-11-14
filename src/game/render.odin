@@ -181,7 +181,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	buf: [12]u8
 	print(f, "Blustery Bulwark", x, 4, COLOR_CYAN)
 	print(f, "of SPLORR!!", x, 13, COLOR_CYAN)
-	draw_gfx(f, .Torch, x, 26, COLOR_ORANGE)
+	draw_gfx(f, g.items[worn(g, .Light)].kind == .Lantern ? .Lantern : .Torch, x, 26, g.items[worn(g, .Light)].kind == .Lantern ? COLOR_YELLOW : COLOR_ORANGE)
 	w := 0
 	if in_town(g) {
 		print(f, "Town", x + 16, 28, COLOR_LIGHT)
@@ -205,9 +205,9 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 	w = print(f, "Food    ", x, y, COLOR_MID)
 	print(f, word, x + w, y, wc)
 	y += 10
-	// Light: turns left in the torch in hand, and spare torches carried.
+	// Light: turns left in the torch or lantern in hand, and spare torches (or oil flasks) carried.
 	w = print(f, "Light   ", x, y, COLOR_MID)
-	fuel, spares := torch_fuel(g), spare_torches(g)
+	fuel, spares := light_fuel(g), light_spares(g)
 	if g.lit {
 		w += print(f, itoa(buf[:], fuel), x + w, y, fuel <= 30 ? COLOR_ORANGE : COLOR_YELLOW)
 	} else {
@@ -284,7 +284,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 2, step 12", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 2, step 13", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

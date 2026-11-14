@@ -383,7 +383,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			return true
 		}
 	}
-	if !g.lit && (torch_fuel(g) > 0 || spare_torches(g) > 0) {
+	if !g.lit && (light_fuel(g) > 0 || spare_torches(g) > 0) {
 		command(g, .Confirm)
 		if !g.lit {
 			light_torch(g)
@@ -571,7 +571,7 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		}
 		s.jools_max = max(s.jools_max, carried_jools(g) + g.bank)
 		s.weight_max = max(s.weight_max, carried_weight(g))
-		if torch_fuel(g) == 0 && spare_torches(g) == 0 && !in_town(g) {
+		if light_fuel(g) == 0 && spare_torches(g) == 0 && !in_town(g) {
 			s.ran_out_torch = true
 		}
 		_ = last_hp
@@ -583,7 +583,7 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 				s.stuck = true
 				when BOT_DEBUG {
 					f := floor_of(g)
-					fmt.printfln("STUCK seed %d mode %v floor %d at %d,%d cell %v turn %d hp %d/%d lit %v fuel %d spare %d hunger %d load %d/%d", seed, g.mode, g.current + 1, g.x, g.y, f.cells[g.y][g.x], g.turn, g.health, max_health(g), g.lit, torch_fuel(g), spare_torches(g), g.hunger, carried_weight(g), carry_limit(g))
+					fmt.printfln("STUCK seed %d mode %v floor %d at %d,%d cell %v turn %d hp %d/%d lit %v fuel %d spare %d hunger %d load %d/%d", seed, g.mode, g.current + 1, g.x, g.y, f.cells[g.y][g.x], g.turn, g.health, max_health(g), g.lit, light_fuel(g), spare_torches(g), g.hunger, carried_weight(g), carry_limit(g))
 					for i in 1 ..< MAX_ITEMS {
 						it := &g.items[i]
 						if it.place == .Ground && int(it.floor) == g.current && abs(int(it.x) - g.x) <= 1 && abs(int(it.y) - g.y) <= 1 {

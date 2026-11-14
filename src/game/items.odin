@@ -65,6 +65,13 @@ Item_Kind :: enum u8 {
 	Iron_Helm,
 	Tower_Shield,
 	Chain_Mail,
+	// The town's stock after the Horde (slice 2 step 13).
+	Mace,
+	Leather_Armour,
+	Cloak,
+	Lantern, // burns oil (fuel); gusts snuff it a third as often as a torch
+	Oil_Flask, // fills a dry lantern
+	Tinderbox, // carried, lighting takes no turn
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -167,6 +174,12 @@ KIND := [Item_Kind]Kind_Info {
 	.Iron_Helm     = {name = "Iron helm", gfx = .Iron_Helm, color = COLOR_LIGHT, weight = 2500, bulk = 3000, slot = .Helmet, armour = 2, durability = 60},
 	.Tower_Shield  = {name = "Tower shield", gfx = .Tower_Shield, color = COLOR_LIGHT, weight = 7000, bulk = 12000, slot = .Shield, armour = 3, durability = 70},
 	.Chain_Mail    = {name = "Chain mail", gfx = .Chain_Mail, color = COLOR_LIGHT, weight = 11000, bulk = 10000, slot = .Armour, armour = 4, durability = 90},
+	.Mace          = {name = "Mace", gfx = .Mace, color = COLOR_LIGHT, weight = 2500, bulk = 2000, slot = .Weapon, dmin = 2, dmax = 8, durability = 60},
+	.Leather_Armour = {name = "Leather armour", gfx = .Leather_Armour, color = COLOR_BROWN, weight = 6000, bulk = 9000, slot = .Armour, armour = 3, durability = 60},
+	.Cloak         = {name = "Cloak", gfx = .Cloak, color = COLOR_BROWN, weight = 1000, bulk = 3000, slot = .Cloak, armour = 1, durability = 40},
+	.Lantern       = {name = "Lantern", gfx = .Lantern, color = COLOR_YELLOW, weight = 1000, bulk = 1500, slot = .Light, fuel = OIL_TURNS},
+	.Oil_Flask     = {name = "Oil flask", gfx = .Oil_Flask, color = COLOR_ORANGE, weight = 500, bulk = 500},
+	.Tinderbox     = {name = "Tinderbox", gfx = .Tinderbox, color = COLOR_BROWN, weight = 200, bulk = 300},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
@@ -488,8 +501,8 @@ item_name :: proc(g: ^Game, id: int) -> string {
 	case .Jools:
 		add(buf[:], &n, itoa(num[:], int(it.count)))
 		add(buf[:], &n, " Jools")
-	case .Torch:
-		add(buf[:], &n, "Torch (")
+	case .Torch, .Lantern:
+		add(buf[:], &n, it.kind == .Torch ? "Torch (" : "Lantern (")
 		add(buf[:], &n, itoa(num[:], int(it.fuel)))
 		add(buf[:], &n, ")")
 	case:

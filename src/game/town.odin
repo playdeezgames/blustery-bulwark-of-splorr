@@ -114,11 +114,23 @@ VALUE := #partial [Item_Kind]int {
 	.Iron_Helm       = 30,
 	.Tower_Shield    = 45,
 	.Chain_Mail      = 70,
+	.Mace            = 40,
+	.Leather_Armour  = 60,
+	.Cloak           = 20,
+	.Lantern         = 60,
+	.Oil_Flask       = 6,
+	.Tinderbox       = 12,
 	.Old_Bones       = 1,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
 SMITH_STOCK := [?]Item_Kind{.Dagger, .Club, .Short_Sword, .Leather_Cap, .Boots, .Buckler, .Padded_Armour}
+// Once the Horde is destroyed the shops stock more (slice 2 step 13; Castle of the Winds' "time
+// changes shop stock").
+GENERAL_LATER := [?]Item_Kind{.Lantern, .Oil_Flask, .Tinderbox}
+SMITH_LATER := [?]Item_Kind{.Mace, .Leather_Armour, .Cloak}
+SAGE_SHELF := [?]Item_Kind{.Potion_Healing, .Potion_Mana, .Potion_Sight, .Scroll_Return, .Scroll_Identify, .Scroll_Uncurse} // once named
+TEMPLE_RESTORE :: 25 // a drained attribute point back
 
 // Tuning (PLAN.md step 7; to review).
 SAGE_FEE :: 10
@@ -365,6 +377,7 @@ Act :: enum u8 {
 	Admit,
 	Climb,
 	Chute,
+	Restore, // arg: an Attr the cave bear drained
 }
 
 Row :: struct {
@@ -428,6 +441,11 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 			}
 			add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 		}
+		if g.boss_dead {
+			for k in GENERAL_LATER {
+				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+			}
+		}
 	case .Smith:
 		for i in 1 ..< MAX_ITEMS {
 			if is_carried(g, i) && KIND[g.items[i].kind].durability > 0 && repair_price(g, i) > 0 {
@@ -436,6 +454,11 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		}
 		for k in SMITH_STOCK {
 			add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+		}
+		if g.boss_dead {
+			for k in SMITH_LATER {
+				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+			}
 		}
 		for i in 1 ..< MAX_ITEMS {
 			if sellable(g, i) && KIND[g.items[i].kind].durability > 0 {
@@ -449,6 +472,13 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 				add_row(rows, &n, .Identify, i, SAGE_FEE, "Name ", item_name(g, i))
 			}
 		}
+		if g.boss_dead {
+			for k in SAGE_SHELF {
+				if k in g.ident {
+					add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+				}
+			}
+		}
 		if n == 0 {
 			add_row(rows, &n, .Talk, 0, 0, "Ask about the wind")
 		}
@@ -460,6 +490,11 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 			if g.items[i].place == .Worn && g.items[i].cursed {
 				add_row(rows, &n, .Uncurse, 0, TEMPLE_UNCURSE, "Lift a curse")
 				break
+			}
+		}
+		for a in Attr {
+			if g.drained[a] > 0 {
+				add_row(rows, &n, .Restore, int(a), TEMPLE_RESTORE, "Restore ", ATTR_NAME[a])
 			}
 		}
 		if n == 0 {
@@ -612,6 +647,13 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 				}
 			}
 			say(g, "The priest lifts the curse. What you wear will come off now.")
+		}
+	case .Restore:
+		a := Attr(r.arg)
+		if g.drained[a] > 0 && pay(g, r.price) {
+			g.drained[a] -= 1
+			g.attr[a] += 1
+			say(g, "The priest restores a point of ", ATTR_NAME[a], ". \"His Lordship's bears are His Lordship's.\"")
 		}
 	case .Deposit:
 		have := carried_jools(g)

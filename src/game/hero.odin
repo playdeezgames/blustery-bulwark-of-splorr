@@ -230,7 +230,7 @@ wake :: proc(g: ^Game) {
 	say(g, "You wake in the temple. They fed you.")
 	say(g, "What you carried lies where you fell.")
 	enter_town(g, .Temple)
-	g.lit = torch_fuel(g) > 0
+	g.lit = light_fuel(g) > 0
 	open_learn_if_owed(g)
 }
 

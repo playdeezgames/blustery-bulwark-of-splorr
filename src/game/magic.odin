@@ -180,7 +180,7 @@ cast_command :: proc(g: ^Game, c: Command) {
 choose_spell :: proc(g: ^Game, s: Spell) {
 	g.mode = .Play
 	if s == .Kindle && g.lit {
-		say(g, "Yer torch already burns.")
+		say(g, "Yer ", light_name(g), " already burns.")
 		return
 	}
 	if SPELL[s].aimed {

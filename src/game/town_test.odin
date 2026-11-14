@@ -193,12 +193,12 @@ test_the_herald_claims_yer_deeds :: proc(t: ^testing.T) {
 test_town_is_calm_and_daylit :: proc(t: ^testing.T) {
 	g := town_game()
 	defer free(g)
-	fuel := torch_fuel(g)
+	fuel := light_fuel(g)
 	start := [2]int{g.x, g.y}
 	for _ in 0 ..< 40 {
 		command(g, .Wait)
 	}
-	testing.expect_value(t, torch_fuel(g), fuel)
+	testing.expect_value(t, light_fuel(g), fuel)
 	testing.expect_value(t, [2]int{g.x, g.y}, start)
 	testing.expect(t, g.vis[g.town.down.y][g.town.down.x])
 }

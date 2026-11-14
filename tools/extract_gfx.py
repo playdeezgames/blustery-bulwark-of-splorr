@@ -81,6 +81,13 @@ PICKS = [
     ('Iron_Helm',   41, 12),  # a great helm
     ('Tower_Shield', 27, 12),
     ('Hermit',     169, 0),   # a figure with a staff
+    # The town's stock after the Horde (slice 2 step 13).
+    ('Mace',        26, 7),
+    ('Leather_Armour', 29, 11),
+    ('Cloak',       12, 28),  # a hooded cloak
+    ('Lantern',      5, 42),
+    ('Oil_Flask',    2, 21),  # a bottle
+    ('Tinderbox',   33, 19),  # a small lockbox
 ]
 
 def tile(col, row):

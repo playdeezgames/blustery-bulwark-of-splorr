@@ -106,6 +106,12 @@ Gfx :: enum {
 	Iron_Helm,
 	Tower_Shield,
 	Hermit,
+	Mace,
+	Leather_Armour,
+	Cloak,
+	Lantern,
+	Oil_Flask,
+	Tinderbox,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

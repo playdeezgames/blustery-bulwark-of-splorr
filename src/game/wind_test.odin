@@ -102,7 +102,7 @@ test_torch_burns_out_and_a_spare_is_lit :: proc(t: ^testing.T) {
 	turn := g.turn
 	command(g, .Confirm)
 	testing.expect(t, g.lit)
-	testing.expect_value(t, torch_fuel(g), TORCH_TURNS - 1)
+	testing.expect_value(t, light_fuel(g), TORCH_TURNS - 1)
 	testing.expect_value(t, spare_torches(g), spares - 1)
 	testing.expect_value(t, g.turn, turn + 1)
 }
@@ -116,11 +116,11 @@ test_gusts_snuff_torches_and_relighting_keeps_the_fuel :: proc(t: ^testing.T) {
 	for _ in 0 ..< 200 {
 		g.x, g.y = spot.x, spot.y
 		g.gust_in = 1
-		fuel := torch_fuel(g)
+		fuel := light_fuel(g)
 		command(g, .Wait)
 		if !g.lit {
 			snuffed += 1
-			testing.expect_value(t, torch_fuel(g), fuel - 1) // blown out, not used up
+			testing.expect_value(t, light_fuel(g), fuel - 1) // blown out, not used up
 			g.x, g.y = spot.x, spot.y
 			g.gust_in = 1000
 			command(g, .Confirm)

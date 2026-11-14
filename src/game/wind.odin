@@ -22,6 +22,8 @@ gust_push :: proc(number: int) -> int {
 }
 
 TORCH_TURNS :: 300 // a fresh torch
+OIL_TURNS :: 600 // a lantern's flask of oil
+LANTERN_SNUFF :: 3 // a gust snuffs a lit lantern a third as often as a torch
 DARK_SIGHT :: 1
 
 gust_period :: proc(number: int) -> int {
@@ -67,11 +69,19 @@ end_turn :: proc(g: ^Game) {
 	f := floor_of(g)
 	if g.lit && !in_town(g) { // daylight in town: the torch is not used up
 		id := worn(g, .Light)
-		if id == 0 || g.items[id].kind != .Torch {
+		if id == 0 || !is_light(g.items[id].kind) {
 			g.lit = false
 		} else {
 			g.items[id].fuel -= 1
-			if g.items[id].fuel <= 0 {
+			if g.items[id].fuel <= 0 && g.items[id].kind == .Lantern {
+				g.items[id].fuel = 0
+				g.lit = false
+				if oil_flasks(g) > 0 {
+					say(g, "Yer lantern runs dry. Enter/OK to fill it.")
+				} else {
+					say(g, "Yer lantern runs dry, and you have no oil.")
+				}
+			} else if g.items[id].fuel <= 0 {
 				free_item(g, id)
 				g.lit = false
 				if spare_torches(g) > 0 {
@@ -146,9 +156,13 @@ gust :: proc(g: ^Game) {
 			say(g, moved > 1 ? "A gust hurls you " : "A gust shoves you ", COMPASS[direction_index(d)], ".")
 		}
 	}
-	if g.lit && rng_int(&g.rng, 100) < snuff_chance(f.number) {
+	chance := snuff_chance(f.number)
+	if g.items[worn(g, .Light)].kind == .Lantern {
+		chance /= LANTERN_SNUFF
+	}
+	if g.lit && rng_int(&g.rng, 100) < chance {
 		g.lit = false
-		say(g, "The gust blows out yer torch. Enter/OK to relight.")
+		say(g, "The gust blows out yer ", light_name(g), ". Enter/OK to relight.")
 	}
 }
 
@@ -173,13 +187,46 @@ spare_torches :: proc(g: ^Game) -> int {
 	return n
 }
 
-// Turns left in the torch in the light slot (0 when there is none).
-torch_fuel :: proc(g: ^Game) -> int {
+is_light :: proc(k: Item_Kind) -> bool {
+	return k == .Torch || k == .Lantern
+}
+
+// "torch" or "lantern": what is in the light slot.
+light_name :: proc(g: ^Game) -> string {
+	return g.items[worn(g, .Light)].kind == .Lantern ? "lantern" : "torch"
+}
+
+// Turns left in the torch or lantern in the light slot (0 when there is none).
+light_fuel :: proc(g: ^Game) -> int {
 	id := worn(g, .Light)
-	if id == 0 || g.items[id].kind != .Torch {
+	if id == 0 || !is_light(g.items[id].kind) {
 		return 0
 	}
 	return int(g.items[id].fuel)
+}
+
+// What can relight yer light: oil flasks for a lantern in the light slot, else spare torches.
+light_spares :: proc(g: ^Game) -> int {
+	return g.items[worn(g, .Light)].kind == .Lantern ? oil_flasks(g) : spare_torches(g)
+}
+
+oil_flasks :: proc(g: ^Game) -> int {
+	n := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].kind == .Oil_Flask && is_carried(g, i) {
+			n += 1
+		}
+	}
+	return n
+}
+
+has_tinderbox :: proc(g: ^Game) -> bool {
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].kind == .Tinderbox && is_carried(g, i) {
+			return true
+		}
+	}
+	return false
 }
 
 // Confirm with nothing else to do: relight the torch in the light slot, or take a spare (the belt's
@@ -188,12 +235,38 @@ light_torch :: proc(g: ^Game, takes_turn := true) -> bool {
 	if g.lit {
 		return false
 	}
+	quick := !takes_turn || has_tinderbox(g) // a tinderbox (or Kindle) takes no turn
 	id := worn(g, .Light)
 	if id != 0 && g.items[id].kind == .Torch {
 		g.lit = true
 		say(g, "You light yer torch.")
 		refresh_view(g)
-		if takes_turn {
+		if !quick {
+			end_turn(g)
+		}
+		return true
+	}
+	if id != 0 && g.items[id].kind == .Lantern {
+		if g.items[id].fuel <= 0 {
+			oil := 0
+			for i in 1 ..< MAX_ITEMS {
+				if g.items[i].kind == .Oil_Flask && is_carried(g, i) {
+					oil = i
+				}
+			}
+			if oil == 0 {
+				say(g, "Yer lantern is dry, and you have no oil.")
+				return true
+			}
+			free_item(g, oil)
+			g.items[id].fuel = OIL_TURNS
+			say(g, "You fill yer lantern and light it.")
+		} else {
+			say(g, "You light yer lantern.")
+		}
+		g.lit = true
+		refresh_view(g)
+		if !quick {
 			end_turn(g)
 		}
 		return true
@@ -225,7 +298,7 @@ light_torch :: proc(g: ^Game, takes_turn := true) -> bool {
 	g.lit = true
 	say(g, "You light a fresh torch.")
 	refresh_view(g)
-	if takes_turn {
+	if !quick {
 		end_turn(g)
 	}
 	return true
