@@ -156,7 +156,7 @@ stuck_on :: proc(g: ^Game, id: int) -> bool {
 
 // Things to eat, drink or read.
 usable :: proc(k: Item_Kind) -> bool {
-	return KIND[k].food > 0 || k == .Spellbook || KIND[k].group == .Potion || KIND[k].group == .Scroll
+	return KIND[k].food > 0 || k == .Spellbook || k == .Note || KIND[k].group == .Potion || KIND[k].group == .Scroll
 }
 
 // Eats, drinks or reads an item from the inventory. A turn passes (Return excepted). False when it
@@ -168,6 +168,11 @@ use_item :: proc(g: ^Game, id: int) -> bool {
 	name_buf: [32]u8
 	n := copy(name_buf[:], item_name(g, id))
 	name := string(name_buf[:n])
+	if k == .Note {
+		read_note(g, int(it.fuel))
+		end_turn(g)
+		return true
+	}
 	if info.food > 0 {
 		free_item(g, id)
 		g.hunger = max(0, g.hunger - info.food)

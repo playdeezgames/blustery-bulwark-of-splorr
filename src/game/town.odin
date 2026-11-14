@@ -40,6 +40,7 @@ Shop :: enum u8 {
 	Carny, // a carny's stall on the floors
 	Admission, // the carny at floor 4's door
 	Gate, // the bulwark gate, once the windchute is open
+	Hermit, // the hermit's camp on floor 6 (camp.odin)
 }
 
 Shop_Info :: struct {
@@ -62,6 +63,7 @@ SHOP := [Shop]Shop_Info {
 	.Carny   = {0, "A carny's stall", "", "\"Step up! Every game a winner, nearly!\""},
 	.Admission = {0, "The door to the Horde", "", "\"See the Undead Horde! Two Jools! Terrifying! Mostly!\""},
 	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to floor 4, where you have been."},
+	.Hermit  = {0, "The hermit's camp", "", "\"Twice the town's prices. The town is a long way down.\""},
 }
 
 // What a thing is worth in Jools (shops sell at this, the smith buys gear at half, the junk shop
@@ -108,6 +110,10 @@ VALUE := #partial [Item_Kind]int {
 	.Goblin_Ear      = 6,
 	.Bear_Hide       = 15,
 	.Eviction_Notice = 4,
+	.Note            = 1,
+	.Iron_Helm       = 30,
+	.Tower_Shield    = 45,
+	.Chain_Mail      = 70,
 	.Old_Bones       = 1,
 }
 
@@ -494,6 +500,8 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		add_row(rows, &n, .Toss, 0, RING_TOSS, "Ring toss (win a prize)")
 		add_row(rows, &n, .Buy, int(Item_Kind.Wind_Charm), VALUE[.Wind_Charm], "Buy a Wind charm")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
+	case .Hermit:
+		hermit_rows(g, rows, &n)
 	case .Admission:
 		add_row(rows, &n, .Admit, 0, ADMISSION, "Pay to see the Horde")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
@@ -629,6 +637,8 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			say(g, "\"The wind is His Lordship's breath. I have identified it.\"")
 		case .Temple:
 			say(g, "You pray for calm. The priest prays for His Lordship's health.")
+		case .Hermit:
+			say(g, "The hermit: ", HERMIT_LINES[g.talk % len(HERMIT_LINES)])
 		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate:
 		}
 		g.talk += 1

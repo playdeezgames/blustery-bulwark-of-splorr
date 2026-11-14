@@ -73,6 +73,14 @@ PICKS = [
     ('Bailiff',    123, 0),   # a figure holding a ledger
     ('Feather',     26, 26),
     ('Hide',         2, 23),
+    # Earlier climbers' camps and the hermit (slice 2 step 12).
+    ('Campfire',     0, 42),  # painted grey: long cold
+    ('Bedroll',      4, 23),  # a cloth roll
+    ('Note',        53, 20),  # a written page
+    ('Chain_Mail',  30, 11),
+    ('Iron_Helm',   41, 12),  # a great helm
+    ('Tower_Shield', 27, 12),
+    ('Hermit',     169, 0),   # a figure with a staff
 ]
 
 def tile(col, row):

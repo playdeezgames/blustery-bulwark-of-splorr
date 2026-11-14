@@ -160,7 +160,9 @@ bfs :: proc(g: ^Game, want: Goal) -> Plan {
 			if !f.seen[n.y][n.x] || !passable(f.cells[n.y][n.x]) {
 				continue
 			}
-			if v.tenant[n.y][n.x] != 0 && want not_in v.goal[n.y][n.x] {
+			// A tenant blocks the way, unless it is what we are after (never a frontier or an item
+			// under a peaceful one: that only had the bot waiting beside the hermit for ever).
+			if v.tenant[n.y][n.x] != 0 && !((want == .Hostile || want == .Ticket) && want in v.goal[n.y][n.x]) {
 				continue
 			}
 			v.done[n.y][n.x] = true
@@ -176,7 +178,7 @@ bfs :: proc(g: ^Game, want: Goal) -> Plan {
 worth_taking :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
 	k := it.kind
-	if k == .Old_Bones || k == .None {
+	if k == .Old_Bones || k == .None || KIND[k].fixed {
 		return false
 	}
 	if KIND[k].slot != .None && k != .Torch && !is_container(k) && worn(g, KIND[k].slot) != 0 && KIND[k].dmax == 0 {
@@ -602,6 +604,20 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 			}
 		} else {
 			idle = 0
+		}
+	}
+	when BOT_DEBUG {
+		if !s.won && !s.stuck {
+			fmt.printfln("OUT seed %d mode %v floor %d at %d,%d turn %d hp %d/%d", seed, g.mode, g.current + 1, g.x, g.y, g.turn, g.health, max_health(g))
+			for i in 1 ..< MAX_TENANTS {
+				t := &g.tenants[i]
+				if t.kind != .None && int(t.floor) == g.current && abs(int(t.x) - g.x) <= 2 && abs(int(t.y) - g.y) <= 2 {
+					fmt.printfln("  tenant %v at %d,%d hostile %v", t.kind, t.x, t.y, hostile(t))
+				}
+			}
+			for i in 0 ..< LOG_LINES {
+				fmt.printfln("  log: %s", message(&g.log[i]))
+			}
 		}
 	}
 	s.turns = g.turn

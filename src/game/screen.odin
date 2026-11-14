@@ -99,6 +99,13 @@ Gfx :: enum {
 	Bailiff,
 	Feather,
 	Hide,
+	Campfire,
+	Bedroll,
+	Note,
+	Chain_Mail,
+	Iron_Helm,
+	Tower_Shield,
+	Hermit,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

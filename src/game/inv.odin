@@ -183,6 +183,10 @@ act :: proc(g: ^Game, pane, row: int) {
 		if target != 0 && stuck_on(g, target) {
 			return
 		}
+		if target != 0 && KIND[g.items[target].kind].fixed {
+			say(g, fixed_line(g.items[target].kind))
+			return
+		}
 		if target != 0 {
 			v.held = target
 			if usable(g.items[target].kind) {

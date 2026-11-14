@@ -299,3 +299,39 @@ test_dump_higher :: proc(t: ^testing.T) {
 		write_ppm(DUMP_HIGHER + "-tenants.ppm", fr)
 	}
 }
+
+// Floor 6's camp by eye (-define:DUMP_CAMP=<prefix>): <prefix>-camp.ppm (the fire, bedroll, note,
+// shield and the hermit) and <prefix>-hermit.ppm (her trades).
+DUMP_CAMP :: #config(DUMP_CAMP, "")
+
+@(test)
+test_dump_camp :: proc(t: ^testing.T) {
+	when DUMP_CAMP != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		enter_floor(g, 5, .Stairs_Down)
+		h := 0
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind == .Hermit {
+				h = i
+			} else if int(g.tenants[i].floor) == 5 {
+				g.tenants[i] = {}
+			}
+		}
+		teleport(g, {int(g.tenants[h].x), int(g.tenants[h].y) + 3})
+		say(g, "You see a camp.")
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_CAMP + "-camp.ppm", fr)
+		teleport(g, {int(g.tenants[h].x), int(g.tenants[h].y) + 1})
+		give(g, .Kobold_Ear)
+		receive_jools(g, 20)
+		command(g, .North)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_CAMP + "-hermit.ppm", fr)
+	}
+}

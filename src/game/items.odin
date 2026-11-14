@@ -58,6 +58,13 @@ Item_Kind :: enum u8 {
 	Goblin_Ear,
 	Bear_Hide,
 	Eviction_Notice,
+	// Earlier climbers' camps on floors 5 to 7 (slice 2 step 12).
+	Campfire, // fixed: part of the camp
+	Bedroll, // fixed
+	Note, // fuel holds which note (1 to 3)
+	Iron_Helm,
+	Tower_Shield,
+	Chain_Mail,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -127,6 +134,7 @@ Kind_Info :: struct {
 	food:       int, // hunger an eaten one takes away
 	group:      Group,
 	cursed:     bool, // will not come off once worn, until uncursed
+	fixed:      bool, // part of the place: never picked up or moved (a camp's fire and bedroll)
 }
 
 BELT_SLOT_BULK :: 1000 // the biggest thing a belt slot holds
@@ -153,6 +161,12 @@ KIND := [Item_Kind]Kind_Info {
 	.Goblin_Ear    = {name = "Goblin ear", gfx = .Kobold_Ear, color = 6, weight = 15, bulk = 20, trophy = true},
 	.Bear_Hide     = {name = "Bear hide", gfx = .Hide, color = COLOR_BROWN, weight = 3000, bulk = 6000, trophy = true},
 	.Eviction_Notice = {name = "Eviction notice", gfx = .Scroll, color = COLOR_WHITE, weight = 20, bulk = 50, trophy = true},
+	.Campfire      = {name = "Cold campfire", gfx = .Campfire, color = COLOR_MID, weight = 50000, bulk = 50000, fixed = true},
+	.Bedroll       = {name = "Bedroll", gfx = .Bedroll, color = COLOR_LIGHT, weight = 50000, bulk = 50000, fixed = true},
+	.Note          = {name = "Note", gfx = .Note, color = COLOR_WHITE, weight = 10, bulk = 20},
+	.Iron_Helm     = {name = "Iron helm", gfx = .Iron_Helm, color = COLOR_LIGHT, weight = 2500, bulk = 3000, slot = .Helmet, armour = 2, durability = 60},
+	.Tower_Shield  = {name = "Tower shield", gfx = .Tower_Shield, color = COLOR_LIGHT, weight = 7000, bulk = 12000, slot = .Shield, armour = 3, durability = 70},
+	.Chain_Mail    = {name = "Chain mail", gfx = .Chain_Mail, color = COLOR_LIGHT, weight = 11000, bulk = 10000, slot = .Armour, armour = 4, durability = 90},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
@@ -505,6 +519,10 @@ get_here :: proc(g: ^Game) -> bool {
 	id := ground_item_at(g, g.x, g.y)
 	if id == 0 {
 		return false
+	}
+	if KIND[g.items[id].kind].fixed {
+		say(g, fixed_line(g.items[id].kind))
+		return true
 	}
 	pick_up(g, id)
 	return true

@@ -23,6 +23,7 @@ Tenant_Kind :: enum u8 {
 	Goblin,
 	Bear, // heavy: gusts do not move it; a maul can take a point of Strength
 	Bailiff, // does not fight: takes Jools from yer purse and runs
+	Hermit, // floor 6's camp (camp.odin): trades when bumped
 }
 
 Tenant_Info :: struct {
@@ -63,6 +64,7 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Goblin  = {name = "goblin", a = "a goblin", gfx = .Goblin, color = 6, health = 12, hit = 60, dmin = 2, dmax = 6, defence = 15, speed = 10, xp = 6, trophy = .Goblin_Ear, chance = 40, first = 5, verb = "slashes", line = "Hopes to be a landlord one day."},
 	.Bear    = {name = "cave bear", a = "a cave bear", gfx = .Bear, color = COLOR_BROWN, health = 26, hit = 55, dmin = 3, dmax = 8, defence = 10, speed = 5, xp = 12, rare = true, trophy = .Bear_Hide, chance = 60, first = 5, verb = "mauls", line = "Hibernates through rent day, every year."},
 	.Bailiff = {name = "bailiff", a = "a bailiff", gfx = .Bailiff, color = 9, health = 8, hit = 70, defence = 15, speed = 15, xp = 5, rare = true, trophy = .Eviction_Notice, chance = 50, first = 5, verb = "frisks", line = "\"Collecting His Lordship's rent.\""},
+	.Hermit  = {name = "hermit", a = "the hermit", gfx = .Hermit, color = 10, health = 14, hit = 60, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 4, peaceful = true, first = 99, verb = "thumps", line = "She stopped here years ago. She seems fine with it."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -464,7 +466,7 @@ kill_tenant :: proc(g: ^Game, id: int) {
 	}
 	if t.kind == .Skeleton {
 		boss_falls(g, t)
-	} else if t.kind == .Carny {
+	} else if t.kind == .Carny || t.kind == .Hermit {
 		drop_at(g, t, .Jools, rng_range(&g.rng, 5, 20))
 	} else if info.trophy != .None && rng_int(&g.rng, 100) < info.chance {
 		drop_at(g, t, info.trophy, 1)

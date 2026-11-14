@@ -179,6 +179,7 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
+		make_camp(g, i)
 		if !g.no_tenants {
 			r := Rng{floor_seed(g.seed, f.number) ~ 0x7E4A_47_5EED}
 			populate_tenants(g, i, &r)
@@ -310,6 +311,11 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 			open_shop(g, id == g.ticket && !g.admitted ? .Admission : .Carny)
 			return false
 		}
+		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Hermit {
+			g.shop_tenant = id
+			open_shop(g, .Hermit)
+			return false
+		}
 		player_attack(g, id)
 		return false
 	}
@@ -332,7 +338,11 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 
 describe_arrival :: proc(g: ^Game) {
 	if id := ground_item_at(g, g.x, g.y); id != 0 {
-		say(g, "Here: ", item_name(g, id), ". Enter/OK to pick up.")
+		if KIND[g.items[id].kind].fixed {
+			say(g, fixed_line(g.items[id].kind))
+		} else {
+			say(g, "Here: ", item_name(g, id), ". Enter/OK to pick up.")
+		}
 		return
 	}
 	#partial switch cell_at(g, g.x, g.y) {
