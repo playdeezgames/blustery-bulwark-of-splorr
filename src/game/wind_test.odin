@@ -267,3 +267,45 @@ test_the_wind_can_be_switched_off_part_by_part :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.gust_in, turn_gust)
 	testing.expect_value(t, int(g.wind_seen.gusts), 30)
 }
+
+// The wind study (November 15, 2026): a heavy load holds you against some gusts, more on the
+// shallow floors, and when it does not, the gust moves you one cell less (but at least one).
+@(test)
+test_a_heavy_load_holds_often_and_drags_otherwise :: proc(t: ^testing.T) {
+	g := open_room()
+	defer free(g)
+	g.attr[.Strength] = 8
+	sack := new_item(g, .Sack)
+	put_in(g, sack, worn(g, .Pack))
+	put_in(g, new_item(g, .Jools, 100), sack)
+	testing.expect(t, load_anchors(g))
+	f := floor_of(g)
+	f.number = 5 // a gust pushes 2 cells here
+	g.lit = false
+	held, dragged := 0, 0
+	for _ in 0 ..< 200 {
+		teleport(g, {20, 20})
+		gust(g)
+		switch g.x - 20 {
+		case 0:
+			held += 1
+		case 1:
+			dragged += 1
+		case:
+			testing.fail_now(t, "a heavy load was pushed more than one cell")
+		}
+		testing.expect_value(t, g.y, 20)
+	}
+	testing.expect(t, held > 50 && held < 110) // about 40 in 100 on floor 5
+	testing.expect(t, dragged > 90)
+	testing.expect_value(t, int(g.wind_seen.held), held)
+	// Light, the full two cells.
+	put_in(g, new_item(g, .Jools, 1), worn(g, .Pack)) // keep a thing in the pack
+	free_item(g, sack)
+	testing.expect(t, !load_anchors(g))
+	teleport(g, {20, 20})
+	gust(g)
+	testing.expect_value(t, g.x, 22)
+	// Deeper floors hold less.
+	testing.expect(t, load_hold(1) > load_hold(5) && load_hold(5) > load_hold(8))
+}

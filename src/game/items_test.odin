@@ -166,12 +166,7 @@ test_a_heavy_load_anchors_and_slows_and_too_much_stops_you :: proc(t: ^testing.T
 	put_in(g, sack, worn(g, .Pack))
 	put_in(g, new_item(g, .Jools, 100), sack) // 5 kg more: 15.3 kg, at least 75% of 20
 	testing.expect(t, anchored(g))
-	g.gust_in = 1
-	command(g, .Wait)
-	testing.expect_value(t, [2]int{g.x, g.y}, spot)
-	testing.expect_value(t, message(&g.log[LOG_LINES - 2]), "A gust tugs at you. Yer load holds you")
-	testing.expect_value(t, message(&g.log[LOG_LINES - 1]), " down.")
-	g.gust_in = 1000
+	g.gust_in = 1000 // gusts against a load: test_a_heavy_load_holds_often_and_drags_otherwise
 	turn := g.turn
 	for d, i in DIRECTIONS {
 		if passable(cell_at(g, g.x + d.x, g.y + d.y)) {

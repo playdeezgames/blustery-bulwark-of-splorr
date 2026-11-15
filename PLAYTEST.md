@@ -279,4 +279,28 @@ The wind killed 101 times in these 200 climbs, 12 % of all deaths. In the heavy 
 
 To run the study again, add `-define:NO_GUSTS=true`, `NO_PUSH`, `NO_SNUFF` or `NO_BLOW` to the build in "Running it again", and `-define:BOT_LOAD=74` for the light climber. The bolt study runs with `-define:WIND_AIM=true -define:ODIN_TEST_NAMES=game.test_wind_aim_study`.
 
-Nothing in the game's rules was changed by the study. The decision is open.
+Nothing in the game's rules was changed by the study itself.
+
+### Decided with the user: make the wind reach heavy climbers (November 15, 2026)
+
+**Built:** a heavy load (75 % of the limit or more) no longer always holds you. It holds against 60 gusts in 100 on floor 1, falling by 5 a floor to 25 on floor 8 (`LOAD_HOLD`). A gust it doesn't hold still drags against the load: it moves you one cell less, but at least one ("A gust drags you and yer load E."). A slam into a wall still costs a point. The Anchor spell still holds fully, and a light climber is pushed as before. The numbers are Claude's, for review. A test checks holds, drags and the light push. 128 tests. Saves are unchanged.
+
+The same bots ran again, 50 climbs per build:
+
+| | Even | Fighter | Nimble | Caster | All four |
+|---|---|---|---|---|---|
+| **Heavy (90 %)**: deaths a climb, new rule (old rule, no gusts) | 4.92 (3.14, 2.72) | 0.76 (0.38, 0.38) | 1.68 (0.88, 0.60) | 4.86 (3.42, 3.38) | 3.06 (1.96, 1.77) |
+| Turn floor 7's stairs were reached | 7146 (6934, 6737) | 5555 (5122, 4907) | 6814 (6265, 6101) | 8018 (7448, 7543) | 6883 (6442, 6322) |
+| Gusts the load held | 253 of 810 | 184 of 637 | 257 of 776 | 309 of 904 | 32 % (was 87 %) |
+| Pushes (cells), slams | 317 (347), 247 | 248 (254), 207 | 292 (301), 229 | 342 (368), 259 | |
+| **Light (74 %)**: deaths a climb, new rule (old rule) | 6.06 (5.94) | 2.64 (2.48) | 2.80 (2.68) | 5.44 (5.66) | 4.24 (4.19) |
+| Turn floor 7's stairs were reached | 5113 (4964) | 5433 (5421) | 4478 (4463) | 4587 (4601) | 4903 (4862) |
+
+The wind killed 36 times in the 200 heavy climbs (7 before) and 104 in the light ones (101 before).
+
+What it shows:
+
+- **The wind now reaches heavy climbers.** Their deaths rise from 1.96 to 3.06 a climb, and climbs take 7 % longer. Before, switching gusts off moved heavy deaths by 0.2; now the wind accounts for 1.3.
+- **The trade-off is still there.** Light climbs are unchanged, and light is still faster (4903 turns against 6883) and deadlier (4.24 against 3.06).
+- **It's a real difficulty rise, mostly from walls.** A heavy climber slams into a wall about every 30 turns, for a point each. That's chip damage, and with tenants it turns into deaths: the wind itself is named in only 36 of about 600 heavy deaths. The wind-blind bot walks corridors through gust warnings; a player who steps off a wall during the two-turn warning takes far fewer slams. If it is too harsh, the gentlest fixes are to let a drag that meets a wall cost nothing, or to raise `LOAD_HOLD`.
+- **Not changed:** snuffing (the light runs out anyway) and blowing things and tenants about.

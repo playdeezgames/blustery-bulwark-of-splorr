@@ -1,9 +1,9 @@
 package game
 
 // The wind and the light (slice 1 steps 2 and 3; DESIGN.md "Gusts are telegraphed by turn", "Gusts
-// push the player unless their load anchors them", "Light burns down, and gusts snuff it"). Each
+// push the player unless their load anchors them" (since November 15, 2026, only some of the time), "Light burns down, and gusts snuff it"). Each
 // floor has a prevailing wind; a gust comes every few turns, with a warning two turns before,
-// pushes the player a tile downwind unless their load anchors them, carries light things on the
+// pushes the player a tile downwind (a heavy load often holds them, and always drags), carries light things on the
 // ground along, and may blow out the torch. The torch in the light slot burns down one turn at a
 // time; without light the player sees only the cells next to them.
 
@@ -15,6 +15,15 @@ GUST_WARNING :: 2 // turns of warning before a gust
 
 // Chance in 100 that a gust blows out a lit torch, by floor number.
 SNUFF_CHANCE := [8]int{25, 35, 45, 60, 50, 55, 60, 65}
+
+// Chance in 100 that a heavy load holds you against a gust, by floor number (the wind study,
+// November 15, 2026: a load that always held made the wind vanish for anyone who loots). When it
+// does not hold, the load still drags: the gust moves you one cell less, but at least one.
+LOAD_HOLD := [8]int{60, 55, 50, 45, 40, 35, 30, 25}
+
+load_hold :: proc(number: int) -> int {
+	return LOAD_HOLD[clamp(number, 1, len(LOAD_HOLD)) - 1]
+}
 
 // Cells a gust pushes you (and light things and tenants), by floor number: 2 from floor 5.
 gust_push :: proc(number: int) -> int {
@@ -138,17 +147,19 @@ gust :: proc(g: ^Game) {
 	}
 	if .Push in g.wind_off {
 		// studied without the push
-	} else if anchored(g) {
-		say(g, "A gust tugs at you. ", load_anchors(g) ? "Yer load" : "Yer spell", " holds you down.")
+	} else if g.anchor_spell || (load_anchors(g) && rng_int(&g.rng, 100) < load_hold(f.number)) {
+		say(g, "A gust tugs at you. ", g.anchor_spell ? "Yer spell" : "Yer load", " holds you down.")
 		g.anchor_spell = false
 		g.wind_seen.held += 1
 	} else {
+		heavy := load_anchors(g)
+		cells := heavy ? max(1, gust_push(f.number) - 1) : gust_push(f.number)
 		reach_before := hostile_in_reach(g)
 		// Pushed cell by cell; a wall or a tenant in the way stops you, and "costs a little"
 		// (DESIGN.md).
 		moved := 0
 		blocked := ""
-		for _ in 0 ..< gust_push(f.number) {
+		for _ in 0 ..< cells {
 			nx, ny := g.x + d.x, g.y + d.y
 			if !passable(floor_cell(f, nx, ny)) {
 				blocked = "the wall"
@@ -179,7 +190,11 @@ gust :: proc(g: ^Game) {
 				return
 			}
 		} else {
-			say(g, moved > 1 ? "A gust hurls you " : "A gust shoves you ", COMPASS[direction_index(d)], ".")
+			if heavy {
+				say(g, "A gust drags you and yer load ", COMPASS[direction_index(d)], ".")
+			} else {
+				say(g, moved > 1 ? "A gust hurls you " : "A gust shoves you ", COMPASS[direction_index(d)], ".")
+			}
 		}
 	}
 	chance := snuff_chance(f.number)
