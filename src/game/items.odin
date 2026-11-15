@@ -72,6 +72,8 @@ Item_Kind :: enum u8 {
 	Lantern, // burns oil (fuel); gusts snuff it a third as often as a torch
 	Oil_Flask, // fills a dry lantern
 	Tinderbox, // carried, lighting takes no turn
+	Key_Nine, // the sergeant's key to floor 9 (army.odin)
+	Medal, // the herald's, for routing the army
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -180,6 +182,8 @@ KIND := [Item_Kind]Kind_Info {
 	.Lantern       = {name = "Lantern", gfx = .Lantern, color = COLOR_YELLOW, weight = 1000, bulk = 1500, slot = .Light, fuel = OIL_TURNS},
 	.Oil_Flask     = {name = "Oil flask", gfx = .Oil_Flask, color = COLOR_ORANGE, weight = 500, bulk = 500},
 	.Tinderbox     = {name = "Tinderbox", gfx = .Tinderbox, color = COLOR_BROWN, weight = 200, bulk = 300},
+	.Key_Nine      = {name = "Key to floor 9", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
+	.Medal         = {name = "Medal", gfx = .Amulet, color = COLOR_YELLOW, weight = 50, bulk = 40, trophy = true},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
@@ -551,6 +555,12 @@ pick_up :: proc(g: ^Game, id: int) {
 		say(g, "No room to carry ", name, ".")
 	} else if g.items[id].kind == .Key {
 		say(g, "You pick up the ", name, ".")
+	} else if g.items[id].kind == .Key_Nine {
+		say(g, "You pick up the ", name, ".")
+		if !g.slice_done {
+			g.slice_done = true
+			g.mode = .Notice
+		}
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {

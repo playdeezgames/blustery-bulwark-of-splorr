@@ -306,19 +306,19 @@ test_a_repeated_line_shows_once_with_a_count :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_floors_five_to_seven_climb_to_a_sign :: proc(t: ^testing.T) {
+test_floors_five_to_seven_climb_to_floor_eight :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
-	for number in 5 ..= BUILT_FLOORS {
+	for number in 5 ..= 7 {
 		testing.expect_value(t, floor_of(g).number, number)
 		testing.expect_value(t, floor_of(g).w, 64)
 		teleport(g, floor_of(g).up)
 		command(g, .Confirm)
 	}
-	// Floor 7's stairs up: floor 8 is still being built.
-	testing.expect_value(t, floor_of(g).number, 7)
-	testing.expect_value(t, g.deepest, 7)
+	// Floor 7's stairs up lead to floor 8 (step 15).
+	testing.expect_value(t, floor_of(g).number, 8)
+	testing.expect_value(t, g.deepest, 8)
 	// Floor 5's stairs down lead to floor 4's door.
 	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
 	command(g, .Confirm)

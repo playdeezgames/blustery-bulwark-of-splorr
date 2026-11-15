@@ -425,3 +425,39 @@ test_dump_spells :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_SPELLS + "-panel.ppm")
 	}
 }
+
+// Floor 8 by eye (-define:DUMP_ARMY=<prefix>): <prefix>-door.ppm (arriving, the carny at the door),
+// <prefix>-hall.ppm (inside, the rats and the sergeant), <prefix>-rout.ppm (the sergeant fallen, the
+// rats gone) and <prefix>-notice.ppm.
+DUMP_ARMY :: #config(DUMP_ARMY, "")
+
+@(test)
+test_dump_army :: proc(t: ^testing.T) {
+	when DUMP_ARMY != "" {
+		g := army_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		say(g, "You climb to floor 8. The wind is stronger.")
+		shot(g, fr, DUMP_ARMY + "-door.ppm")
+		c := g.tenants[g.army_ticket]
+		teleport(g, {int(c.x) - 1, int(c.y)})
+		command(g, .East)
+		choose(g, .Admit)
+		teleport(g, {int(c.x) + 1, int(c.y)})
+		shot(g, fr, DUMP_ARMY + "-hall.ppm")
+		id := find_army(g, .Sergeant)
+		s := g.tenants[id]
+		kill_tenant(g, id)
+		g.mode = .Play
+		teleport(g, {int(s.x) - 1, int(s.y)})
+		shot(g, fr, DUMP_ARMY + "-rout.ppm")
+		g.mode = .Notice
+		shot(g, fr, DUMP_ARMY + "-notice.ppm")
+	}
+}

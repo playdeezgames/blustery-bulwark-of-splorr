@@ -31,7 +31,7 @@ test_floors_five_to_seven_have_a_camp :: proc(t: ^testing.T) {
 			enter_floor(g, i, .Stairs_Down)
 			fire, bedroll, note, gear := camp_items(g, i)
 			number := g.floors[i].number
-			if number >= 5 {
+			if number >= 5 && i != ARMY_INDEX {
 				testing.expectf(t, fire != 0 && bedroll != 0 && note != 0 && gear != 0, "seed %v floor %v: camp incomplete", seed, number)
 				testing.expect_value(t, g.items[gear].kind, camp_gear(number))
 				testing.expect_value(t, int(g.items[note].fuel), number - 4)

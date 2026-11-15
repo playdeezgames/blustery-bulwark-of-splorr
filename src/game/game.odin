@@ -41,7 +41,7 @@ DIRECTION := [Command][2]int {
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
-BUILT_FLOORS :: 7 // floors that exist so far (slice 2 step 10): floor 8 is still being built
+BUILT_FLOORS :: 8 // floors that exist so far (slice 2 step 15): floor 9 is still being built
 
 Mode :: enum u8 {
 	Play,
@@ -53,7 +53,7 @@ Mode :: enum u8 {
 	Cast, // the list of known spells
 	Aim, // a direction for an aimed spell
 	Shop, // inside a town shop (or at a carny's stall)
-	Notice, // the end of slice 1, once
+	Notice, // the end of the stretch (the key to floor 9), once
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -129,7 +129,7 @@ Game :: struct {
 	ticket:      int, // the carny at floor 4's door
 	admitted:    bool, // paid to see the Horde
 	boss_dead:   bool,
-	slice_done:  bool, // the end-of-slice notice has been shown
+	slice_done:  bool, // the end-of-stretch notice has been shown (since step 15, for the key to floor 9)
 	unlocked:    bit_set[0 ..< FLOOR_COUNT], // boss floors (by index) whose door up has been opened: it stays open
 	// New fields go here, at the end: a save from before them loads with them zero (save.odin).
 	drained:     [Attr]i8, // attribute points a cave bear took (the temple gives them back)
@@ -138,6 +138,10 @@ Game :: struct {
 	sense_items: int, // Sense Things: every item on the floor shows
 	wind_off:    Wind_Parts, // parts of the wind switched off (only tests and the playtest bot set this)
 	wind_seen:   Wind_Counts, // what gusts have done to this climber (counted for the playtest)
+	army_ticket: int, // the carny at floor 8's door (army.odin)
+	army_admitted: bool, // paid to see the Army
+	army_dead:   bool, // the sergeant fell
+	army_told:   bool, // the herald has proclaimed the rout (and pinned the Medal)
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -195,6 +199,8 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 	f := floor_of(g)
 	if !f.made && i == BOSS_INDEX {
 		build_boss_floor(g)
+	} else if !f.made && i == ARMY_INDEX {
+		build_army_floor(g)
 	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
@@ -204,7 +210,7 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 			populate_tenants(g, i, &r)
 		}
 	}
-	if i != BOSS_INDEX {
+	if i != BOSS_INDEX && i != ARMY_INDEX {
 		restock(g, i)
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
@@ -327,7 +333,14 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 	if id := tenant_at(g, g.x + d.x, g.y + d.y); id != 0 {
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Carny {
 			g.shop_tenant = id
-			open_shop(g, id == g.ticket && !g.admitted ? .Admission : .Carny)
+			switch {
+			case id == g.ticket && !g.admitted:
+				open_shop(g, .Admission)
+			case id == g.army_ticket && !g.army_admitted:
+				open_shop(g, .Army_Door)
+			case:
+				open_shop(g, .Carny)
+			}
 			return false
 		}
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Hermit {
@@ -450,11 +463,11 @@ use_here :: proc(g: ^Game) {
 			gate(g)
 		} else if g.current == BOSS_INDEX {
 			door_to_floor_five(g)
+		} else if g.current == ARMY_INDEX {
+			door_to_floor_nine(g)
 		} else if g.current + 1 < BUILT_FLOORS {
 			enter_floor(g, g.current + 1, .Stairs_Down)
 			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")
-		} else {
-			say(g, "Above: scaffolding, and a sign. \"Floor 8. Coming soon, by order of His Lordship.\"")
 		}
 	case .Stairs_Down:
 		if g.current > 0 {

@@ -12,7 +12,7 @@ same_game :: proc(a, b: ^Game) -> bool {
 test_a_save_round_trips :: proc(t: ^testing.T) {
 	g := new_game_with_tenants(77)
 	defer free(g)
-	// Play a little everywhere: two floors, the town, floor 4.
+	// Play a little everywhere: two floors, the town, floors 4 and 8.
 	for _ in 0 ..< 30 {
 		command(g, .East)
 		command(g, .South)
@@ -20,6 +20,7 @@ test_a_save_round_trips :: proc(t: ^testing.T) {
 	enter_floor(g, 1, .Stairs_Down)
 	command(g, .Wait)
 	enter_floor(g, BOSS_INDEX, .Stairs_Down)
+	enter_floor(g, ARMY_INDEX, .Stairs_Down)
 	enter_town(g, .Gate)
 	hurt(g, 1000, "a test")
 	buf := make([]u8, SAVE_CAP)

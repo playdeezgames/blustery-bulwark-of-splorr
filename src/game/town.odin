@@ -41,6 +41,7 @@ Shop :: enum u8 {
 	Admission, // the carny at floor 4's door
 	Gate, // the bulwark gate, once the windchute is open
 	Hermit, // the hermit's camp on floor 6 (camp.odin)
+	Army_Door, // the carny at floor 8's door (army.odin)
 }
 
 Shop_Info :: struct {
@@ -62,7 +63,8 @@ SHOP := [Shop]Shop_Info {
 	.Herald  = {'H', "The herald", "", "Hear ye! His Lordship commands the wind!"},
 	.Carny   = {0, "A carny's stall", "", "\"Step up! Every game a winner, nearly!\""},
 	.Admission = {0, "The door to the Horde", "", "\"See the Undead Horde! Two Jools! Terrifying! Mostly!\""},
-	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to floor 4, where you have been."},
+	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to the floors you have reached."},
+	.Army_Door = {0, "The door to the Army", "", "\"See the Army of a Thousand! Three Jools! Count them yerself!\""},
 	.Hermit  = {0, "The hermit's camp", "", "\"Twice the town's prices. The town is a long way down.\""},
 }
 
@@ -121,6 +123,7 @@ VALUE := #partial [Item_Kind]int {
 	.Oil_Flask       = 6,
 	.Tinderbox       = 12,
 	.Old_Bones       = 1,
+	.Medal           = 5,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
@@ -258,7 +261,12 @@ proclaim :: proc(g: ^Game) {
 			n^ += copy(text[n^:], s)
 		}
 	}
+	medal := false
 	switch {
+	case g.army_dead && !g.army_told:
+		add(text[:], &n, "His Lordship has routed an army of a thousand, as foretold.")
+		g.army_told = true
+		medal = true
 	case g.boss_dead && !told.boss:
 		add(text[:], &n, "His Lordship has destroyed the Undead Horde, as foretold.")
 	case g.deepest > told.deepest:
@@ -276,6 +284,9 @@ proclaim :: proc(g: ^Game) {
 	g.proclamation_n = copy(g.proclamation[:], text[:n])
 	say(g, "The herald reads: \"", string(g.proclamation[:g.proclamation_n]), "\"")
 	say(g, "The town cheers the lord.")
+	if medal {
+		give_medal(g)
+	}
 }
 
 // Coins carried, paid out of the purse first. False (and nothing taken) when there are too few.
@@ -426,7 +437,7 @@ repair_price :: proc(g: ^Game, id: int) -> int {
 // Things carried that a shop could take: not worn, not coins, not a container with anything in it.
 sellable :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
-	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
+	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.kind != .Key_Nine && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
 }
 
 shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
@@ -540,9 +551,15 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 	case .Admission:
 		add_row(rows, &n, .Admit, 0, ADMISSION, "Pay to see the Horde")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
+	case .Army_Door:
+		add_row(rows, &n, .Admit, 0, ARMY_ADMISSION, "Pay to see the Army")
+		add_row(rows, &n, .Shove, 0, 0, "Shove past")
 	case .Gate:
 		add_row(rows, &n, .Climb, 0, 0, "Climb to floor 1")
-		add_row(rows, &n, .Chute, 0, 0, "Ride the windchute to floor 4")
+		add_row(rows, &n, .Chute, BOSS_INDEX, 0, "Ride the windchute to floor 4")
+		if g.deepest >= ARMY_INDEX + 1 {
+			add_row(rows, &n, .Chute, ARMY_INDEX, 0, "Ride the windchute to floor 8")
+		}
 	}
 	add_row(rows, &n, .Leave, 0, 0, "Leave")
 	return n
@@ -688,7 +705,7 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		case .Hermit:
 			say(g, "The hermit: ", HERMIT_LINES[g.talk % len(HERMIT_LINES)])
 			g.met_hermit = true
-		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate:
+		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate, .Army_Door:
 		}
 		g.talk += 1
 	case .Train:
@@ -716,8 +733,13 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		}
 	case .Admit:
 		if pay(g, r.price) {
+			army := g.shop == .Army_Door
 			leave_shop(g)
-			admit(g)
+			if army {
+				army_admit(g)
+			} else {
+				admit(g)
+			}
 		}
 	case .Climb:
 		leave_shop(g)
@@ -725,8 +747,9 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		say(g, "You climb to floor 1. The wind is stronger.")
 	case .Chute:
 		leave_shop(g)
-		enter_floor(g, BOSS_INDEX, .Stairs_Down)
-		say(g, "The windchute blows you up to floor 4.")
+		buf: [8]u8
+		enter_floor(g, r.arg, .Stairs_Down)
+		say(g, "The windchute blows you up to floor ", itoa(buf[:], r.arg + 1), ".")
 	case .Shove:
 		id := g.shop_tenant
 		leave_shop(g)

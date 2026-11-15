@@ -131,8 +131,12 @@ boss_falls :: proc(g: ^Game, t: Tenant) {
 }
 
 has_key :: proc(g: ^Game) -> bool {
+	return has_kind(g, .Key)
+}
+
+has_kind :: proc(g: ^Game, kind: Item_Kind) -> bool {
 	for i in 1 ..< MAX_ITEMS {
-		if g.items[i].kind == .Key && is_carried(g, i) {
+		if g.items[i].kind == kind && is_carried(g, i) {
 			return true
 		}
 	}
@@ -154,15 +158,16 @@ door_to_floor_five :: proc(g: ^Game) {
 	}
 }
 
-// The end of slice 1: shown once, the first time the key is picked up.
+// The end of the stretch: shown once, the first time the key to floor 9 is picked up (it was the
+// key to floor 5 in slice 1).
 NOTICE_Y :: 40
 
 draw_notice :: proc(f: ^Frame, g: ^Game) {
 	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 84, COLOR_BLACK)
 	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 1, COLOR_YELLOW)
 	fill_rect(f, 14, NOTICE_Y + 75, VIEW_W * TILE - 28, 1, COLOR_YELLOW)
-	print(f, "The key to floor 5.", 24, NOTICE_Y, COLOR_YELLOW)
-	print(f, "Here ends the first stretch.", 24, NOTICE_Y + 14, COLOR_LIGHT)
+	print(f, "The key to floor 9.", 24, NOTICE_Y, COLOR_YELLOW)
+	print(f, "Here ends the second stretch.", 24, NOTICE_Y + 14, COLOR_LIGHT)
 	print(f, "The rest of the bulwark is", 24, NOTICE_Y + 24, COLOR_LIGHT)
 	print(f, "still being built.", 24, NOTICE_Y + 34, COLOR_LIGHT)
 	print(f, "Thank you for climbing.", 24, NOTICE_Y + 48, COLOR_MID)
