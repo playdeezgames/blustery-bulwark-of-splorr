@@ -304,3 +304,5 @@ What it shows:
 - **The trade-off is still there.** Light climbs are unchanged, and light is still faster (4903 turns against 6883) and deadlier (4.24 against 3.06).
 - **It's a real difficulty rise, mostly from walls.** A heavy climber slams into a wall about every 30 turns, for a point each. That's chip damage, and with tenants it turns into deaths: the wind itself is named in only 36 of about 600 heavy deaths. The wind-blind bot walks corridors through gust warnings; a player who steps off a wall during the two-turn warning takes far fewer slams. If it is too harsh, the gentlest fixes are to let a drag that meets a wall cost nothing, or to raise `LOAD_HOLD`.
 - **Not changed:** snuffing (the light runs out anyway) and blowing things and tenants about.
+
+Kept as built (the user, November 15, 2026).
