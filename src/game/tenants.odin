@@ -496,19 +496,24 @@ wear_down :: proc(g: ^Game, id: int) {
 }
 
 // Gusts carry light tenants a cell downwind when there is room.
-blow_tenants :: proc(g: ^Game) {
+blow_tenants :: proc(g: ^Game) -> (moved: int) {
 	d := wind_blow(floor_of(g))
 	for i in 1 ..< MAX_TENANTS {
 		t := &g.tenants[i]
 		if t.kind != .None && int(t.floor) == g.current && TENANT[t.kind].light {
+			before := [2]i16{t.x, t.y}
 			for _ in 0 ..< gust_push(floor_of(g).number) {
 				tenant_step(g, i, d)
+			}
+			if before != {t.x, t.y} {
+				moved += 1
 			}
 		}
 		if t.kind != .None && int(t.floor) == g.current && TENANT[t.kind].prop && rng_int(&g.rng, TOPPLE_CHANCE) == 0 {
 			topple(g, i, true)
 		}
 	}
+	return
 }
 
 draw_tenants :: proc(f: ^Frame, g: ^Game) {

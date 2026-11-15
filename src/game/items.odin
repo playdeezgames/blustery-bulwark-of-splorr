@@ -647,7 +647,7 @@ give_starting_kit :: proc(g: ^Game) {
 }
 
 // A gust carries light things on the ground one cell downwind (each moves once per gust).
-blow_items :: proc(g: ^Game) {
+blow_items :: proc(g: ^Game) -> (moved: int) {
 	f := floor_of(g)
 	d := wind_blow(f)
 	for i in 1 ..< MAX_ITEMS {
@@ -655,6 +655,7 @@ blow_items :: proc(g: ^Game) {
 		if it.place != .Ground || int(it.floor) != g.current || weight_of(g, i) > LIGHT_ITEM {
 			continue
 		}
+		before := [2]i16{it.x, it.y}
 		for _ in 0 ..< gust_push(f.number) {
 			nx, ny := int(it.x) + d.x, int(it.y) + d.y
 			if !passable(floor_cell(f, nx, ny)) {
@@ -662,7 +663,11 @@ blow_items :: proc(g: ^Game) {
 			}
 			it.x, it.y = i16(nx), i16(ny)
 		}
+		if before != {it.x, it.y} {
+			moved += 1
+		}
 	}
+	return
 }
 
 // Jools carried anywhere about yer person.

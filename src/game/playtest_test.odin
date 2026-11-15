@@ -18,6 +18,11 @@ PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
 PLAYTEST_TURNS :: 12000 // give up after this many turns
 BOT_DEBUG :: #config(BOT_DEBUG, false)
+// Parts of the wind switched off for the wind study (November 15, 2026).
+NO_GUSTS :: #config(NO_GUSTS, false)
+NO_PUSH :: #config(NO_PUSH, false)
+NO_SNUFF :: #config(NO_SNUFF, false)
+NO_BLOW :: #config(NO_BLOW, false)
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
@@ -50,6 +55,8 @@ Bot_Stats :: struct {
 	broke:           int, // gear broken
 	trophies_end:    int,
 	weight_max:      int,
+	wind:            Wind_Counts,
+	wind_deaths:     int,
 }
 
 @(private = "file")
@@ -537,6 +544,18 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 	g := new(Game)
 	defer free(g)
 	init_game(g, seed)
+	when NO_GUSTS {
+		g.wind_off += {.Gusts}
+	}
+	when NO_PUSH {
+		g.wind_off += {.Push}
+	}
+	when NO_SNUFF {
+		g.wind_off += {.Snuff}
+	}
+	when NO_BLOW {
+		g.wind_off += {.Blow}
+	}
 	g.attr = attrs
 	g.health = max_health(g)
 	g.mana = max_mana(g)
@@ -621,6 +640,7 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		}
 	}
 	s.turns = g.turn
+	s.wind = g.wind_seen
 	s.deepest = g.deepest
 	s.level = g.level
 	s.kills = g.kills
@@ -668,6 +688,7 @@ test_playtest :: proc(t: ^testing.T) {
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns := 0, 0
+			wind: [10]int
 			starving, hungry, dark, anchored, out_torch, overload := 0, 0, 0, 0, 0, 0
 			level, kills, jools, eaten, drunk, spent := 0, 0, 0, 0, 0, 0
 			wmax := 0
@@ -682,6 +703,10 @@ test_playtest :: proc(t: ^testing.T) {
 				if s.won {
 					won += 1
 					turns_won += s.turn_won
+				}
+				ws := s.wind
+				for v, i in ([10]i32{ws.gusts, ws.pushed, ws.cells, ws.slams, ws.held, ws.snuffed, ws.things_moved, ws.tenants_moved, ws.into_reach, ws.out_of_reach}) {
+					wind[i] += int(v)
 				}
 				if s.key_turn > 0 {
 					keys += 1
@@ -722,6 +747,7 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
 			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
+			fmt.printfln("wind a climb: gusts %d; pushed %d (%d cells); slams %d; held by load %d; snuffed %d; things moved %d; tenants moved %d; pushed into a hostile's reach %d, out of it %d", wind[0] / runs, wind[1] / runs, wind[2] / runs, wind[3] / runs, wind[4] / runs, wind[5] / runs, wind[6] / runs, wind[7] / runs, wind[8] / runs, wind[9] / runs)
 			fmt.printf("causes:")
 			for k, v in causes {
 				fmt.printf(" %s %d;", k, v)

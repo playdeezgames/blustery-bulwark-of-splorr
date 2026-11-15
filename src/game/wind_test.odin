@@ -243,3 +243,27 @@ test_a_gust_slams_you_into_a_tenant_not_onto_it :: proc(t: ^testing.T) {
 	testing.expect_value(t, [2]int{g.x, g.y}, start)
 	testing.expect_value(t, g.health, hp - 1)
 }
+
+// The wind study's switches (November 15, 2026): each part can be turned off, and gusts are counted.
+@(test)
+test_the_wind_can_be_switched_off_part_by_part :: proc(t: ^testing.T) {
+	g := new_game()
+	defer free(g)
+	start := [2]int{g.x, g.y}
+	g.wind_off = {.Push, .Snuff}
+	g.lit = true
+	for _ in 0 ..< 30 {
+		gust(g)
+	}
+	testing.expect_value(t, [2]int{g.x, g.y}, start)
+	testing.expect(t, g.lit)
+	testing.expect_value(t, int(g.wind_seen.gusts), 30)
+	testing.expect_value(t, int(g.wind_seen.pushed), 0)
+	g.wind_off = {.Gusts}
+	turn_gust := g.gust_in
+	for _ in 0 ..< 50 {
+		end_turn(g)
+	}
+	testing.expect_value(t, g.gust_in, turn_gust)
+	testing.expect_value(t, int(g.wind_seen.gusts), 30)
+}

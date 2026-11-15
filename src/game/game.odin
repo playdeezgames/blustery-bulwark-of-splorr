@@ -136,6 +136,22 @@ Game :: struct {
 	met_hermit:  bool, // talked to the hermit: the mentor has a line about her
 	calm_turns:  int, // Calm: gusts pass you by
 	sense_items: int, // Sense Things: every item on the floor shows
+	wind_off:    Wind_Parts, // parts of the wind switched off (only tests and the playtest bot set this)
+	wind_seen:   Wind_Counts, // what gusts have done to this climber (counted for the playtest)
+}
+
+// The wind's parts, to study what each adds (November 15, 2026, at the user's request).
+Wind_Part :: enum u8 {
+	Gusts, // no gusts at all (no warnings either)
+	Push, // gusts never move you
+	Snuff, // gusts never blow out yer light
+	Blow, // gusts never move things on the ground or light tenants, nor topple bones
+}
+Wind_Parts :: bit_set[Wind_Part; u8]
+
+Wind_Counts :: struct {
+	gusts, pushed, cells, slams, held, snuffed, things_moved, tenants_moved: i32,
+	into_reach, out_of_reach: i32, // pushes that put you next to an awake hostile tenant, or took you out of its reach
 }
 
 Told :: struct {

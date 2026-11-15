@@ -108,6 +108,10 @@ end_turn :: proc(g: ^Game) {
 		refresh_view(g)
 		return
 	}
+	if .Gusts in g.wind_off {
+		refresh_view(g)
+		return
+	}
 	g.gust_in -= 1
 	if g.gust_in == GUST_WARNING {
 		say(g, "The wind picks up from the ", COMPASS[f.wind_from], ".")
@@ -123,16 +127,23 @@ gust :: proc(g: ^Game) {
 	f := floor_of(g)
 	stop_travel(g)
 	d := wind_blow(f)
-	blow_items(g)
-	blow_tenants(g)
+	g.wind_seen.gusts += 1
+	if .Blow not_in g.wind_off {
+		g.wind_seen.things_moved += i32(blow_items(g))
+		g.wind_seen.tenants_moved += i32(blow_tenants(g))
+	}
 	if g.calm_turns > 0 {
 		say(g, "A gust passes you by.")
 		return // Calm: no push, and yer light stays lit
 	}
-	if anchored(g) {
+	if .Push in g.wind_off {
+		// studied without the push
+	} else if anchored(g) {
 		say(g, "A gust tugs at you. ", load_anchors(g) ? "Yer load" : "Yer spell", " holds you down.")
 		g.anchor_spell = false
+		g.wind_seen.held += 1
 	} else {
+		reach_before := hostile_in_reach(g)
 		// Pushed cell by cell; a wall or a tenant in the way stops you, and "costs a little"
 		// (DESIGN.md).
 		moved := 0
@@ -150,7 +161,18 @@ gust :: proc(g: ^Game) {
 			g.x, g.y = nx, ny
 			moved += 1
 		}
+		if moved > 0 {
+			g.wind_seen.pushed += 1
+			g.wind_seen.cells += i32(moved)
+			reach_after := hostile_in_reach(g)
+			if reach_after && !reach_before {
+				g.wind_seen.into_reach += 1
+			} else if reach_before && !reach_after {
+				g.wind_seen.out_of_reach += 1
+			}
+		}
 		if blocked != "" {
+			g.wind_seen.slams += 1
 			say(g, moved > 0 ? "A gust shoves you along and slams you into " : "A gust slams you into ", blocked, ".")
 			hurt(g, 1, "the wind")
 			if g.mode == .Dead {
@@ -164,10 +186,22 @@ gust :: proc(g: ^Game) {
 	if g.items[worn(g, .Light)].kind == .Lantern {
 		chance /= LANTERN_SNUFF
 	}
-	if g.lit && rng_int(&g.rng, 100) < chance {
+	if g.lit && .Snuff not_in g.wind_off && rng_int(&g.rng, 100) < chance {
 		g.lit = false
+		g.wind_seen.snuffed += 1
 		say(g, "The gust blows out yer ", light_name(g), ". Enter/OK to relight.")
 	}
+}
+
+// True when an awake hostile tenant stands next to you.
+hostile_in_reach :: proc(g: ^Game) -> bool {
+	for i in 1 ..< MAX_TENANTS {
+		t := &g.tenants[i]
+		if hostile(t) && t.awake && int(t.floor) == g.current && max(abs(int(t.x) - g.x), abs(int(t.y) - g.y)) <= 1 {
+			return true
+		}
+	}
+	return false
 }
 
 direction_index :: proc(d: [2]int) -> int {

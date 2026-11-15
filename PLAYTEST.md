@@ -207,3 +207,76 @@ Two things from this for discussion (nothing in the game was changed):
 The bot rerun is the same as round 4. The bot never comes back to town with money (it shops only at the start and after a death, which costs it what it carries), so it never buys the Big pack. A player who uses Return, or walks down, can. That is round 1's "money has little use" again.
 
 Found on the way and fixed: the general store's line ("...He breathes a great deal.") needed three lines, and the shop screen had room for two, so the joke lost its last words. The rows now start 8 px lower. There is still room for 13 rows, and every other shop's line fits in two.
+
+## Wind study: does the wind earn its place? (November 15, 2026)
+
+Asked by the user while reviewing step 14: "i dont know that the mechanic of wind blowing is really impactful to game play as assumed. we need some deep testing for it usefulness as a game mechanic and whether to keep it."
+
+### How it was tested
+
+- **The wind can now be switched off part by part**, for testing only (`g.wind_off`, a set of Gusts, Push, Snuff, Blow). Gusts off means no gust at all. The other three switch off one effect each: pushing you, snuffing yer light, and blowing things and tenants around. Play is unchanged. A test checks each switch.
+- **The game now counts what the wind does** (`g.wind_seen`): gusts, pushes and cells pushed, slams into walls, gusts yer load held, lights snuffed, things and tenants moved, and pushes that took you into or out of an awake hostile's reach. The bot prints these per climb.
+- **The bot climbed floors 1 to 7 fifty times per build in five variants:** the full wind, then each of the four switches. That's 1000 climbs, carrying up to 90 % of the load limit as in earlier rounds.
+- **Bolts were studied on their own** (`-define:WIND_AIM=true`, `test_wind_aim_study`). On an open floor, for every wind and every cell within 7, the study checks which cells a bolt can reach in a calm and which with the wind.
+
+### What the wind does in a climb (full wind, per climb)
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Gusts | 788 | 586 | 711 | 838 |
+| Gusts yer load held | 688 (87 %) | 491 (84 %) | 651 (92 %) | 756 (90 %) |
+| Pushes (cells) | 52 (70) | 50 (54) | 32 (36) | 45 (66) |
+| Slams into a wall | 51 | 44 | 28 | 41 |
+| Lights snuffed | 107 | 122 | 97 | 96 |
+| Things blown | 263 | 140 | 157 | 247 |
+| Tenants blown | 911 | 657 | 820 | 1019 |
+| Pushed into a hostile's reach (out of it), all 50 climbs | 1 (3) | 1 (1) | 0 (1) | 0 (3) |
+
+### What changes when a part is switched off
+
+Deaths a climb and the turn floor 7's stairs were reached, each build at 50 climbs:
+
+| | Even | Fighter | Nimble | Caster | All four |
+|---|---|---|---|---|---|
+| **Full wind** | 3.14, 6934 | 0.38, 5122 | 0.88, 6265 | 3.42, 7448 | 1.96, 6442 |
+| No gusts at all | 2.72, 6737 | 0.38, 4907 | 0.60, 6101 | 3.38, 7543 | 1.77, 6322 |
+| No push | 3.80, 6971 | 0.28, 5034 | 1.04, 6491 | 3.68, 7674 | 2.20, 6543 |
+| No snuff | 3.66, 6745 | 0.42, 4993 | 0.90, 6251 | 3.38, 7654 | 2.09, 6411 |
+| No blowing | 2.92, 6670 | 0.52, 5181 | 0.92, 6378 | 3.06, 7404 | 1.86, 6408 |
+
+Every build reached floor 7's stairs in every variant, except for one Caster wedge in two variants. The wind killed 7 times in the 200 full-wind climbs, out of 391 deaths.
+
+### Bolts
+
+- **Aimed at a target on one of the eight lines a calm bolt would hit**, a windy bolt still hits 54 % of the time. Aiming another way never hits that target. By distance: 1 to 3 cells always hit; 4 and 5 cells 25 %; 6 cells 18 %; 7 cells 12 %.
+- **Over every cell within 7**, averaged over the eight winds, a calm bolt can reach 56 cells and a windy one 58. Only 30 cells are reachable both ways. 28 are reachable only with the wind (off the lines, by aiming upwind and letting it drift), and 25 only in a calm (far cells on the lines).
+
+### The wind against a light load
+
+The variants above carry up to 90 % of the load limit, so the bot is anchored most of the time. To see the wind where it is strongest, the bot also climbed 50 times per build stopping at 74 %, just under the anchoring line, with the full wind and with no gusts:
+
+| Bot stops at 74 % | Even | Fighter | Nimble | Caster | All four |
+|---|---|---|---|---|---|
+| Deaths a climb, full wind (no gusts) | 5.94 (4.12) | 2.48 (0.92) | 2.68 (1.48) | 5.66 (4.46) | 4.19 (2.75) |
+| Turn floor 7's stairs were reached | 4964 (3944) | 5421 (3091) | 4463 (3405) | 4601 (4136) | 4862 (3644) |
+| Gusts yer load held | 40 of 556 | 45 of 617 | 59 of 503 | 37 of 510 | 7 % |
+| Pushes (cells) | 256 (404) | 215 (338) | 215 (336) | 264 (416) | |
+| Slams into a wall | 303 | 394 | 266 | 255 | |
+| Pushed into a hostile's reach (out of it), all 50 climbs | 4 (15) | 3 (11) | 3 (12) | 3 (16) | |
+| Turns in the dark | 2976 (1996) | 3291 (1033) | 2604 (1591) | 2765 (2354) | |
+
+The wind killed 101 times in these 200 climbs, 12 % of all deaths. In the heavy climbs it was 2 %.
+
+### What it shows
+
+- **The wind is a strong force for a light climber and almost nothing for a heavy one.** Under the anchoring line, gusts push about every second time, the climber slams into a wall about every 16 turns, deaths go up by half (4.19 a climb against 2.75 with no gusts) and climbs take a third longer. Over the line, the load holds about 87 % of gusts, and no switch moves deaths or turns beyond the noise (1.77 to 2.20 deaths a climb, turns within 2 %; switching the push off even gave *more* deaths).
+- **So the wind's real job is the load trade-off, and it does that job.** Being heavy is the bulwark: slower and anchored, but the wind can't touch you. Being light is faster, but the wind batters you. Without gusts a light climber is both faster (3644 turns against 6322) and only a little more deadly (2.75 against 1.77). With gusts the light climber is still faster (4862 against 6442) but dies more than twice as often (4.19 against 1.96). The light climber also leaves food and potions behind (rounds 2 and 3), which adds to its deaths with or without wind.
+- **But the trade-off is lopsided now.** A player who picks things up crosses the line early (the bot is anchored from floor 1) and never meets the wind again except as messages. Anyone who plays like the 90 % bot, which is most players who loot, would rightly feel the wind does nothing. That matches the user's sense of it.
+- **Snuffing hardly matters, because the light runs out anyway.** Every build runs out of torches by floor 7 in every variant. Snuffs add a few hundred turns of dark.
+- **Blowing is busy but harmless.** Hundreds of tenants and things shift each climb, and it changes nothing measurable. A push into a hostile's reach is rare (about 3 in 50 light climbs, 1 in 50 heavy). Pushes out of reach are four times as common, which helps a wind-blind bot as often as it hurts.
+- **Bolts are where the wind matters for everyone.** It doesn't weaken bolts overall. It reshapes where they reach: far targets on the line become unreliable, and off-line cells open up for a player who knows the drift. There's no preview (by design), so that skill comes from learning the drift.
+- **Limits.** The bot is wind-blind: it never waits out a gust, casts Anchor or Calm, aims with the wind, keeps away from walls, or uses a gust to escape. A wind-aware light climber would take fewer slams than these numbers show. A heavy one would gain little either way, because the wind barely reaches them.
+
+To run the study again, add `-define:NO_GUSTS=true`, `NO_PUSH`, `NO_SNUFF` or `NO_BLOW` to the build in "Running it again", and `-define:BOT_LOAD=74` for the light climber. The bolt study runs with `-define:WIND_AIM=true -define:ODIN_TEST_NAMES=game.test_wind_aim_study`.
+
+Nothing in the game's rules was changed by the study. The decision is open.
