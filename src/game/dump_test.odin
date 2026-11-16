@@ -114,7 +114,9 @@ test_dump_magic :: proc(t: ^testing.T) {
 		open_learn_if_owed(g)
 		g.menu_row = 6
 		shot(g, fr, DUMP_MAGIC + "-learn.ppm")
-		g.known = ~bit_set[Spell]{}
+		for sp in Spell {
+			g.known += {sp}
+		}
 		g.mode = .Play
 		g.mana = 5
 		g.ward_turns, g.sense_turns, g.anchor_spell = 12, 7, true

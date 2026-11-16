@@ -16,7 +16,9 @@ _ :: fmt
 
 PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
-PLAYTEST_TURNS :: 12000 // give up after this many turns
+PLAYTEST_TURNS :: 16000 // give up after this many turns
+TRIP_GAP :: 600 // turns between the bot's trips back to town
+TRIP_MONEY :: 40 // Jools (carried, or in trophies) worth a trip
 BOT_DEBUG :: #config(BOT_DEBUG, false)
 // Parts of the wind switched off for the wind study (November 15, 2026).
 NO_GUSTS :: #config(NO_GUSTS, false)
@@ -26,7 +28,7 @@ NO_BLOW :: #config(NO_BLOW, false)
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // reached the top of what is built (floor 7's stairs up, slice 2 step 10)
+	won:             bool, // took the key to floor 9, the end of slice 2 (step 16)
 	turn_won:        int,
 	key_turn:        int, // when the key to floor 5 was picked up (0: never)
 	turns:           int,
@@ -57,6 +59,10 @@ Bot_Stats :: struct {
 	weight_max:      int,
 	wind:            Wind_Counts,
 	wind_deaths:     int,
+	trips:           int, // back to town by Return to shop
+	last_trip:       int,
+	lanterns:        int, // bought
+	army_turn:       int, // when floor 8 was reached (0: never)
 }
 
 @(private = "file")
@@ -101,7 +107,7 @@ look_around :: proc(g: ^Game) {
 		if hostile(t) {
 			v.goal[t.y][t.x] += {.Hostile}
 		}
-		if i == g.ticket && !g.admitted {
+		if (i == g.ticket && !g.admitted) || (i == g.army_ticket && !g.army_admitted) {
 			v.goal[t.y][t.x] += {.Ticket}
 		}
 	}
@@ -110,7 +116,7 @@ look_around :: proc(g: ^Game) {
 		if it.place != .Ground || int(it.floor) != g.current {
 			continue
 		}
-		if it.kind == .Key {
+		if it.kind == .Key || it.kind == .Key_Nine {
 			v.goal[it.y][it.x] += {.Key}
 		}
 		c := f.cells[it.y][it.x]
@@ -286,6 +292,43 @@ shop_town :: proc(g: ^Game, s: ^Bot_Stats) {
 			break
 		}
 	}
+	// After the Horde: a lantern once, then oil; healing potions once they are named.
+	if g.boss_dead {
+		lantern := worn(g, .Light) != 0 && g.items[worn(g, .Light)].kind == .Lantern
+		_, packed := carried_of(g, proc(k: Item_Kind) -> bool {return k == .Lantern})
+		if !lantern && (packed > 0 || (carried_jools(g) >= VALUE[.Lantern] + 30 && buy(g, s, .Lantern))) {
+			if packed == 0 {
+				s.lanterns += 1
+			}
+			for i in 1 ..< MAX_ITEMS {
+				if g.items[i].kind == .Lantern && is_carried(g, i) && g.items[i].place != .Worn {
+					if old := worn(g, .Light); old != 0 {
+						unplace(g, old)
+						if !put_in(g, old, worn(g, .Pack)) {
+							free_item(g, old)
+						}
+					}
+					unplace(g, i)
+					g.items[i].place, g.items[i].slot = .Worn, .Light
+					g.items[i].fuel = 0
+					g.lit = false
+					break
+				}
+			}
+		}
+		lantern = worn(g, .Light) != 0 && g.items[worn(g, .Light)].kind == .Lantern
+		if lantern {
+			for oil_flasks(g) < 3 && buy(g, s, .Oil_Flask) {}
+		}
+		if .Potion_Healing in g.ident {
+			for {
+				_, n := carried_of(g, proc(k: Item_Kind) -> bool {return k == .Potion_Healing})
+				if n >= 2 || !buy(g, s, .Potion_Healing) {
+					break
+				}
+			}
+		}
+	}
 	for spare_torches(g) < 2 && buy(g, s, .Torch) {}
 	// A Big pack once there is money for it and the usual shopping after.
 	if g.items[worn(g, .Pack)].kind != .Big_Pack && carried_jools(g) >= VALUE[.Big_Pack] + 30 {
@@ -324,9 +367,12 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		list: [len(Spell)]Spell
 		n := learnable(g, &list)
 		g.menu_row = 0
+		best := 99
 		for i in 0 ..< n {
-			if list[i] == .Mend {
-				g.menu_row = i
+			for want, rank in ([?]Spell{.Mend, .Return}) {
+				if list[i] == want && rank < best {
+					g.menu_row, best = i, rank
+				}
 			}
 		}
 		command(g, .Confirm)
@@ -350,8 +396,23 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			} else {
 				choose_row(g, .Shove)
 			}
+		} else if g.shop == .Army_Door {
+			if carried_jools(g) >= ARMY_ADMISSION {
+				choose_row(g, .Admit)
+			} else {
+				choose_row(g, .Shove)
+			}
 		} else if g.shop == .Gate {
-			choose_row(g, .Chute)
+			// The highest stop the windchute offers.
+			rows: [MAX_ROWS]Row
+			n := shop_rows(g, &rows)
+			g.menu_row = 0
+			for i in 0 ..< n {
+				if rows[i].act == .Chute {
+					g.menu_row = i
+				}
+			}
+			command(g, .Confirm)
 		} else if g.shop == .Carny {
 			choose_row(g, .Leave)
 		} else {
@@ -390,7 +451,15 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			return true
 		}
 	}
-	if !g.lit && (light_fuel(g) > 0 || spare_torches(g) > 0) {
+	// A dry lantern and no oil: put it away and light a torch (a player would, in the inventory).
+	if lt := worn(g, .Light); lt != 0 && g.items[lt].kind == .Lantern && g.items[lt].fuel <= 0 && oil_flasks(g) == 0 && spare_torches(g) > 0 {
+		unplace(g, lt)
+		if !put_in(g, lt, worn(g, .Pack)) {
+			free_item(g, lt) // left behind (dropped, it would be picked up and worn again)
+		}
+		g.lit = false
+	}
+	if !g.lit && (light_fuel(g) > 0 || light_spares(g) > 0) {
 		command(g, .Confirm)
 		if !g.lit {
 			light_torch(g)
@@ -405,6 +474,26 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 		return true
 	}
+	// Back to town to shop, by Return, when the bags are full or the light or food is running out,
+	// and there is money (or trophies) to spend.
+	if g.current >= 1 && !hostile_in_view(g) && .Return in g.known && g.mana >= SPELL[.Return].cost && g.turn - s.last_trip >= TRIP_GAP {
+		_, food := carried_of(g, is_food)
+		full := carried_weight(g) * 100 >= carry_limit(g) * (BOT_LOAD - 8)
+		dark := light_fuel(g) < 100 && light_spares(g) == 0
+		trophies := 0
+		for i in 1 ..< MAX_ITEMS {
+			if KIND[g.items[i].kind].trophy && is_carried(g, i) {
+				trophies += VALUE[g.items[i].kind]
+			}
+		}
+		// Full only counts when there are trophies to sell; short of light or food, any money will do.
+		if (full && trophies >= TRIP_MONEY) || ((dark || food == 0) && carried_jools(g) + trophies >= TRIP_MONEY / 2) {
+			s.trips += 1
+			s.last_trip = g.turn
+			cast_spell(g, .Return, {0, 0})
+			return true
+		}
+	}
 	// Too loaded to move: drop something.
 	if overloaded(g) && drop_one(g) {
 		return true
@@ -418,7 +507,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			if it.place != .Ground || int(it.floor) != g.current || int(it.x) != g.x || int(it.y) != g.y {
 				continue
 			}
-			if it.kind == .Key {
+			if it.kind == .Key || it.kind == .Key_Nine {
 				pick = i
 				break
 			}
@@ -428,7 +517,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 		if pick != 0 {
 			pick_up(g, pick)
-			if g.items[pick].kind == .Key && g.items[pick].place == .Ground {
+			if (g.items[pick].kind == .Key || g.items[pick].kind == .Key_Nine) && g.items[pick].place == .Ground {
 				drop_one(g) // no room for the key: make some
 			}
 			best_weapon(g)
@@ -437,7 +526,8 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	// Go somewhere: the key, a hostile in view, things, the unexplored, then the stairs up.
 	plan := bfs(g, .Key)
-	if !plan.ok && hostile_in_view(g) {
+	// On floor 8 the sergeant has the key: hunt it, seen or not.
+	if !plan.ok && (hostile_in_view(g) || (g.current == ARMY_INDEX && !g.army_dead)) {
 		plan = bfs(g, .Hostile)
 	}
 	if !plan.ok {
@@ -453,11 +543,21 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		if cell_at(g, g.x, g.y) == .Stairs_Up {
 			if g.current == BOSS_INDEX && !has_key(g) && BOSS_INDEX not_in g.unlocked {
 				s.stuck = true // explored floor 4 without the key
+				when BOT_DEBUG {
+					fmt.printfln("NOKEY floor 4 seed %d turn %d boss_dead %v", g.seed, g.turn, g.boss_dead)
+				}
 				return false
 			}
-			if g.current == BUILT_FLOORS - 1 {
-				s.won = true // the top of what is built
-				s.turn_won = g.turn
+			if g.current == ARMY_INDEX && !has_kind(g, .Key_Nine) {
+				s.stuck = true // explored floor 8 without the key
+				when BOT_DEBUG {
+					fmt.printfln("NOKEY floor 8 seed %d turn %d army_dead %v sergeants %d", g.seed, g.turn, g.army_dead, count_of(g, .Sergeant))
+					for i in 1 ..< MAX_ITEMS {
+						if g.items[i].kind == .Key_Nine {
+							fmt.printfln("  key place %v floor %d at %d,%d", g.items[i].place, g.items[i].floor, g.items[i].x, g.items[i].y)
+						}
+					}
+				}
 				return false
 			}
 			command(g, .Confirm)
@@ -471,7 +571,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	// Never walk into a peaceful tenant (that opens a stall or knocks bones over): wait instead.
 	nx, ny := g.x + plan.dir.x, g.y + plan.dir.y
-	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) {
+	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) && !(id == g.army_ticket && !g.army_admitted) {
 		command(g, .Wait)
 		return true
 	}
@@ -485,12 +585,21 @@ drop_one :: proc(g: ^Game) -> bool {
 	heaviest, trophy := 0, false
 	for i in 1 ..< MAX_ITEMS {
 		k := g.items[i].kind
-		if k == .None || k == .Key || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
+		if k == .None || k == .Key || k == .Key_Nine || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
 			continue
 		}
 		t := KIND[k].trophy
 		if heaviest == 0 || (t && !trophy) || (t == trophy && weight_of(g, i) > weight_of(g, heaviest)) {
 			heaviest, trophy = i, t
+		}
+	}
+	if heaviest == 0 {
+		// Nothing loose: the heaviest armour worn (a cave bear can drain Strength that far).
+		for i in 1 ..< MAX_ITEMS {
+			it := &g.items[i]
+			if it.place == .Worn && is_carried(g, i) && KIND[it.kind].armour > 0 && (heaviest == 0 || weight_of(g, i) > weight_of(g, heaviest)) {
+				heaviest = i
+			}
 		}
 	}
 	if heaviest != 0 {
@@ -588,9 +697,17 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if s.key_turn == 0 && has_key(g) {
 			s.key_turn = g.turn
 		}
+		if s.army_turn == 0 && g.current == ARMY_INDEX {
+			s.army_turn = g.turn
+		}
+		if has_kind(g, .Key_Nine) {
+			s.won = true // the end of slice 2
+			s.turn_won = g.turn
+			break
+		}
 		s.jools_max = max(s.jools_max, carried_jools(g) + g.bank)
 		s.weight_max = max(s.weight_max, carried_weight(g))
-		if light_fuel(g) == 0 && spare_torches(g) == 0 && !in_town(g) {
+		if light_fuel(g) == 0 && light_spares(g) == 0 && !in_town(g) {
 			s.ran_out_torch = true
 		}
 		_ = last_hp
@@ -688,6 +805,7 @@ test_playtest :: proc(t: ^testing.T) {
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns := 0, 0
+			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			wind: [10]int
 			starving, hungry, dark, anchored, out_torch, overload := 0, 0, 0, 0, 0, 0
 			level, kills, jools, eaten, drunk, spent := 0, 0, 0, 0, 0, 0
@@ -715,6 +833,12 @@ test_playtest :: proc(t: ^testing.T) {
 				if s.stuck {
 					stuck += 1
 				}
+				if s.army_turn > 0 {
+					armies += 1
+					army_turns += s.army_turn
+				}
+				trips += s.trips
+				lanterns += s.lanterns
 				deaths += s.deaths
 				if s.deaths > 0 {
 					first_death_runs += 1
@@ -745,7 +869,9 @@ test_playtest :: proc(t: ^testing.T) {
 			}
 			fmt.printfln("\n== %s, %d runs ==", b.name, runs)
 			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
-			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
+			fmt.printfln("took the key to floor 9: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
 			fmt.printfln("wind a climb: gusts %d; pushed %d (%d cells); slams %d; held by load %d; snuffed %d; things moved %d; tenants moved %d; pushed into a hostile's reach %d, out of it %d", wind[0] / runs, wind[1] / runs, wind[2] / runs, wind[3] / runs, wind[4] / runs, wind[5] / runs, wind[6] / runs, wind[7] / runs, wind[8] / runs, wind[9] / runs)
 			fmt.printf("causes:")
@@ -763,4 +889,14 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("food eaten %.1f; potions drunk %.1f; turns hungry %d, starving %d; turns in the dark %d; anchored %d; ran out of torches %d%%; ever overloaded %d%%", f64(eaten) / f64(runs), f64(drunk) / f64(runs), hungry / runs, starving / runs, dark / runs, anchored / runs, out_torch * 100 / runs, overload * 100 / runs)
 		}
 	}
+}
+
+count_of :: proc(g: ^Game, k: Tenant_Kind) -> int {
+	n := 0
+	for &t in g.tenants {
+		if t.kind == k {
+			n += 1
+		}
+	}
+	return n
 }

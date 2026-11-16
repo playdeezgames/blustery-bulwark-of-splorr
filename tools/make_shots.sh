@@ -16,6 +16,7 @@ dump test_dump_fight -define:DUMP_FIGHT="$D/fight.ppm"
 dump test_dump_magic -define:DUMP_MAGIC="$D/magic"
 dump test_dump_supplies -define:DUMP_SUPPLIES="$D/supplies"
 dump test_dump_boss -define:DUMP_BOSS="$D/boss"
+dump test_dump_army -define:DUMP_ARMY="$D/army"
 python3 -I - "$D" <<'PY'
 import os, sys
 from PIL import Image
@@ -28,11 +29,17 @@ shots = [
     ("05-magic.png", "magic-bolt.ppm"),
     ("06-inventory.png", "supplies-inv.ppm"),
     ("07-horde.png", "boss-hall.ppm"),
+    ("08-army.png", "army-hall.ppm"),
 ]
+
+# Pillow 12.1.1 here cannot enlarge with resize (Gotchas, November 15, 2026): scale by whole
+# pixels with an affine transform instead.
+def scale(im, k):
+    return im.transform((im.width * k, im.height * k), Image.AFFINE, (1 / k, 0, 0, 0, 1 / k, 0), Image.NEAREST)
 for out, src in shots:
-    Image.open(os.path.join(d, src)).resize((384 * 3, 216 * 3), Image.NEAREST).save("assets/screenshots/" + out)
+    scale(Image.open(os.path.join(d, src)), 3).save("assets/screenshots/" + out)
 # The map view is 252x180 at the top left; take a 4:3 240x180 window from its middle, doubled.
-Image.open(os.path.join(d, "play.ppm")).crop((6, 0, 246, 180)).resize((480, 360), Image.NEAREST).save("assets/portal.png")
+scale(Image.open(os.path.join(d, "play.ppm")).crop((6, 0, 246, 180)), 2).save("assets/portal.png")
 print(", ".join("assets/screenshots/" + o for o, _ in shots) + ", assets/portal.png")
 PY
 rm -rf "$D"

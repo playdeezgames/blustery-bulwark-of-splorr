@@ -306,3 +306,56 @@ What it shows:
 - **Not changed:** snuffing (the light runs out anyway) and blowing things and tenants about.
 
 Kept as built (the user, November 15, 2026).
+
+## Round 5: slice 2, floors 1 to 8 (November 16, 2026)
+
+Slice 2 step 16. The bot now climbs the whole of slice 2: a climb is done when it takes the key to floor 9 from the sergeant. As the plan asked, it now also **goes back to town** to shop:
+
+- **Spells:** it learns Mend first and Return second.
+- **When it goes back:** it casts Return when its bags are nearly full and it carries 40 Jools' worth of trophies, or when its light or food is about to run out and it has 20 Jools' worth of coin and trophies. It waits at least 600 turns between trips.
+- **In town:**
+  - It sells its trophies.
+  - It buys food (up to three), torches (two spares) and the Big pack, as before.
+  - Once the Horde is gone, it buys a lantern and keeps three flasks of oil.
+  - Once healing potions are named, it keeps two.
+- **Back up:** it rides the windchute to the highest stop.
+- **Floor 8:** it pays the carny, or shoves past when short of coin. It hunts the sergeant even when it can't see it.
+
+Bot faults found and fixed on the way (the game is unchanged):
+
+- With a dry lantern and no oil, it pressed Enter for ever. It now puts the lantern away and lights a torch.
+- It walked to floor 8's stairs without fighting the sergeant, because it only chases tenants it can see.
+- A cave bear drained one Strength so low that it couldn't move and found nothing it would drop. It now drops its heaviest armour as a last resort.
+
+Fifty climbs per build, carrying up to 90 % of the load limit as before (and, in brackets, stopping at 74 %):
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Took the key to floor 9 | 100 % (100 %) | 100 % (100 %) | 100 % (100 %) | 100 % (100 %) |
+| Turn it was taken | 7201 (5653) | 5332 (6526) | 6226 (5122) | 9050 (5245) |
+| Deaths a climb | 5.84 (8.36) | 1.12 (3.44) | 1.94 (3.32) | 7.76 (7.62) |
+| Of them on floors 1 to 4, 5 to 7, 8 | 0.7, 3.9, 1.3 | 0.1, 0.6, 0.4 | 0.1, 1.1, 0.7 | 0.5, 5.4, 1.3 |
+| Trips to town by Return | 6.9 (5.9) | 3.9 (4.4) | 4.9 (4.5) | 10.4 (6.5) |
+| Jools spent in town | 370 (303) | 313 (303) | 276 (228) | 434 (266) |
+| Jools at the end | 21 (9) | 86 (53) | 26 (18) | 9 (7) |
+| Lantern bought | 100 % | 100 % | 96 % | 74 % |
+| Turns in the dark | 912 (1337) | 527 (1791) | 542 (1178) | 1806 (1255) |
+| Turns starving | 0 (12) | 6 (34) | 29 (37) | 3 (0) |
+| Turns on floor 8 | 141 (196) | 100 (279) | 112 (135) | 162 (179) |
+
+Killers over the 200 heavy climbs: goblins 173, cave bears 123, giant ants 112, rats 96, the sergeant 84, kobolds 66, spiders 36, the wind 35, unknown potions 28, crows 21, the skeleton 11, slimes 10, the rest 11.
+
+What it shows:
+
+- **Every build finishes slice 2.** No climb wedges and none runs out of turns. For the weaker builds that is because a death costs little: you wake in town and keep yer things.
+- **The town matters now.** The bot goes back 4 to 10 times a climb and spends nearly everything it finds (276 to 434 Jools). In round 1 money had little use; now it ends with 7 to 86 Jools. Food and light stop being the clocks they were: starving falls from hundreds of turns a climb (the wind study) to almost none, and turns in the dark from 2500 to 5400 to 500 to 1800. The light clock still runs out on some climbs. The lantern is the main buy after the Horde.
+- **Floors 5 to 7 are where people die.** They hold two thirds of all deaths. Goblins, cave bears and giant ants kill more than everything else together. The Even build dies about 4 times there each climb and the Caster more than 5. The Fighter dies there less than once a climb. The gap between builds is wider than in slice 1.
+- **Floor 8 is a short, sharp fight.** It takes 100 to 280 turns and costs about one death a climb for the weaker builds (0.4 for the Fighter). The sergeant itself killed 84 times in 200 climbs.
+- **Light climbers have it harder up here.** They are quicker for every build but the Fighter (whose heavy climb is the fastest), but die more: Even 8.4 a climb, Fighter 3.4. The wind killed 117 of them, and 35 heavy climbers.
+- **Limits.** The bot still plays blind to the wind and casts only Mend and Return. It never uses Gale, gust balls, Calm or Blink, never banks, and never waits for a better moment. It never retreats from a fight. A player who does these things will die far less, most of all on floors 5 to 8.
+
+Open for discussion (nothing in the rules was changed):
+
+1. **Floors 5 to 7 may be too hard for weaker builds.** For the Even and Caster builds, goblins (12 health, 2 to 6), cave bears (26 health, 3 to 8) and ants in threes add up. This could be fine (deaths cost little), or one of these could be eased.
+2. **The sergeant** (health 24, 2 to 5, 60 to hit) killed more than the Horde ever did. That fits a second boss, but it's for the user to judge.
+3. **Light:** even with a lantern and town trips, the light still runs out on most climbs at some point (44 % to 98 %), though only for a few hundred turns now.
