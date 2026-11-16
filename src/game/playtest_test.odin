@@ -63,6 +63,7 @@ Bot_Stats :: struct {
 	last_trip:       int,
 	lanterns:        int, // bought
 	army_turn:       int, // when floor 8 was reached (0: never)
+	casts:           [Spell]int, // spells cast in fights
 }
 
 @(private = "file")
@@ -369,7 +370,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		g.menu_row = 0
 		best := 99
 		for i in 0 ..< n {
-			for want, rank in ([?]Spell{.Mend, .Return}) {
+			for want, rank in ([?]Spell{.Mend, .Return, .Magic_Bolt, .Ward, .Gale, .Gust_Ball}) {
 				if list[i] == want && rank < best {
 					g.menu_row, best = i, rank
 				}
@@ -432,6 +433,9 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	s.floor_turns[g.current] += 1
 	look_around(g)
+	if bot_casts(g, s) {
+		return true
+	}
 	// Fight what is next to you.
 	for d in DIRECTIONS {
 		x, y := g.x + d.x, g.y + d.y
@@ -806,6 +810,7 @@ test_playtest :: proc(t: ^testing.T) {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns := 0, 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
+			casts: [Spell]int
 			wind: [10]int
 			starving, hungry, dark, anchored, out_torch, overload := 0, 0, 0, 0, 0, 0
 			level, kills, jools, eaten, drunk, spent := 0, 0, 0, 0, 0, 0
@@ -838,6 +843,9 @@ test_playtest :: proc(t: ^testing.T) {
 					army_turns += s.army_turn
 				}
 				trips += s.trips
+				for sp in Spell {
+					casts[sp] += s.casts[sp]
+				}
 				lanterns += s.lanterns
 				deaths += s.deaths
 				if s.deaths > 0 {
@@ -872,6 +880,7 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
+			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs))
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
 			fmt.printfln("wind a climb: gusts %d; pushed %d (%d cells); slams %d; held by load %d; snuffed %d; things moved %d; tenants moved %d; pushed into a hostile's reach %d, out of it %d", wind[0] / runs, wind[1] / runs, wind[2] / runs, wind[3] / runs, wind[4] / runs, wind[5] / runs, wind[6] / runs, wind[7] / runs, wind[8] / runs, wind[9] / runs)
 			fmt.printf("causes:")
@@ -899,4 +908,116 @@ count_of :: proc(g: ^Game, k: Tenant_Kind) -> int {
 		}
 	}
 	return n
+}
+
+// Where a bolt (or gust ball) aimed `d` goes, as cast_bolt moves it: the tenant it meets first, and
+// the cell it ends on. The bot aims with the wind in mind (the wind study's drift).
+bot_bolt :: proc(g: ^Game, d: [2]int, ball: bool) -> (hit: int, end: [2]int) {
+	f := floor_of(g)
+	w := wind_blow(f)
+	along := w == d || w == -d
+	reach := (ball ? BALL_RANGE : BOLT_RANGE) + d.x * w.x + d.y * w.y
+	drift := ball ? BALL_DRIFT : BOLT_DRIFT
+	pos := [2]int{g.x, g.y}
+	move :: proc(g: ^Game, f: ^Floor, pos: ^[2]int, by: [2]int) -> (hit: int, wall: bool) {
+		next := pos^ + by
+		if !passable(floor_cell(f, next.x, next.y)) {
+			return 0, true
+		}
+		pos^ = next
+		return tenant_at(g, next.x, next.y), false
+	}
+	for step in 1 ..= max(1, reach) {
+		h, wall := move(g, f, &pos, d)
+		if h != 0 || wall {
+			return h, pos
+		}
+		if !along && step % drift == 0 {
+			h, wall = move(g, f, &pos, w)
+			if h != 0 || wall {
+				return h, pos
+			}
+		}
+	}
+	return 0, pos
+}
+
+// The bot's fighting spells, kept above the mana Return needs: Ward when a fight is near, Gale when
+// crowded, a gust ball at a knot of tenants, a bolt at one that is not next to you (or at any, for
+// a caster). True when it cast.
+bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
+	if !hostile_in_view(g) {
+		return false
+	}
+	reserve := .Return in g.known ? SPELL[.Return].cost : 0
+	can :: proc(g: ^Game, sp: Spell, reserve: int) -> bool {
+		return sp in g.known && g.mana >= SPELL[sp].cost + reserve
+	}
+	do_cast :: proc(g: ^Game, s: ^Bot_Stats, sp: Spell, d: [2]int) -> bool {
+		s.casts[sp] += 1
+		cast_spell(g, sp, d)
+		return true
+	}
+	near, adjacent := 0, 0
+	for i in 1 ..< MAX_TENANTS {
+		t := &g.tenants[i]
+		if hostile(t) && int(t.floor) == g.current && g.vis[t.y][t.x] {
+			dist := max(abs(int(t.x) - g.x), abs(int(t.y) - g.y))
+			if dist <= 4 {
+				near += 1
+			}
+			if dist <= 1 {
+				adjacent += 1
+			}
+		}
+	}
+	if near > 0 && g.ward_turns == 0 && can(g, .Ward, reserve) {
+		return do_cast(g, s, .Ward, {0, 0})
+	}
+	if adjacent >= 2 && can(g, .Gale, reserve) {
+		best, most := [2]int{}, 0
+		for d in DIRECTIONS {
+			n := 0
+			for k in 1 ..= GALE_RANGE {
+				if id := tenant_at(g, g.x + k * d.x, g.y + k * d.y); id != 0 && hostile(&g.tenants[id]) {
+					n += 1
+				}
+			}
+			if n > most {
+				best, most = d, n
+			}
+		}
+		if most >= 2 {
+			return do_cast(g, s, .Gale, best)
+		}
+	}
+	if can(g, .Gust_Ball, reserve) {
+		for d in DIRECTIONS {
+			_, end := bot_bolt(g, d, true)
+			if max(abs(end.x - g.x), abs(end.y - g.y)) <= 1 {
+				continue // it would catch you too
+			}
+			n := 0
+			for dy in -1 ..= 1 {
+				for dx in -1 ..= 1 {
+					if id := tenant_at(g, end.x + dx, end.y + dy); id != 0 && hostile(&g.tenants[id]) {
+						n += 1
+					}
+				}
+			}
+			if n >= 2 {
+				return do_cast(g, s, .Gust_Ball, d)
+			}
+		}
+	}
+	if can(g, .Magic_Bolt, reserve) {
+		caster := g.attr[.Intelligence] >= 14
+		for d in DIRECTIONS {
+			hit, end := bot_bolt(g, d, false)
+			if hit != 0 && hostile(&g.tenants[hit]) && (caster || max(abs(end.x - g.x), abs(end.y - g.y)) > 1) {
+				return do_cast(g, s, .Magic_Bolt, d)
+			}
+		}
+	}
+	return false
 }

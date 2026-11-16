@@ -359,3 +359,36 @@ Open for discussion (nothing in the rules was changed):
 1. **Floors 5 to 7 may be too hard for weaker builds.** For the Even and Caster builds, goblins (12 health, 2 to 6), cave bears (26 health, 3 to 8) and ants in threes add up. This could be fine (deaths cost little), or one of these could be eased.
 2. **The sergeant** (health 24, 2 to 5, 60 to hit) killed more than the Horde ever did. That fits a second boss, but it's for the user to judge.
 3. **Light:** even with a lantern and town trips, the light still runs out on most climbs at some point (44 % to 98 %), though only for a few hundred turns now.
+
+### Round 5 with spells (November 16, 2026)
+
+On finding 1 (floors 5 to 7 for weaker builds), the user asked first to "make the bot use spells".
+
+**What the bot casts now.** It learns Mend, Return, Magic Bolt, Ward, Gale and Gust Ball, in that order of choice. It always keeps the mana Return needs. In a fight:
+
+- **Ward** when a hostile is within 4 cells.
+- **Gale** when two or more hostiles are next to it and at least two lie on one line.
+- **A gust ball** at a knot of two or more hostiles, if the blast won't catch the bot.
+- **A magic bolt** at a hostile it would hit. It aims with the wind's drift, worked out the way the bolt moves, which is more than the old wind-blind bot did. A Caster (Intelligence 14 or more) also bolts tenants that are next to it.
+
+It still doesn't use Calm, Blink or the Sense spells, and doesn't time its moves to the gusts.
+
+Fifty climbs per build. In brackets: round 5 without spells.
+
+| Bot loads to 90 % | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Took the key to floor 9 | 100 % | 100 % | 100 % | 100 % |
+| Turn it was taken | 6931 (7201) | 5511 (5332) | 6135 (6226) | 6680 (9050) |
+| Deaths a climb | 3.10 (5.84) | 0.92 (1.12) | 1.20 (1.94) | 1.16 (7.76) |
+| On floors 5 to 7 | 2.1 (3.9) | 0.4 (0.6) | 0.6 (1.1) | 0.4 (5.4) |
+| On floor 8 | 0.7 (1.3) | 0.4 (0.4) | 0.6 (0.7) | 0.6 (1.3) |
+| Bolts, wards, gales, gust balls a climb | 43, 31, 0.4, 2.1 | 20, 20, 0.3, 1.0 | 31, 26, 0.4, 1.3 | 103, 35, 0.3, 3.1 |
+
+The light climber (74 %) dies 6.30, 3.56, 2.86 and 2.30 times a climb (Even, Fighter, Nimble, Caster; it was 8.36, 3.44, 3.32 and 7.62). One light Fighter climb ran out of turns; none wedged.
+
+What it shows:
+
+- **Spells change the picture.** The Caster goes from the deadliest build (7.8 deaths a climb) to one of the safest (1.2) and finishes sooner. Even dies about half as often. Floors 5 to 7 now cost the weaker builds 0.4 to 2.1 deaths a climb, against 3.9 to 5.4.
+- **The Even build is now the outlier.** Its 10 Intelligence gives it a small mana pool for bolts, and its Strength and Dexterity are only middling. It still dies about 3 times a climb, mostly to goblins (49 of 155 deaths), ants and bears.
+- **Floor 8** is the hardest single floor for every build now (0.4 to 0.7 deaths a climb, 55 of 200 to the sergeant).
+- **Gale hardly comes up** (under one a climb). The bot casts it only when crowded, and is rarely crowded in a line.
