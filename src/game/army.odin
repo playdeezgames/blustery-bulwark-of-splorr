@@ -95,7 +95,7 @@ army_admit :: proc(g: ^Game) {
 		a := army_alcove()
 		t.x, t.y = i16(a.x), i16(a.y)
 	}
-	say(g, "The carny steps aside. \"Count them yerself! Start anywhere!\"")
+	say(g, "The carny steps aside. \"Right this way! Mind the Army!\"")
 }
 
 // The sergeant is gone: the key drops, and the rest of the army scatters into the cracks.
