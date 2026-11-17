@@ -25,6 +25,11 @@ Tenant_Kind :: enum u8 {
 	Bailiff, // does not fight: takes Jools from yer purse and runs
 	Hermit, // floor 6's camp (camp.odin): trades when bumped
 	Sergeant, // floor 8's boss, the Army of a Thousand (army.odin): a rat in a tiny hat
+	// From floor 9 (slice 3 step 18).
+	Ogre, // heavy and slow; meeting plain ogres first sets up floor 12's giant
+	Wisp, // light and fast; its touch puts out yer light and does no harm
+	Mimic, // looks like a pack until you are next to it
+	Draught, // never fights; pushes you away from it; blows pass through, any spell seals it
 }
 
 Tenant_Info :: struct {
@@ -67,6 +72,10 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Bailiff = {name = "bailiff", a = "a bailiff", gfx = .Bailiff, color = 9, health = 8, hit = 70, defence = 15, speed = 15, xp = 5, rare = true, trophy = .Eviction_Notice, chance = 50, first = 5, verb = "frisks", line = "\"Collecting His Lordship's rent.\""},
 	.Hermit  = {name = "hermit", a = "the hermit", gfx = .Hermit, color = 10, health = 14, hit = 60, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 4, peaceful = true, first = 99, verb = "thumps", line = "She stopped here years ago. She seems fine with it."},
 	.Sergeant = {name = "sergeant", a = "the Army of a Thousand", gfx = .Rat, color = COLOR_YELLOW, health = 24, hit = 60, dmin = 2, dmax = 5, defence = 10, speed = 10, xp = 20, first = 99, verb = "bites", line = "A rat in a tiny hat. The hat means everything."},
+	.Ogre    = {name = "ogre", a = "an ogre", gfx = .Ogre, color = COLOR_LIGHT, health = 30, hit = 55, dmin = 3, dmax = 9, defence = 10, speed = 5, xp = 15, trophy = .Ogre_Tooth, chance = 50, first = 9, verb = "clubs", line = "An ogre. Exactly as tall as an ogre."},
+	.Wisp    = {name = "wisp", a = "a wisp", gfx = .Wisp, color = COLOR_WHITE, health = 5, hit = 65, defence = 25, speed = 20, xp = 4, light = true, erratic = true, trophy = .Wisp_Glass, chance = 50, first = 9, verb = "touches", line = "Owes rent from before. Long before."},
+	.Mimic   = {name = "mimic", a = "a mimic", gfx = .Mimic, color = COLOR_RED, health = 16, hit = 60, dmin = 2, dmax = 7, defence = 10, speed = 5, xp = 8, rare = true, trophy = .Mimic_Hinge, chance = 60, first = 9, verb = "bites", line = "Pays rent as furniture. Is furniture, mostly."},
+	.Draught = {name = "draught", a = "a draught", gfx = .Draught, color = COLOR_CYAN, health = 1, speed = 10, xp = 3, peaceful = true, rare = true, first = 9, line = "A wind spirit, the town says. It is a draught."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -117,7 +126,12 @@ tenant_at :: proc(g: ^Game, x, y: int) -> int {
 }
 
 hostile :: proc(t: ^Tenant) -> bool {
-	return t.kind != .None && (!TENANT[t.kind].peaceful || t.angry)
+	return t.kind != .None && (!TENANT[t.kind].peaceful || t.angry) && !disguised(t)
+}
+
+// A mimic that has not woken looks like a pack lying on the floor (slice 3 step 18).
+disguised :: proc(t: ^Tenant) -> bool {
+	return t.kind == .Mimic && !t.awake
 }
 
 // True when a tenant that means you harm is in sight (a mouse route stops for it).
@@ -261,6 +275,23 @@ tenant_act :: proc(g: ^Game, id: int) {
 	if info.prop {
 		return
 	}
+	near := abs(int(t.x) - g.x) <= 1 && abs(int(t.y) - g.y) <= 1
+	if t.kind == .Mimic && !t.awake {
+		if near {
+			t.awake = true
+			t.tx, t.ty = i16(g.x), i16(g.y)
+			say(g, "The pack was a mimic. It opens wide.")
+		}
+		return
+	}
+	if t.kind == .Draught {
+		if near {
+			draught_shoves(g, id)
+		} else if rng_int(&g.rng, 2) == 0 {
+			tenant_step(g, id, DIRECTIONS[rng_int(&g.rng, 8)])
+		}
+		return
+	}
 	if !hostile(t) {
 		if t.still {
 			return
@@ -341,6 +372,15 @@ tenant_attack :: proc(g: ^Game, id: int) {
 		bailiff_takes(g, id)
 		return
 	}
+	if t.kind == .Wisp {
+		if g.lit {
+			g.lit = false
+			say(g, "The wisp touches yer ", light_name(g), ". It goes out. Enter/OK to relight.")
+		} else {
+			say(g, "The wisp brushes past you.")
+		}
+		return
+	}
 	say(g, "The ", info.name, " ", info.verb, " you.")
 	if rng_int(&g.rng, ARMOUR_WEAR) == 0 {
 		pieces: [len(Slot)]int
@@ -412,7 +452,14 @@ player_attack :: proc(g: ^Game, id: int) {
 		end_turn(g)
 		return
 	}
-	if !hostile(t) {
+	if t.kind == .Draught {
+		say(g, "Yer blow goes straight through it.")
+		end_turn(g)
+		return
+	}
+	if disguised(t) {
+		say(g, "The pack was a mimic!")
+	} else if !hostile(t) {
 		t.angry = true
 		say(g, "The ", info.name, " shouts for the law. There is none.")
 	}
@@ -537,6 +584,10 @@ draw_tenants :: proc(f: ^Frame, g: ^Game) {
 		}
 		sx, sy := MAP_X + vx * TILE, MAP_Y + vy * TILE
 		fill_rect(f, sx, sy, TILE, TILE, COLOR_BLACK)
+		if disguised(t) && !sensed { // Sense Tenants shows it for what it is
+			draw_gfx(f, KIND[.Pack].gfx, sx, sy, KIND[.Pack].color)
+			continue
+		}
 		draw_gfx(f, TENANT[t.kind].gfx, sx, sy, sensed ? COLOR_MID : TENANT[t.kind].color)
 	}
 }
@@ -544,6 +595,40 @@ draw_tenants :: proc(f: ^Frame, g: ^Game) {
 inspect_tenant :: proc(g: ^Game, id: int) {
 	t := &g.tenants[id]
 	info := TENANT[t.kind]
+	if disguised(t) {
+		say(g, "A pack. Somebody left it here.")
+		return
+	}
 	hurt := int(t.health) * 2 < info.health
 	say(g, "A ", info.name, hurt ? " (hurt). " : ". ", info.line)
+}
+
+// A draught next to you pushes you a cell away from it; into a wall or a tenant it slams you, as a
+// gust does (slice 3 step 18).
+draught_shoves :: proc(g: ^Game, id: int) {
+	t := &g.tenants[id]
+	d := [2]int{clamp(g.x - int(t.x), -1, 1), clamp(g.y - int(t.y), -1, 1)}
+	nx, ny := g.x + d.x, g.y + d.y
+	stop_travel(g)
+	if !passable(cell_at(g, nx, ny)) {
+		say(g, "A draught slams you into the wall.")
+		hurt(g, 1, "a draught")
+		return
+	}
+	if other := tenant_at(g, nx, ny); other != 0 {
+		say(g, "A draught slams you into ", TENANT[g.tenants[other].kind].a, ".")
+		hurt(g, 1, "a draught")
+		return
+	}
+	g.x, g.y = nx, ny
+	say(g, "A draught shoves you ", COMPASS[direction_index(d)], ".")
+	refresh_view(g)
+}
+
+// Any spell that reaches a draught seals it (slice 3 step 18).
+seal_draught :: proc(g: ^Game, id: int) {
+	g.tenants[id] = {}
+	g.xp += TENANT[.Draught].xp
+	say(g, "The draught is sealed.")
+	check_level(g)
 }

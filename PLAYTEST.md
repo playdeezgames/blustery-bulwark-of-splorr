@@ -454,3 +454,23 @@ Minding the wind cut the wind's kills by two thirds or more, and halved the time
 1. The wind on floors 9 to 11: the bot learned to mind it (above); the game's numbers are kept.
 2. Long floors 9 to 11: kept as they are.
 3. The Even build: kept as it is.
+
+## Step 18: the tenants from floor 9 (November 17, 2026)
+
+50 climbs a build, to floor 11's stairs up, with the bot minding the wind. Floors 9 to 11 now hold the ogre, the wisp, the mimic and the draught alongside the older tenants. Changes are against the wind-minding round in step 17.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| reached floor 11's stairs up | 86 % (was 96) | 98 % (100) | 98 % (100) | 100 % (100) |
+| deaths a climb | 7.12 (6.68) | 2.56 (1.68) | 2.88 (2.36) | 2.04 (1.72) |
+| deaths on floors 9, 10, 11 | 57, 59, 78 | 17, 23, 43 | 26, 27, 38 | 19, 17, 12 |
+| killed by an ogre | 44 | 8 | 21 | 16 |
+| killed by a draught | 21 | 18 | 15 | 0 |
+| killed by a mimic | 3 | 0 | 1 | 0 |
+| killed by the wind | 34 | 25 | 21 | 1 |
+| turns on floors 9, 10, 11 | 2374, 2026, 1829 | 1661, 1530, 1385 | 1679, 1678, 1417 | 1532, 1302, 935 |
+
+**Findings for the step 18 review:**
+1. **The ogre is now the leading killer on floors 9 to 11** for Even (44) and second for the others. That matches its role: meeting plain ogres is meant to set up floor 12's giant.
+2. **Draughts kill 15 to 21 times a build for the non-casters.** The bot never casts at a draught because it is not hostile, and it does not step away from one, so it takes every slam. A player who knows "any spell seals it" would spend a Magic Bolt. It is the bot's blind spot, much as the wind was.
+3. **Mimics and wisps barely register:** mimics killed 4 climbers in 200 climbs and wisps none. Wisps add a little time in the dark (Even 1739 to 2156 turns).

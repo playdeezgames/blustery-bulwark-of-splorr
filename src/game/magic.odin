@@ -417,7 +417,13 @@ cast_gale :: proc(g: ^Game, d: [2]int) {
 			topple(g, id, false)
 			continue
 		}
-		if !hostile(t) {
+		if t.kind == .Draught {
+			seal_draught(g, id)
+			continue
+		}
+		if disguised(t) {
+			say(g, "The pack was a mimic!")
+		} else if !hostile(t) {
 			t.angry = true
 			say(g, "The ", TENANT[t.kind].name, " shouts for the law. There is none.")
 		}
@@ -484,7 +490,13 @@ spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 		topple(g, id, false)
 		return
 	}
-	if !hostile(t) {
+	if t.kind == .Draught {
+		seal_draught(g, id)
+		return
+	}
+	if disguised(t) {
+		say(g, "The pack was a mimic!")
+	} else if !hostile(t) {
 		t.angry = true
 		say(g, "The ", info.name, " shouts for the law. There is none.")
 	}

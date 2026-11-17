@@ -112,6 +112,14 @@ Gfx :: enum {
 	Lantern,
 	Oil_Flask,
 	Tinderbox,
+	// Slice 3 step 18.
+	Ogre,
+	Wisp,
+	Mimic,
+	Draught,
+	Tooth,
+	Glass,
+	Hinge,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

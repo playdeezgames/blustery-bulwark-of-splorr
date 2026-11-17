@@ -124,6 +124,9 @@ VALUE := #partial [Item_Kind]int {
 	.Tinderbox       = 12,
 	.Old_Bones       = 1,
 	.Medal           = 5,
+	.Ogre_Tooth      = 12,
+	.Wisp_Glass      = 8,
+	.Mimic_Hinge     = 10,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}

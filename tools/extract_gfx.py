@@ -88,6 +88,14 @@ PICKS = [
     ('Lantern',      5, 42),
     ('Oil_Flask',    2, 21),  # a bottle
     ('Tinderbox',   33, 19),  # a small lockbox
+    # Tenants from floor 9 and their trophies (slice 3 step 18).
+    ('Ogre',       122, 40),  # a grey ogre with a club
+    ('Wisp',       110, 42),  # a small white ghost (painted)
+    ('Mimic',       27, 19),  # an open chest: a mouth (it looks like a pack until it wakes)
+    ('Draught',     80, 34),  # wind streaks (from the status icons)
+    ('Tooth',        8, 38),
+    ('Glass',       11, 20),  # a wine glass
+    ('Hinge',        5, 38),  # a short bar (painted grey)
 ]
 
 def tile(col, row):

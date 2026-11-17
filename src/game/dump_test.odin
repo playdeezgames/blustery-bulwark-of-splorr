@@ -463,3 +463,51 @@ test_dump_army :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_ARMY + "-notice.ppm")
 	}
 }
+
+// Floor 9's tenants by eye (-define:DUMP_DEEP=<prefix>): <prefix>-tenants.ppm (an ogre, a wisp, a
+// mimic awake, a draught and a mimic still disguised as a pack, with the three trophies below) and
+// <prefix>-view.ppm (floor 9 on arrival).
+DUMP_DEEP :: #config(DUMP_DEEP, "")
+
+@(test)
+test_dump_deep :: proc(t: ^testing.T) {
+	when DUMP_DEEP != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		g.unlocked += {BOSS_INDEX, ARMY_INDEX}
+		enter_floor(g, ARMY_INDEX + 1, .Stairs_Down)
+		say(g, "You climb to floor 9. The wind is stronger.")
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_DEEP + "-view.ppm", fr)
+		f := floor_of(g)
+		for &tn in g.tenants {
+			if int(tn.floor) == g.current {
+				tn = {}
+			}
+		}
+		for k, i in ([?]Tenant_Kind{.Ogre, .Wisp, .Mimic, .Draught, .Mimic}) {
+			id := new_tenant(g, k, g.current, g.x - 4 + 2 * i, g.y - 1)
+			g.tenants[id].awake = i == 2
+		}
+		for k, i in ([?]Item_Kind{.Ogre_Tooth, .Wisp_Glass, .Mimic_Hinge}) {
+			id := new_item(g, k)
+			it := &g.items[id]
+			it.place, it.floor, it.x, it.y = .Ground, i8(g.current), i16(g.x - 4 + 2 * i), i16(g.y + 1)
+		}
+		for y in 0 ..< FLOOR_H {
+			for x in 0 ..< FLOOR_W {
+				f.cells[y][x] = x > 0 && y > 0 && x < f.w - 1 && y < f.h - 1 ? .Floor : .Wall
+			}
+		}
+		g.gust_in = 99
+		say(g, "The pack was a mimic. It opens wide.")
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_DEEP + "-tenants.ppm", fr)
+	}
+}

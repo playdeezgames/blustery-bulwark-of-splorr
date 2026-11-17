@@ -193,7 +193,15 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - Even dies 9.7 times a climb, the Fighter and Nimble 4.3 to 4.4, and the Caster 2.1.
 
     **Reviewed with the user November 17, 2026:** the bot now minds the wind (it steps off a cell where the coming gust would slam it, or waits on a safe one). With that, wind deaths fell by two thirds or more, every build but Even reaches floor 11's stairs up in every climb (Even 96 %), and floors 9 to 11 take 900 to 2100 turns each. Kept as they are: the wind's numbers, the long floors and the Even build. The game is unchanged by the review.
-18. **The new tenants** (item 2), with trophies and lines, and restocking on floors 9 to 11.
+18. **Done November 17, 2026.** **Four tenants from floor 9**, also restocked on floors 9 to 11 like the rest:
+    - **ogre:** health 30, 3 to 9, to hit 55, defence 10, slow (every other turn) and heavy (gusts do not move it), 15 XP. "An ogre. Exactly as tall as an ogre." Trophy: ogre tooth, 12.
+    - **wisp:** health 5, to hit 65, defence 25, fast, flits, carried by gusts, 4 XP. A touch that lands does no harm but puts out yer torch or lantern ("The wisp touches yer torch. It goes out. Enter/OK to relight."). "Owes rent from before. Long before." Trophy: wisp glass, 8.
+    - **mimic:** drawn as a pack lying on the floor ("A pack. Somebody left it here.") and keeps still until you are next to it. Then "The pack was a mimic. It opens wide." and it is drawn as a red open chest: health 16, 2 to 7, to hit 60, slow, 8 XP. Striking it or a spell wakes it too ("The pack was a mimic!"). Sense Tenants shows it for what it is. "Pays rent as furniture. Is furniture, mostly." Trophy: mimic hinge, 10.
+    - **draught:** never fights; drifts about. Each turn you are next to it, it pushes you a cell away from it ("A draught shoves you E."), or slams you into a wall or a tenant for 1 health. Blows pass through it ("Yer blow goes straight through it."), and any spell that reaches it seals it ("The draught is sealed.", 3 XP). "A wind spirit, the town says. It is a draught." No trophy.
+
+    The mimic and the draught are picked half as often. Pictures from Urizen: a grey ogre with a club, a small white ghost, an open chest, wind streaks, a tooth, a wine glass and a short bar. 145 native tests (`deep_test.odin`; `DUMP_DEEP` draws the four, a disguised mimic and the trophies). Checked in the browser: the build loads, showing "Slice 3, step 18", with no console errors; floor 9 not reached there.
+
+    **Bot round** (`PLAYTEST.md`): every build still reaches floor 11 (Even reaches its stairs up in 86 % of climbs, the rest 98 to 100 %). Deaths a climb rose from 6.7 to 7.1 (Even), 1.7 to 2.6 (Fighter), 2.4 to 2.9 (Nimble) and 1.7 to 2.0 (Caster). Ogres killed 8 to 44 a build, draughts 0 to 21, mimics 0 to 3; wisps killed nobody. The bot never casts at a draught, since it is not hostile, so it takes every slam. **Still Claude's, to review:** the four tenants' numbers, the lines, trophy prices and the pictures.
 19. **Camps on floors 9 to 11 and the cartographer** (item 3), and the pack of holding (item 4).
 20. **The town after the army** (item 5).
 21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.

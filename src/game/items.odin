@@ -74,6 +74,10 @@ Item_Kind :: enum u8 {
 	Tinderbox, // carried, lighting takes no turn
 	Key_Nine, // the sergeant's key to floor 9 (army.odin)
 	Medal, // the herald's, for routing the army
+	// Trophies from floor 9 (slice 3 step 18).
+	Ogre_Tooth,
+	Wisp_Glass,
+	Mimic_Hinge,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -184,6 +188,9 @@ KIND := [Item_Kind]Kind_Info {
 	.Tinderbox     = {name = "Tinderbox", gfx = .Tinderbox, color = COLOR_BROWN, weight = 200, bulk = 300},
 	.Key_Nine      = {name = "Key to floor 9", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
 	.Medal         = {name = "Medal", gfx = .Amulet, color = COLOR_YELLOW, weight = 50, bulk = 40, trophy = true},
+	.Ogre_Tooth    = {name = "Ogre tooth", gfx = .Tooth, color = COLOR_WHITE, weight = 40, bulk = 30, trophy = true},
+	.Wisp_Glass    = {name = "Wisp glass", gfx = .Glass, color = COLOR_CYAN, weight = 20, bulk = 30, trophy = true},
+	.Mimic_Hinge   = {name = "Mimic hinge", gfx = .Hinge, color = COLOR_LIGHT, weight = 150, bulk = 40, trophy = true},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
