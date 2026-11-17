@@ -124,9 +124,9 @@ Proposed by Claude and decided by the user item by item on November 13, 2026: ev
 
 Every number above (tenant stats, prices, oil, spell costs, gust strength) is a starting value for the user to review step by step, as in slice 1.
 
-## Slice 3: the third stretch (proposed November 17, 2026; not yet decided)
+## Slice 3: the third stretch (proposed and decided November 17, 2026)
 
-Proposed by Claude on November 17, 2026, for the user to decide item by item, as with slice 2. Nothing is built. Every number is a starting value.
+Proposed by Claude and decided by the user item by item on November 17, 2026: all eight items were accepted as proposed. Nothing is built yet. The numbers are still starting values, to review step by step as in slices 1 and 2.
 
 **Goal:** the key to floor 9 opens the third stretch. There are three more generated floors, windier and more crowded, then floor 12, the third boss floor, "a giant": an ordinary ogre standing on a box (DESIGN.md beat 4). The wind can knock the box away, and so can you. On the way, the earlier climbers' notes start pointing at floor 15 without saying what is there. Once the army is routed, the town gets a second round of stock. When the giant falls, the herald proclaims it, the windchute reaches floor 12, and the slice ends with the key to floor 13 and the same kind of notice as slices 1 and 2.
 
