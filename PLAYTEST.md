@@ -392,3 +392,20 @@ What it shows:
 - **The Even build is now the outlier.** Its 10 Intelligence gives it a small mana pool for bolts, and its Strength and Dexterity are only middling. It still dies about 3 times a climb, mostly to goblins (49 of 155 deaths), ants and bears.
 - **Floor 8** is the hardest single floor for every build now (0.4 to 0.7 deaths a climb, 55 of 200 to the sergeant).
 - **Gale hardly comes up** (under one a climb). The bot casts it only when crowded, and is rarely crowded in a line.
+
+### Decided with the user (November 16, 2026)
+
+1. **Floors 5 to 7:** left as they are. With spells the weaker builds die far less there; the Even build stays the outlier, as a jack of all trades.
+2. **The sergeant:** kept as it is.
+3. **Light: more oil.** A flask now lasts 900 turns (was 600). Tested. Saves are unchanged; a lantern already lit keeps its oil.
+
+Rerun of the heavy climbs (with spells) after the oil change, 50 per build. In brackets: before the change.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| Turns in the dark | 612 (835) | 671 (681) | 467 (512) | 974 (995) |
+| Light ran out at some point | 54 % (62 %) | 76 % (84 %) | 36 % (50 %) | 50 % (58 %) |
+| Trips to town | 5.0 (5.6) | 3.7 (3.8) | 4.2 (4.7) | 6.5 (6.6) |
+| Deaths a climb | 3.26 (3.10) | 0.86 (0.92) | 1.08 (1.20) | 1.00 (1.16) |
+
+The light lasts longer and the bot goes back to town a little less, but this is a small change. Most of the dark that is left comes from torches before the lantern (floors 1 to 4) and from gusts snuffing the light, not from oil running out. Deaths are within the noise.

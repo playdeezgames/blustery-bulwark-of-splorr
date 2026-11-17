@@ -31,7 +31,7 @@ gust_push :: proc(number: int) -> int {
 }
 
 TORCH_TURNS :: 300 // a fresh torch
-OIL_TURNS :: 600 // a lantern's flask of oil
+OIL_TURNS :: 900 // a lantern's flask of oil (was 600 until November 16, 2026, round 5)
 LANTERN_SNUFF :: 3 // a gust snuffs a lit lantern a third as often as a torch
 DARK_SIGHT :: 1
 
