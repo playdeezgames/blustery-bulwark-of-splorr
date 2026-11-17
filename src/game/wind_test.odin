@@ -165,14 +165,18 @@ test_each_floor_has_its_own_wind_and_higher_floors_gust_more :: proc(t: ^testing
 		free(b)
 	}
 	testing.expect(t, differs)
-	// Windier going up, among the generated floors (1 to 3, then 5 to 7) and among the boss
-	// floors (4, 8); a boss hall is windier than the floor above it (decided November 13, 2026).
-	for pair in ([?][2]int{{1, 2}, {2, 3}, {3, 5}, {5, 6}, {6, 7}, {4, 8}}) {
+	// Windier going up, among the generated floors (1 to 3, 5 to 7, 9 to 11) and among the boss
+	// floors (4, 8, 12); a boss hall is windier than the floor above it (decided November 13, 2026;
+	// floors 9 to 12 decided November 17, 2026).
+	for pair in ([?][2]int{{1, 2}, {2, 3}, {3, 5}, {5, 6}, {6, 7}, {7, 9}, {9, 10}, {10, 11}, {4, 8}, {8, 12}}) {
 		testing.expect(t, gust_period(pair[1]) <= gust_period(pair[0]))
 		testing.expect(t, snuff_chance(pair[1]) >= snuff_chance(pair[0]))
 	}
 	testing.expect_value(t, gust_push(4), 1)
 	testing.expect_value(t, gust_push(5), 2)
+	testing.expect_value(t, gust_push(12), 2) // a 3-cell push waits for slice 4
+	testing.expect_value(t, gust_period(11), 6)
+	testing.expect_value(t, snuff_chance(12), 75)
 }
 
 @(test)
@@ -307,5 +311,6 @@ test_a_heavy_load_holds_often_and_drags_otherwise :: proc(t: ^testing.T) {
 	gust(g)
 	testing.expect_value(t, g.x, 22)
 	// Deeper floors hold less.
-	testing.expect(t, load_hold(1) > load_hold(5) && load_hold(5) > load_hold(8))
+	testing.expect(t, load_hold(1) > load_hold(5) && load_hold(5) > load_hold(8) && load_hold(8) > load_hold(11))
+	testing.expect_value(t, load_hold(12), 15)
 }

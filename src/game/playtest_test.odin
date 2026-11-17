@@ -16,7 +16,7 @@ _ :: fmt
 
 PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
-PLAYTEST_TURNS :: 16000 // give up after this many turns
+PLAYTEST_TURNS :: 24000 // give up after this many turns (16000 in slice 2)
 TRIP_GAP :: 600 // turns between the bot's trips back to town
 TRIP_MONEY :: 40 // Jools (carried, or in trophies) worth a trip
 BOT_DEBUG :: #config(BOT_DEBUG, false)
@@ -28,8 +28,9 @@ NO_BLOW :: #config(NO_BLOW, false)
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // took the key to floor 9, the end of slice 2 (step 16)
+	won:             bool, // reached floor 11's stairs up, the top of slice 3 so far (step 17)
 	turn_won:        int,
+	key9_turn:       int, // when the key to floor 9 was picked up (0: never)
 	key_turn:        int, // when the key to floor 5 was picked up (0: never)
 	turns:           int,
 	deaths:          int,
@@ -552,7 +553,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 				}
 				return false
 			}
-			if g.current == ARMY_INDEX && !has_kind(g, .Key_Nine) {
+			if g.current == ARMY_INDEX && !has_kind(g, .Key_Nine) && ARMY_INDEX not_in g.unlocked {
 				s.stuck = true // explored floor 8 without the key
 				when BOT_DEBUG {
 					fmt.printfln("NOKEY floor 8 seed %d turn %d army_dead %v sergeants %d", g.seed, g.turn, g.army_dead, count_of(g, .Sergeant))
@@ -704,8 +705,11 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if s.army_turn == 0 && g.current == ARMY_INDEX {
 			s.army_turn = g.turn
 		}
-		if has_kind(g, .Key_Nine) {
-			s.won = true // the end of slice 2
+		if s.key9_turn == 0 && has_kind(g, .Key_Nine) {
+			s.key9_turn = g.turn
+		}
+		if g.current == BUILT_FLOORS - 1 && cell_at(g, g.x, g.y) == .Stairs_Up {
+			s.won = true // the top floor built so far
 			s.turn_won = g.turn
 			break
 		}
@@ -808,7 +812,7 @@ test_playtest :: proc(t: ^testing.T) {
 		}
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
-			keys, key_turns := 0, 0
+			keys, key_turns, keys9, key9_turns := 0, 0, 0, 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			casts: [Spell]int
 			wind: [10]int
@@ -834,6 +838,10 @@ test_playtest :: proc(t: ^testing.T) {
 				if s.key_turn > 0 {
 					keys += 1
 					key_turns += s.key_turn
+				}
+				if s.key9_turn > 0 {
+					keys9 += 1
+					key9_turns += s.key9_turn
 				}
 				if s.stuck {
 					stuck += 1
@@ -878,7 +886,8 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("\n== %s, %d runs ==", b.name, runs)
 			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
-			fmt.printfln("took the key to floor 9: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
+			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
 			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs))
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])

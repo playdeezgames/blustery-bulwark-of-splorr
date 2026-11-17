@@ -1,7 +1,6 @@
 #+build !js
 package game
 
-import "core:strings"
 import "core:testing"
 
 // Floor 8 with its tenants, the player on its stairs down, no gust coming.
@@ -97,28 +96,23 @@ test_the_sergeant_drops_the_key_and_the_rats_scatter :: proc(t: ^testing.T) {
 	teleport(g, {int(s.x), int(s.y)})
 	testing.expect_value(t, g.items[ground_item_at(g, g.x, g.y)].kind, Item_Kind.Key_Nine)
 	command(g, .Confirm)
+	for g.mode == .Learn {
+		command(g, .Confirm) // the sergeant's XP can bring another spell to choose
+	}
 	testing.expect(t, has_kind(g, .Key_Nine))
-	testing.expect_value(t, g.mode, Mode.Notice) // the end of the second stretch
-	command(g, .Confirm)
-	testing.expect_value(t, g.mode, Mode.Play)
-	// Only once.
+	testing.expect_value(t, g.mode, Mode.Play) // no notice since step 17: the stretch goes on
 	key := 0
 	for i in 1 ..< MAX_ITEMS {
 		if g.items[i].kind == .Key_Nine {
 			key = i
 		}
 	}
-	unplace(g, key)
-	g.items[key].place, g.items[key].floor, g.items[key].x, g.items[key].y = .Ground, i8(ARMY_INDEX), i16(g.x), i16(g.y)
-	g.mode = .Play
-	pick_up(g, key)
-	testing.expect_value(t, g.mode, Mode.Play)
 	// The key cannot be sold.
 	testing.expect(t, !sellable(g, key))
 }
 
 @(test)
-test_the_door_to_floor_nine_opens_on_scaffolding :: proc(t: ^testing.T) {
+test_the_door_to_floor_nine_opens_and_stays_open :: proc(t: ^testing.T) {
 	g := army_game()
 	defer free(g)
 	teleport(g, floor_of(g).up)
@@ -128,11 +122,17 @@ test_the_door_to_floor_nine_opens_on_scaffolding :: proc(t: ^testing.T) {
 	id := new_item(g, .Key_Nine)
 	testing.expect(t, stow(g, id))
 	command(g, .Confirm)
-	testing.expect_value(t, g.current, ARMY_INDEX) // nowhere to go yet
+	testing.expect_value(t, g.current, ARMY_INDEX + 1) // floor 9
+	testing.expect_value(t, message(&g.last_said), "You climb to floor 9. The wind is stronger.")
 	testing.expect(t, ARMY_INDEX in g.unlocked)
+	// Floor 9's stairs down come back to the door.
+	teleport(g, floor_of(g).down)
+	command(g, .Confirm)
+	testing.expect_value(t, g.current, ARMY_INDEX)
+	testing.expect_value(t, [2]int{g.x, g.y}, floor_of(g).up)
 	free_item(g, id) // lost: the door stays open
 	command(g, .Confirm)
-	testing.expect(t, strings.has_prefix(message(&g.last_said), "Above: scaffolding, and a sign. \"Floor 9."))
+	testing.expect_value(t, g.current, ARMY_INDEX + 1)
 }
 
 @(test)

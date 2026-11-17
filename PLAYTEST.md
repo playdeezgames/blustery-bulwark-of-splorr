@@ -409,3 +409,26 @@ Rerun of the heavy climbs (with spells) after the oil change, 50 per build. In b
 | Deaths a climb | 3.26 (3.10) | 0.86 (0.92) | 1.08 (1.20) | 1.00 (1.16) |
 
 The light lasts longer and the bot goes back to town a little less, but this is a small change. The dark that is left probably comes mostly from torches before the lantern (floors 1 to 4) and from gusts snuffing the light; the bot does not count those apart. Deaths are within the noise.
+
+## Step 17: floors 9 to 11 (November 17, 2026)
+
+50 climbs a build, playing to floor 11's stairs up, with the turn limit raised from 16000 to 24000. Floors 9 to 11 hold slice 2's tenants for now; the new tenants arrive in step 18.
+
+**The first run is not counted.** Nearly every climb ended "stuck" on floor 8. The bot gave up there whenever it was not carrying the key, even after the door was open. The game was right (the door stays open); the bot's check now matches floor 4's.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| reached floor 11 | 100 % | 100 % | 100 % | 100 % |
+| reached its stairs up | 66 % | 88 % | 90 % | 100 % |
+| ran out of turns | 17 | 6 | 5 | 0 |
+| deaths a climb | 9.74 | 4.32 | 4.42 | 2.08 |
+| deaths on floors 9, 10, 11 | 64, 88, 158 | 38, 45, 87 | 34, 44, 84 | 16, 15, 22 |
+| killed by the wind | 110 | 109 | 80 | 6 |
+| killed by hunger | 61 | 43 | 42 | 0 |
+| turns on floors 9, 10, 11 | 2967, 3217, 3522 | 2415, 2268, 2373 | 2214, 2288, 2363 | 1250, 1142, 761 |
+| spent in town | 839 | 664 | 639 | 376 |
+
+**Findings for the step 17 review:**
+1. **The wind is the main killer on floors 9 to 11** for every build but the Caster: wall slams at 1 health each, with a gust every 6 or 7 turns pushing 2 cells. Round 5 found the bot is wind-blind and slams about once every 30 turns. A player who keeps away from walls on the downwind side would slam far less, so this is partly the bot. The Caster's Ward and its kills from range keep its health higher between slams.
+2. **Floors 9 to 11 take about three times as long as floors 5 to 7** for the non-casters (2200 to 3500 turns each). That long stay is where hunger and the dark come back: starving 335 to 425 turns a climb, and 1600 to 2500 turns in the dark.
+3. **Even is the weakest build again**, at nearly 10 deaths a climb, with a third of its climbs out of turns.

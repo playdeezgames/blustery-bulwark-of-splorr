@@ -556,11 +556,8 @@ pick_up :: proc(g: ^Game, id: int) {
 	} else if g.items[id].kind == .Key {
 		say(g, "You pick up the ", name, ".")
 	} else if g.items[id].kind == .Key_Nine {
+		// No notice since step 17: the end of the stretch moves to the key to floor 13 (step 22).
 		say(g, "You pick up the ", name, ".")
-		if !g.slice_done {
-			g.slice_done = true
-			g.mode = .Notice
-		}
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {

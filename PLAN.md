@@ -176,7 +176,23 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
 
 ### Proposed build order
 
-17. **The door and floors 9 to 11:** the key to floor 9 opens floor 8's door onto floor 9 and it stays open; floors 9 to 11 are generated with item 1's numbers; a sign on floor 11's stairs up; the end-of-stretch notice moves off the key to floor 9; the bot's goal becomes floor 11's stairs up.
+17. **Done November 17, 2026.**
+    - **The door:** with the key, floor 8's door opens onto floor 9 ("The key turns. The door stays open." then "You climb to floor 9. The wind is stronger.") and stays open after that, as on floor 4. Floor 9's stairs down come back to the door.
+    - **Floors 9 to 11** are generated at 64 by 44. Gusts come every 7, 7 and 6 turns (6 planned for floor 12) and snuff a lit torch 65, 70 and 70 % of the time (75 on floor 12). A heavy load holds against 20, 20 and 15 gusts in 100 (15 on floor 12). The push stays at 2 cells. For now the floors hold slice 2's tenants and items; the new tenants come in step 18 and the camps in step 19.
+    - **The sign:** floor 11's stairs up show "Floor 12. Coming soon, by order of His Lordship."
+    - **The notice:** picking up the key to floor 9 no longer shows the end-of-stretch notice. It returns with the key to floor 13 in step 22.
+    - **Tests:** 137 native tests. A new test enters all eleven floors for three seeds and checks that items and tenants stay under three quarters of their room.
+    - **Bot:** its climb is done at floor 11's stairs up, and it no longer gives up on floor 8 once the door has been opened.
+    - Checked in the browser: the build loads, showing "Slice 3, step 17", with no console errors. Floor 9 was not reached in the browser.
+
+    **Bot round** (50 climbs a build, results in `PLAYTEST.md`):
+    - The first run showed nearly every climb "stuck" on floor 8. The bot gave up there whenever it had lost the key, even with the door already open; the game was right. After fixing the bot, every build reaches floor 11 in every climb, and 0 to 34 % of climbs run out of turns before reaching its stairs up.
+    - Floors 9 to 11 take 2200 to 3500 turns each, against about 900 for floors 5 to 7. The Caster takes 750 to 1250.
+    - **The wind is the leading killer up there:** 80 to 110 deaths in 50 climbs for the three non-casters, mostly wall slams. The Caster has 6.
+    - Hunger kills 40 to 60 times per build for the non-casters.
+    - Even dies 9.7 times a climb, the Fighter and Nimble 4.3 to 4.4, and the Caster 2.1.
+
+    The numbers are the ones decided for item 1 and are not changed here. They are for the step 17 review.
 18. **The new tenants** (item 2), with trophies and lines, and restocking on floors 9 to 11.
 19. **Camps on floors 9 to 11 and the cartographer** (item 3), and the pack of holding (item 4).
 20. **The town after the army** (item 5).

@@ -3,6 +3,7 @@ package game
 
 SLICE1_GENERATED :: 3 // floors 1 to 3, generated since slice 1
 
+import "core:strings"
 import "core:testing"
 
 new_game :: proc(seed: u64 = 12345) -> ^Game {
@@ -306,7 +307,7 @@ test_a_repeated_line_shows_once_with_a_count :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_floors_five_to_seven_climb_to_floor_eight :: proc(t: ^testing.T) {
+test_floors_five_to_seven_climb_to_floor_eight_and_nine_to_eleven_to_a_sign :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
@@ -319,6 +320,20 @@ test_floors_five_to_seven_climb_to_floor_eight :: proc(t: ^testing.T) {
 	// Floor 7's stairs up lead to floor 8 (step 15).
 	testing.expect_value(t, floor_of(g).number, 8)
 	testing.expect_value(t, g.deepest, 8)
+	// Floors 9 to 11 (step 17): generated at 64 by 44, windier; floor 11's stairs up show a sign.
+	g.unlocked += {ARMY_INDEX}
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	for number in 9 ..= 11 {
+		testing.expect_value(t, floor_of(g).number, number)
+		testing.expect_value(t, floor_of(g).w, 64)
+		testing.expect_value(t, floor_of(g).h, 44)
+		teleport(g, floor_of(g).up)
+		command(g, .Confirm)
+	}
+	testing.expect_value(t, floor_of(g).number, 11)
+	testing.expect_value(t, g.deepest, 11)
+	testing.expect(t, strings.has_prefix(message(&g.last_said), "Above: scaffolding, and a sign. \"Floor 12."))
 	// Floor 5's stairs down lead to floor 4's door.
 	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
 	command(g, .Confirm)
@@ -334,5 +349,31 @@ test_floors_one_to_three_keep_their_size :: proc(t: ^testing.T) {
 		generate_floor(f, floor_seed(7, number), number)
 		testing.expect_value(t, f.w, 60)
 		testing.expect_value(t, f.h, 40)
+	}
+}
+
+// Every built floor entered once still leaves room for more items and tenants (slice 3 step 17:
+// floors 9 to 11 are the most crowded yet).
+@(test)
+test_every_built_floor_fits_in_the_game :: proc(t: ^testing.T) {
+	for seed in ([?]u64{1, 7, 12345}) {
+		g := new_game(seed)
+		defer free(g)
+		for i in 0 ..< BUILT_FLOORS {
+			enter_floor(g, i, .Stairs_Down)
+		}
+		items, tenants := 0, 0
+		for i in 1 ..< MAX_ITEMS {
+			if g.items[i].kind != .None {
+				items += 1
+			}
+		}
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind != .None {
+				tenants += 1
+			}
+		}
+		testing.expect(t, items < MAX_ITEMS * 3 / 4)
+		testing.expect(t, tenants < MAX_TENANTS * 3 / 4)
 	}
 }

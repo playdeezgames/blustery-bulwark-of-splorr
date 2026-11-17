@@ -5,8 +5,8 @@ package game
 // an army of a thousand: it is forty rats and a sergeant rat in a tiny hat. A carny takes three
 // Jools at the door (or fights if you shove past). The wind blows down the hall from the west and
 // sweeps the rats with it. When the sergeant falls the rest scatter, and it drops the key to floor 9,
-// whose door opens on scaffolding: the end of the second stretch. Reaching the floor gives the
-// windchute a second stop.
+// whose door opens onto floor 9 (since slice 3 step 17; it opened on scaffolding in slice 2).
+// Reaching the floor gives the windchute a second stop.
 
 ARMY_INDEX :: 7 // floors[7] is floor 8
 ARMY_X :: 8
@@ -120,14 +120,17 @@ sergeant_falls :: proc(g: ^Game, t: Tenant) {
 	}
 }
 
-// The stairs up on floor 8: the door to floor 9, which opens on scaffolding.
+// The stairs up on floor 8: the door to floor 9 (slice 3 step 17). Once opened it stays open, as
+// on floor 4, so a key lost in a fall up there cannot lock you out.
 door_to_floor_nine :: proc(g: ^Game) {
 	if ARMY_INDEX in g.unlocked {
-		say(g, "Above: scaffolding, and a sign. \"Floor 9. Coming soon, by order of His Lordship.\"")
+		enter_floor(g, ARMY_INDEX + 1, .Stairs_Down)
+		say(g, "You climb to floor 9. The wind is stronger.")
 	} else if has_kind(g, .Key_Nine) {
 		g.unlocked += {ARMY_INDEX}
+		enter_floor(g, ARMY_INDEX + 1, .Stairs_Down)
 		say(g, "The key turns. The door stays open.")
-		say(g, "Above: scaffolding, and a sign. \"Floor 9. Coming soon, by order of His Lordship.\"")
+		say(g, "You climb to floor 9. The wind is stronger.")
 	} else {
 		say(g, "The door to floor 9 is locked. The army has the key, they say.")
 	}
