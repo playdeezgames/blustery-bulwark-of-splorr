@@ -408,4 +408,4 @@ Rerun of the heavy climbs (with spells) after the oil change, 50 per build. In b
 | Trips to town | 5.0 (5.6) | 3.7 (3.8) | 4.2 (4.7) | 6.5 (6.6) |
 | Deaths a climb | 3.26 (3.10) | 0.86 (0.92) | 1.08 (1.20) | 1.00 (1.16) |
 
-The light lasts longer and the bot goes back to town a little less, but this is a small change. Most of the dark that is left comes from torches before the lantern (floors 1 to 4) and from gusts snuffing the light, not from oil running out. Deaths are within the noise.
+The light lasts longer and the bot goes back to town a little less, but this is a small change. The dark that is left probably comes mostly from torches before the lantern (floors 1 to 4) and from gusts snuffing the light; the bot does not count those apart. Deaths are within the noise.
