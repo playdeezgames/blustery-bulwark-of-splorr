@@ -123,3 +123,63 @@ Proposed by Claude and decided by the user item by item on November 13, 2026: ev
 16. **Done November 16, 2026.** **The bot** climbs all of slice 2 (done when it takes the key to floor 9), learns Return after Mend and casts it to go back to town when its bags are full of trophies or its light or food is running out. In town it sells trophies and buys food, torches, the Big pack, a lantern and oil after the Horde, and named healing potions, then rides the windchute to the highest stop. On floor 8 it pays the carny and hunts the sergeant. Three bot faults found and fixed (a dry lantern, the unseen sergeant, a drained Strength); the game is unchanged. **Playtest round 5** (`PLAYTEST.md`): every build takes the key to floor 9 in all 400 climbs; the bot spends 230 to 430 Jools a climb in town; floors 5 to 7 hold two thirds of deaths; floor 8 costs about one death a climb for the weaker builds. **Screenshots:** a floor 8 shot added (`08-army.png`); `tools/make_shots.sh` now enlarges by an affine transform (Pillow 12.1.1 here can't enlarge with resize); an old frame dump that no longer compiled fixed. 135 native tests. **The bot also casts fighting spells** (on the user's word): bolts aimed with the wind, Ward, Gale and gust balls. With them the Caster drops from 7.8 to 1.2 deaths a climb and Even from 5.8 to 3.1. **Decided with the user November 16, 2026:** floors 5 to 7 and the sergeant left as they are; a flask of oil lasts 900 turns (was 600). **Slice 2 is complete.**
 
 Every number above (tenant stats, prices, oil, spell costs, gust strength) is a starting value for the user to review step by step, as in slice 1.
+
+## Slice 3: the third stretch (proposed November 17, 2026; not yet decided)
+
+Proposed by Claude on November 17, 2026, for the user to decide item by item, as with slice 2. Nothing is built. Every number is a starting value.
+
+**Goal:** the key to floor 9 opens the third stretch. There are three more generated floors, windier and more crowded, then floor 12, the third boss floor, "a giant": an ordinary ogre standing on a box (DESIGN.md beat 4). The wind can knock the box away, and so can you. On the way, the earlier climbers' notes start pointing at floor 15 without saying what is there. Once the army is routed, the town gets a second round of stock. When the giant falls, the herald proclaims it, the windchute reaches floor 12, and the slice ends with the key to floor 13 and the same kind of notice as slices 1 and 2.
+
+**Already in place:** saves have room for all 16 floors, 640 items and 320 tenants (step 10), and fields added at the end of the game state load into older saves (step 11). So this slice should not need saves to start over. The floor grid is 64 by 44 at most, so floors 9 to 11 stay that size.
+
+**In the slice**
+
+1. **Floors 9 to 11:** generated at 64 by 44, like floors 5 to 7. Gusts come every 7, 7 and 6 turns, with 6 on floor 12. A lit torch is snuffed 65, 70 and 70 % of the time (75 % on floor 12). A heavy load holds against 20, 20 and 15 gusts in 100 (15 on floor 12), continuing `LOAD_HOLD`. A gust still pushes 2 cells; 3 cells waits for slice 4.
+2. **New tenants from floor 9** (tenants pay rent and believe the proclamations, DESIGN.md beat 3):
+   - **ogre:** health 30, 3 to 9, to hit 55, slow and heavy (gusts do not move it). "An ogre. Exactly as tall as an ogre." Meeting plain ogres first is what sets up the giant. Trophy: ogre tooth, 12.
+   - **wisp:** light and fast, carried by gusts. A touch does no harm but puts out yer light, torch or lantern. "Owes rent from before. Long before." Trophy: wisp glass, 8.
+   - **mimic:** looks like a pack or chest lying on the floor until you step next to it or try to pick it up. Then it bites hard (2 to 7) and moves slowly. "Pays rent as furniture. Is furniture, mostly." Trophy: mimic hinge, 10.
+   - **draught:** the town calls it a wind spirit, but it is a draught through a crack. It never fights. Each turn you are next to it, it pushes you a cell away from it, and into a wall or a tenant that costs 1, like a gust. Blows pass through it ("Yer blow goes straight through it."), and any spell that reaches it seals it. "A wind spirit, the town says. It is a draught." No trophy.
+
+   The mimic and the draught are picked half as often.
+3. **Earlier climbers:** each of floors 9 to 11 has a camp, a note and one piece of gear. The notes:
+   - floor 9: "Day 160. Fewer camps up here. Fewer climbers, or fewer who stop to cook."
+   - floor 10: "Ogres on this floor. The big one upstairs is an ogre too, they say, only taller. I did not go up to measure."
+   - floor 11: "Someone on fifteen calls himself undefeated. I did not ask him to prove it."
+
+   The gear: a war hammer on floor 9 (3 to 10, 5 kg), a pack of holding on floor 10 (below), and scale mail on floor 11 (armour 5, 14 kg).
+
+   **The cartographer** lives at floor 10's camp and never wanders. She sells a map of any floor you have reached, which shows its whole automap, for 15 Jools each. Her lines: "I mapped up to ten. Ten was enough.", "Floor fifteen? I hear it is very tidy.", "The wind redraws nothing. The tenants move the furniture."
+4. **A pack of holding:** half the weight of what it holds counts (Castle of the Winds' pack of holding). It does not go inside another pack of holding. One lies at floor 10's camp, and once the army is routed the sage sells one for 200.
+5. **The town after the army:**
+   - **smith:** a war hammer 70, scale mail 90 and a spear (2 to 8, light enough to keep a load low) 45.
+   - **general store:** **gust insurance**, sold as in DESIGN.md beat 2. It costs 30 Jools for 1000 turns and pays 2 Jools into yer purse for each wall slam. It pays, but on average it pays out less than it costs, and the clerk never says so.
+6. **Levels 9 to 12 and four spells**, offered from level 9:
+   - **Uncurse** (6): frees everything you wear, as the scroll does (DESIGN.md lists Remove Curse as a spell).
+   - **Clairvoyance** (5): shows the map within 12 cells of you.
+   - **Teleport** (7): to a random open cell on the floor at least 20 cells away (Hop goes only 2 to 6).
+   - **Squall** (8, aimed): a bigger gust ball, 4 cells out, bursting for 3 to 8 over three by three, and it does not hurt you. Like the gust ball, it drifts every 2nd cell.
+
+   With 18 spells, the spell list no longer fits at 10 pixels a row, so it needs two columns or scrolling. That is decided at build time and shown in a frame.
+7. **Floor 12, "a giant":**
+   - **The layout:** a hand-built hall. A carny at the door says "See the Giant! Four Jools! Mind yer head!"; you pay or Shove past, as on floors 4 and 8.
+   - **On the crate:** the giant is an ogre standing on a crate. It strikes from two cells away for 4 to 10, so it hits you as you close in; next to it, you can strike back.
+   - **Getting it off the crate:** the crate is an empty crate, so the wind catches it.
+     - A gust tips it one time in three, like the propped-up bones.
+     - Gale, a gust ball or Squall knocks it off at once.
+   - **Off the crate:** it is an ordinary ogre (health 40 in all, 3 to 9, next to you only, slow). It walks back to the crate and spends a turn climbing up, unless the crate is gone. Gusts carry a loose crate downwind, so the ogre chases it, and you can pick the crate up yerself (4 kg) so it can never get back on.
+   - **When it falls:** it drops the Key to floor 13 and an ogre tooth, and "That was the Giant." The end-of-stretch notice moves to this key: "The key to floor 13. Here ends the third stretch."
+   - **After:** floor 12's stairs up are the locked door to floor 13 (scaffolding and a sign, as before). The herald proclaims "His Lordship has felled a giant, as foretold." and hands you a **Certificate** ("Giant felled. Height not recorded."; a trophy worth 5). The windchute gains floor 12.
+8. **The bot** climbs all of slice 3: done when it takes the key to floor 13. On floor 12 it knocks the giant off its crate (Gale, gust ball, Squall, or waiting for a gust) and picks up the crate when it can. **Playtest round 6** at 50 climbs a build, plus a floor 12 screenshot.
+
+**Not in the slice:** floors 13 and up, the champion, the lord and the ending, elemental damage and resistances, a second ring slot, a stronger push than 2 cells, LootLocker scores, sound.
+
+### Proposed build order
+
+17. **The door and floors 9 to 11:** the key to floor 9 opens floor 8's door onto floor 9 and it stays open; floors 9 to 11 are generated with item 1's numbers; a sign on floor 11's stairs up; the end-of-stretch notice moves off the key to floor 9; the bot's goal becomes floor 11's stairs up.
+18. **The new tenants** (item 2), with trophies and lines, and restocking on floors 9 to 11.
+19. **Camps on floors 9 to 11 and the cartographer** (item 3), and the pack of holding (item 4).
+20. **The town after the army** (item 5).
+21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.
+22. **Floor 12, the giant** (item 7).
+23. **The bot and playtest round 6** (item 8), with screenshots.
