@@ -25,6 +25,7 @@ NO_GUSTS :: #config(NO_GUSTS, false)
 NO_PUSH :: #config(NO_PUSH, false)
 NO_SNUFF :: #config(NO_SNUFF, false)
 NO_BLOW :: #config(NO_BLOW, false)
+BOT_WIND :: #config(BOT_WIND, true) // the bot minds the wind (step 17 review); false for the old wind-blind bot
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
@@ -59,6 +60,8 @@ Bot_Stats :: struct {
 	trophies_end:    int,
 	weight_max:      int,
 	wind:            Wind_Counts,
+	wind_dodges:     int, // steps off a cell the coming gust would slam
+	wind_waits:      int, // turns waited on a safe cell for a gust
 	wind_deaths:     int,
 	trips:           int, // back to town by Return to shop
 	last_trip:       int,
@@ -448,6 +451,11 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			return true
 		}
 	}
+	// Mind the wind (step 17 review, November 17, 2026): on the last turn before a gust, stand
+	// where the push will not slam you into a wall or a tenant. Off a safe cell, wait it out.
+	if bot_minds_wind(g, s) {
+		return true
+	}
 	// Look after yerself.
 	if g.hunger >= HUNGER_HUNGRY {
 		if id, _ := carried_of(g, is_food); id != 0 {
@@ -751,8 +759,8 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		}
 	}
 	when BOT_DEBUG {
-		if !s.won && !s.stuck {
-			fmt.printfln("OUT seed %d mode %v floor %d at %d,%d turn %d hp %d/%d", seed, g.mode, g.current + 1, g.x, g.y, g.turn, g.health, max_health(g))
+		if !s.won {
+			fmt.printfln("OUT stuck %v seed %d mode %v floor %d at %d,%d turn %d hp %d/%d gust_in %d", s.stuck, seed, g.mode, g.current + 1, g.x, g.y, g.turn, g.health, max_health(g), g.gust_in)
 			for i in 1 ..< MAX_TENANTS {
 				t := &g.tenants[i]
 				if t.kind != .None && int(t.floor) == g.current && abs(int(t.x) - g.x) <= 2 && abs(int(t.y) - g.y) <= 2 {
@@ -813,6 +821,7 @@ test_playtest :: proc(t: ^testing.T) {
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns, keys9, key9_turns := 0, 0, 0, 0
+			dodges, wwaits := 0, 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			casts: [Spell]int
 			wind: [10]int
@@ -851,6 +860,8 @@ test_playtest :: proc(t: ^testing.T) {
 					army_turns += s.army_turn
 				}
 				trips += s.trips
+				dodges += s.wind_dodges
+				wwaits += s.wind_waits
 				for sp in Spell {
 					casts[sp] += s.casts[sp]
 				}
@@ -888,6 +899,7 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
 			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("minding the wind a climb: stepped aside %d, waited %d", dodges / runs, wwaits / runs)
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
 			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs))
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
@@ -954,6 +966,43 @@ bot_bolt :: proc(g: ^Game, d: [2]int, ball: bool) -> (hit: int, end: [2]int) {
 // The bot's fighting spells, kept above the mana Return needs: Ward when a fight is near, Gale when
 // crowded, a gust ball at a knot of tenants, a bolt at one that is not next to you (or at any, for
 // a caster). True when it cast.
+// Would the coming gust slam you into something, standing at (x, y)?
+gust_slams :: proc(g: ^Game, x, y: int) -> bool {
+	f := floor_of(g)
+	d := wind_blow(f)
+	cells := load_anchors(g) ? max(1, gust_push(f.number) - 1) : gust_push(f.number)
+	cx, cy := x, y
+	for _ in 0 ..< cells {
+		cx, cy = cx + d.x, cy + d.y
+		if !passable(floor_cell(f, cx, cy)) || tenant_at(g, cx, cy) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// The last turn before a gust: step off a cell where it would slam you, or wait on a safe one.
+bot_minds_wind :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
+	if !BOT_WIND || g.gust_in != 1 || g.calm_turns > 0 || g.anchor_spell || in_town(g) || overloaded(g) {
+		return false
+	}
+	if !gust_slams(g, g.x, g.y) {
+		s.wind_waits += 1
+		command(g, .Wait)
+		return true
+	}
+	f := floor_of(g)
+	for d, i in DIRECTIONS {
+		x, y := g.x + d.x, g.y + d.y
+		if passable(floor_cell(f, x, y)) && tenant_at(g, x, y) == 0 && !gust_slams(g, x, y) {
+			s.wind_dodges += 1
+			command(g, Command(i))
+			return true
+		}
+	}
+	return false
+}
+
 bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	if !hostile_in_view(g) {
 		return false

@@ -432,3 +432,25 @@ The light lasts longer and the bot goes back to town a little less, but this is 
 1. **The wind is the main killer on floors 9 to 11** for every build but the Caster: wall slams at 1 health each, with a gust every 6 or 7 turns pushing 2 cells. Round 5 found the bot is wind-blind and slams about once every 30 turns. A player who keeps away from walls on the downwind side would slam far less, so this is partly the bot. The Caster's Ward and its kills from range keep its health higher between slams.
 2. **Floors 9 to 11 take about three times as long as floors 5 to 7** for the non-casters (2200 to 3500 turns each). That long stay is where hunger and the dark come back: starving 335 to 425 turns a climb, and 1600 to 2500 turns in the dark.
 3. **Even is the weakest build again**, at nearly 10 deaths a climb, with a third of its climbs out of turns.
+
+### The bot minds the wind (step 17 review, November 17, 2026)
+
+On the user's word ("Teach the bot the wind"), the bot now minds the wind. On the last turn before a gust it checks whether the push would slam it into a wall or a tenant. If so it steps to a neighbouring cell where it would not; if it is already safe it waits. It does not dodge while fighting something next to it, or when it carries too much to move. A first run left 3 to 14 climbs a build stuck: an overloaded bot kept trying to step aside instead of dropping something. That was fixed before this run. `-define:BOT_WIND=false` gives the old wind-blind bot.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| reached floor 11's stairs up | 96 % (was 66) | 100 % (88) | 100 % (90) | 100 % (100) |
+| deaths a climb | 6.68 (was 9.74) | 1.68 (4.32) | 2.36 (4.42) | 1.72 (2.08) |
+| deaths on floors 9, 10, 11 | 53, 59, 75 | 9, 7, 23 | 17, 17, 34 | 14, 10, 9 |
+| killed by the wind | 38 (was 110) | 14 (109) | 19 (80) | 3 (6) |
+| killed by hunger | 15 (was 61) | 7 (43) | 12 (42) | 0 (0) |
+| turns on floors 9, 10, 11 | 2113, 1776, 1800 | 1324, 1244, 1156 | 1580, 1496, 1278 | 1309, 1123, 897 |
+| stepped aside, waited (a climb) | 280, 506 | 208, 385 | 236, 447 | 205, 430 |
+
+Minding the wind cut the wind's kills by two thirds or more, and halved the time spent on floors 9 to 11. Slams still happen, about 400 to 640 a climb, all floors together: when a gust comes during a fight, when no neighbouring cell is safe, or when the bot is overloaded. The wind is now behind goblins, cave bears and giant ants as a cause of death for every build. Floors 9 to 11 still take about one and a half times as long as floors 5 to 7. Even remains the weakest build by far.
+
+### Decided with the user (November 17, 2026)
+
+1. The wind on floors 9 to 11: the bot learned to mind it (above); the game's numbers are kept.
+2. Long floors 9 to 11: kept as they are.
+3. The Even build: kept as it is.

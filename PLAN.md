@@ -192,7 +192,7 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - Hunger kills 40 to 60 times per build for the non-casters.
     - Even dies 9.7 times a climb, the Fighter and Nimble 4.3 to 4.4, and the Caster 2.1.
 
-    The numbers are the ones decided for item 1 and are not changed here. They are for the step 17 review.
+    **Reviewed with the user November 17, 2026:** the bot now minds the wind (it steps off a cell where the coming gust would slam it, or waits on a safe one). With that, wind deaths fell by two thirds or more, every build but Even reaches floor 11's stairs up in every climb (Even 96 %), and floors 9 to 11 take 900 to 2100 turns each. Kept as they are: the wind's numbers, the long floors and the Even build. The game is unchanged by the review.
 18. **The new tenants** (item 2), with trophies and lines, and restocking on floors 9 to 11.
 19. **Camps on floors 9 to 11 and the cartographer** (item 3), and the pack of holding (item 4).
 20. **The town after the army** (item 5).
