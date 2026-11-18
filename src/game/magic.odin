@@ -23,6 +23,11 @@ Spell :: enum u8 {
 	Calm,
 	Sense_Things,
 	Blink,
+	// From level 9 (slice 3 step 21).
+	Uncurse,
+	Clairvoyance,
+	Teleport,
+	Squall,
 }
 
 Spell_Info :: struct {
@@ -48,13 +53,19 @@ SPELL := [Spell]Spell_Info {
 	.Calm          = {"Calm", 4, false, true, "no gusts, 30 turns"},
 	.Sense_Things  = {"Sense Things", 3, false, true, "show items, 30 turns"},
 	.Blink         = {"Blink", 4, true, true, "jump 4; wind bends it"},
+	.Uncurse       = {"Uncurse", 6, false, true, "free what you wear"},
+	.Clairvoyance  = {"Clairvoyance", 5, false, true, "map 12 cells round you"},
+	.Teleport      = {"Teleport", 7, false, true, "far across the floor"},
+	.Squall        = {"Squall", 8, true, true, "big blast, spares you"},
 }
 
-// The level a spell can first be chosen at: slice 2's four from level 5.
+// The level a spell can first be chosen at: slice 2's four from level 5, slice 3's from level 9.
 spell_level :: proc(s: Spell) -> int {
 	#partial switch s {
 	case .Gale, .Calm, .Sense_Things, .Blink:
 		return SLICE2_SPELL_LEVEL
+	case .Uncurse, .Clairvoyance, .Teleport, .Squall:
+		return SLICE3_SPELL_LEVEL
 	}
 	return 1
 }
@@ -68,6 +79,10 @@ WARD_TURNS :: 40
 WARD_ARMOUR :: 3
 SENSE_TURNS :: 30
 SLICE2_SPELL_LEVEL :: 5
+SLICE3_SPELL_LEVEL :: 9
+CLAIRVOYANCE_RANGE :: 12 // cells round you that Clairvoyance maps
+TELEPORT_MIN :: 20 // Teleport lands at least this far away (Hop goes only 2 to 6)
+SQUALL_RANGE :: 4 // a squall flies like a gust ball, drifting every second cell
 GALE_RANGE :: 6 // cells along the line it shoves
 GALE_SHOVE :: 3 // cells a tenant is shoved, plus how much the wind is behind it (-2 to +2)
 CALM_TURNS :: 30
@@ -140,6 +155,7 @@ open_learn_if_owed :: proc(g: ^Game) {
 	stop_travel(g)
 	g.mode = .Learn
 	g.menu_row = 0
+	g.spell_scroll = 0
 }
 
 learn :: proc(g: ^Game, s: Spell) {
@@ -161,6 +177,7 @@ learn_command :: proc(g: ^Game, c: Command) {
 	case .Confirm:
 		learn(g, list[g.menu_row])
 	}
+	keep_spell_row(g)
 }
 
 // Known spells, in table order.
@@ -183,6 +200,7 @@ open_cast :: proc(g: ^Game) {
 	}
 	g.mode = .Cast
 	g.menu_row = 0
+	g.spell_scroll = 0
 }
 
 cast_command :: proc(g: ^Game, c: Command) {
@@ -197,6 +215,16 @@ cast_command :: proc(g: ^Game, c: Command) {
 		choose_spell(g, list[g.menu_row])
 	case .Cancel, .Cast:
 		g.mode = .Play
+	}
+	keep_spell_row(g)
+}
+
+// Scrolls the spell list so the chosen row shows (18 spells do not fit; slice 3 step 21).
+keep_spell_row :: proc(g: ^Game) {
+	if g.menu_row < g.spell_scroll {
+		g.spell_scroll = g.menu_row
+	} else if g.menu_row >= g.spell_scroll + SPELL_ROWS {
+		g.spell_scroll = g.menu_row - SPELL_ROWS + 1
 	}
 }
 
@@ -297,10 +325,67 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 		say(g, "You feel what lies about on this floor.")
 	case .Blink:
 		blink(g, d)
+	case .Uncurse:
+		say(g, uncurse_worn(g) ? "A weight lifts. What you wear will come off now." : "Nothing you wear was cursed.")
+	case .Clairvoyance:
+		reveal(floor_of(g), g.x - CLAIRVOYANCE_RANGE, g.y - CLAIRVOYANCE_RANGE, g.x + CLAIRVOYANCE_RANGE, g.y + CLAIRVOYANCE_RANGE)
+		say(g, "The floor round you draws itself on yer map.")
+	case .Teleport:
+		teleport_far(g)
+	case .Squall:
+		cast_bolt(g, d, true, true)
 	}
 	if turn {
 		end_turn(g)
 	}
+}
+
+// Frees everything worn of its curse, as the scroll does. True when something was cursed.
+uncurse_worn :: proc(g: ^Game) -> bool {
+	lifted := false
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Worn && g.items[i].cursed {
+			g.items[i].cursed = false
+			lifted = true
+		}
+	}
+	return lifted
+}
+
+// Marks a box of a floor as seen: every open cell in it, and the walls round them (Clairvoyance,
+// and the cartographer's maps).
+reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
+	for y in max(0, y0) ..= min(FLOOR_H - 1, y1) {
+		for x in max(0, x0) ..= min(FLOOR_W - 1, x1) {
+			if f.cells[y][x] == .Wall {
+				continue
+			}
+			for dy in -1 ..= 1 {
+				for dx in -1 ..= 1 {
+					if nx, ny := x + dx, y + dy; nx >= 0 && ny >= 0 && nx < FLOOR_W && ny < FLOOR_H {
+						f.seen[ny][nx] = true
+					}
+				}
+			}
+		}
+	}
+}
+
+// Teleport: to a random open cell at least TELEPORT_MIN away, with nobody on it.
+teleport_far :: proc(g: ^Game) {
+	f := floor_of(g)
+	for _ in 0 ..< 400 {
+		x, y := rng_int(&g.rng, f.w), rng_int(&g.rng, f.h)
+		if max(abs(x - g.x), abs(y - g.y)) < TELEPORT_MIN || !passable(floor_cell(f, x, y)) || tenant_at(g, x, y) != 0 {
+			continue
+		}
+		g.x, g.y = x, y
+		stop_travel(g)
+		refresh_view(g)
+		say(g, "The wind drops you somewhere else entirely.")
+		return
+	}
+	say(g, "The spell finds nowhere far enough to put you.")
 }
 
 hop :: proc(g: ^Game) {
@@ -322,14 +407,15 @@ hop :: proc(g: ^Game) {
 // A magic bolt or a gust ball, thrown one of eight ways. It flies cell by cell, drifting a cell
 // downwind every few cells (unless the wind is along its line), and stops at a wall, a tenant or
 // the end of its range. A bolt hurts the tenant it meets; a ball bursts over the three by three
-// cells where it stops, yerself included.
-cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool) {
+// cells where it stops, yerself included. A squall is a bigger gust ball: it flies SQUALL_RANGE,
+// bursts harder, and spares you.
+cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool, squall := false) {
 	f := floor_of(g)
 	w := wind_blow(f)
 	along := w == d || w == -d
-	reach := (ball ? BALL_RANGE : BOLT_RANGE) + d.x * w.x + d.y * w.y
+	reach := (squall ? SQUALL_RANGE : ball ? BALL_RANGE : BOLT_RANGE) + d.x * w.x + d.y * w.y
 	drift := ball ? BALL_DRIFT : BOLT_DRIFT
-	name := ball ? "gust ball" : "bolt"
+	name := squall ? "squall" : ball ? "gust ball" : "bolt"
 	g.fx_len, g.fx_blast = 0, false
 	pos := [2]int{g.x, g.y}
 	hit := 0
@@ -369,14 +455,14 @@ cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool) {
 		return
 	}
 	g.fx_blast, g.fx_at = true, pos
-	say(g, "The gust ball bursts.")
+	say(g, squall ? "The squall bursts." : "The gust ball bursts.")
 	for dy in -1 ..= 1 {
 		for dx in -1 ..= 1 {
 			x, y := pos.x + dx, pos.y + dy
 			if id := tenant_at(g, x, y); id != 0 {
-				spell_hit(g, id, rng_range(&g.rng, 2, 5) + spell_bonus(g), name)
+				spell_hit(g, id, (squall ? rng_range(&g.rng, 3, 8) : rng_range(&g.rng, 2, 5)) + spell_bonus(g), name)
 			}
-			if x == g.x && y == g.y && g.mode != .Dead {
+			if x == g.x && y == g.y && g.mode != .Dead && !squall {
 				say(g, "Yer own gust ball catches you.")
 				hurt(g, rng_range(&g.rng, 2, 5), "yer own gust ball")
 			}
@@ -537,7 +623,9 @@ magic_turn :: proc(g: ^Game) {
 
 // Screens: choosing a spell at a level, and casting one. Rows in the map area.
 MENU_TOP :: 30
-MENU_ROW_H :: 10 // 14 rows fit (every spell) above the hint line; 14 px until slice 2 step 14
+MENU_ROW_H :: 10 // 14 px until slice 2 step 14
+SPELL_ROWS :: 13 // rows shown; a longer list scrolls, with "more" marks above and below (slice 3 step 21)
+MORE_X :: 210
 MENU_COST_X :: 96
 MENU_USE_X :: 112
 
@@ -545,10 +633,10 @@ menu_pointer :: proc(g: ^Game, sx, sy: int, n: int) -> int {
 	if sx >= VIEW_W * TILE {
 		return -1
 	}
-	for row in 0 ..< n {
+	for row in 0 ..< min(n - g.spell_scroll, SPELL_ROWS) {
 		y := MENU_TOP + row * MENU_ROW_H
 		if sy >= y - 3 && sy < y + MENU_ROW_H - 3 {
-			return row
+			return row + g.spell_scroll
 		}
 	}
 	return -1
@@ -574,8 +662,18 @@ cast_pointer :: proc(g: ^Game, sx, sy: int) {
 
 draw_spell_rows :: proc(f: ^Frame, g: ^Game, list: []Spell, casting: bool) {
 	buf: [8]u8
-	for s, i in list {
-		y := MENU_TOP + i * MENU_ROW_H
+	first := clamp(g.spell_scroll, 0, max(0, len(list) - SPELL_ROWS))
+	// Marks for rows above and below the screen: in the header line, and in the row under the last.
+	if first > 0 {
+		print(f, "^ more", MORE_X, MENU_TOP - 12, COLOR_YELLOW)
+	}
+	if first + SPELL_ROWS < len(list) {
+		print(f, "v more", MORE_X, MENU_TOP + SPELL_ROWS * MENU_ROW_H, COLOR_YELLOW)
+	}
+	for row in 0 ..< min(len(list) - first, SPELL_ROWS) {
+		i := first + row
+		s := list[i]
+		y := MENU_TOP + row * MENU_ROW_H
 		if g.menu_row == i {
 			fill_rect(f, 2, y - 3, VIEW_W * TILE - 4, MENU_ROW_H, COLOR_DARK)
 			print(f, ">", 4, y, COLOR_YELLOW)

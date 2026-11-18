@@ -145,20 +145,7 @@ cartographer_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row, n: ^int) {
 
 // A bought map: the floor's whole automap is filled in, walls and all.
 map_floor :: proc(g: ^Game, index: int) {
-	f := &g.floors[index]
-	for y in 0 ..< FLOOR_H {
-		for x in 0 ..< FLOOR_W {
-			if f.cells[y][x] != .Wall {
-				for dy in -1 ..= 1 {
-					for dx in -1 ..= 1 {
-						if nx, ny := x + dx, y + dy; nx >= 0 && ny >= 0 && nx < FLOOR_W && ny < FLOOR_H {
-							f.seen[ny][nx] = true
-						}
-					}
-				}
-			}
-		}
-	}
+	reveal(&g.floors[index], 0, 0, FLOOR_W - 1, FLOOR_H - 1)
 	g.mapped += {index}
 }
 

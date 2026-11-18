@@ -145,6 +145,7 @@ Game :: struct {
 	mapped:      bit_set[0 ..< FLOOR_COUNT], // floors (by index) whose map you bought from the cartographer
 	sage_holding: bool, // bought the sage's one pack of holding
 	insured_to:  int, // gust insurance runs until this turn (town.odin)
+	spell_scroll: int, // the first spell row shown when the list is longer than the screen (magic.odin)
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).

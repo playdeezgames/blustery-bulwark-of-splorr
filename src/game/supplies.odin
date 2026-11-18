@@ -225,14 +225,7 @@ use_item :: proc(g: ^Game, id: int) -> bool {
 	case .Scroll_Identify:
 		start_identify(g)
 	case .Scroll_Uncurse:
-		lifted := false
-		for i in 1 ..< MAX_ITEMS {
-			if g.items[i].place == .Worn && g.items[i].cursed {
-				g.items[i].cursed = false
-				lifted = true
-			}
-		}
-		say(g, lifted ? "A weight lifts. What you wear will come off now." : "Nothing you wear was cursed.")
+		say(g, uncurse_worn(g) ? "A weight lifts. What you wear will come off now." : "Nothing you wear was cursed.")
 	case .Scroll_Decree:
 		say(g, "You read it aloud: all tenants to report at once. They come.")
 		for &t in g.tenants {

@@ -568,3 +568,31 @@ test_dump_deep_camp :: proc(t: ^testing.T) {
 		write_ppm(DUMP_DEEP_CAMP + "-maps.ppm", fr)
 	}
 }
+
+// The spell list with all 18 spells by eye (-define:DUMP_SPELL_LIST=<prefix>): <prefix>-top.ppm (the
+// first rows, more below) and <prefix>-end.ppm (scrolled to Squall, more above).
+DUMP_SPELL_LIST :: #config(DUMP_SPELL_LIST, "")
+
+@(test)
+test_dump_spell_list :: proc(t: ^testing.T) {
+	when DUMP_SPELL_LIST != "" {
+		g := new_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		for s in Spell {
+			g.known += {s}
+		}
+		g.learns = 0
+		g.level = 12
+		g.mana = 14
+		open_cast(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_SPELL_LIST + "-top.ppm", fr)
+		command(g, .North) // wraps to the last
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_SPELL_LIST + "-end.ppm", fr)
+	}
+}

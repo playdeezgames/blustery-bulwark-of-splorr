@@ -222,6 +222,16 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - No bot round: the bot does not buy any of it yet (step 23), so its climbs are as in step 19.
 
     **Reviewed November 18, 2026:** kept as built: the spear (1.8 kg, 3 litres, durability 50), the two insurance lines and the picture.
-21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.
+21. **Done November 18, 2026.** **Four spells from level 9, and a spell list that scrolls:**
+    - **Uncurse** (6): frees everything you wear of its curse, as the scroll does, with the scroll's lines.
+    - **Clairvoyance** (5): maps every open cell within 12 of you, and the walls round them ("The floor round you draws itself on yer map."). The cartographer's maps now use the same reveal.
+    - **Teleport** (7): to a random open cell with nobody on it, at least 20 cells away ("The wind drops you somewhere else entirely."). If none is found in 400 tries: "The spell finds nowhere far enough to put you."
+    - **Squall** (8, aimed): a gust ball that flies 4 cells (plus the wind behind it, as other spells), drifting every second cell, and bursts over three by three for 3 to 8 plus the Intelligence bonus. It does not hurt you, even next to you ("The squall bursts."). It seals draughts and wakes mimics like any spell.
+    - **The spell list:** with 18 spells it no longer fits, so it scrolls: 13 rows at the same 10 pixels, with a yellow "^ more" in the header line when rows are hidden above and "v more" under the last row when rows are hidden below. The cursor wraps, and a click picks the row it lands on. Both the choosing screen and the casting screen scroll. Shown in a frame (`DUMP_SPELL_LIST`).
+    - There is no level cap, so levels 9 to 12 needed nothing new: XP keeps rising by 30 a level past level 6.
+    - 159 native tests (`deep_spell_test.odin`). Checked in the browser: the build loads, showing "Slice 3, step 21", with no console errors.
+    - **Bot round:** the same figures as step 19 to the last digit. The bot ends its climbs at about level 30, so it learns all four, but it never casts them (step 23), and learning draws no random numbers.
+
+    **Claude's, to review:** the four spells' one-line uses and messages, Teleport's 400 tries, and the scrolling layout.
 22. **Floor 12, the giant** (item 7).
 23. **The bot and playtest round 6** (item 8), with screenshots.
