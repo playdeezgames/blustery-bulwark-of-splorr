@@ -221,7 +221,7 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - The spear's picture is a plain Urizen spear, painted brown. 152 native tests (`army_town_test.odin`). Checked in the browser: the build loads, showing "Slice 3, step 20", with no console errors.
     - No bot round: the bot does not buy any of it yet (step 23), so its climbs are as in step 19.
 
-    **Claude's, to review:** the spear's weight, bulk and durability (1.8 kg, 3 litres, 50), the two insurance lines, and the picture.
+    **Reviewed November 18, 2026:** kept as built: the spear (1.8 kg, 3 litres, durability 50), the two insurance lines and the picture.
 21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.
 22. **Floor 12, the giant** (item 7).
 23. **The bot and playtest round 6** (item 8), with screenshots.
