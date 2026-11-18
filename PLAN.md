@@ -201,6 +201,8 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
 
     The mimic and the draught are picked half as often. Pictures from Urizen: a grey ogre with a club, a small white ghost, an open chest, wind streaks, a tooth, a wine glass and a short bar. 145 native tests (`deep_test.odin`; `DUMP_DEEP` draws the four, a disguised mimic and the trophies). Checked in the browser: the build loads, showing "Slice 3, step 18", with no console errors; floor 9 not reached there.
 
+    **Reviewed November 18, 2026:** all four tenants, their lines, trophy prices and pictures kept as built. The bot learned to seal a draught next to it with a Magic Bolt, which cut draught deaths from 15 to 21 a build to 4 to 7 (`PLAYTEST.md`).
+
     **Bot round** (`PLAYTEST.md`): every build still reaches floor 11 (Even reaches its stairs up in 86 % of climbs, the rest 98 to 100 %). Deaths a climb rose from 6.7 to 7.1 (Even), 1.7 to 2.6 (Fighter), 2.4 to 2.9 (Nimble) and 1.7 to 2.0 (Caster). Ogres killed 8 to 44 a build, draughts 0 to 21, mimics 0 to 3; wisps killed nobody. The bot never casts at a draught, since it is not hostile, so it takes every slam. **Still Claude's, to review:** the four tenants' numbers, the lines, trophy prices and the pictures.
 19. **Camps on floors 9 to 11 and the cartographer** (item 3), and the pack of holding (item 4).
 20. **The town after the army** (item 5).

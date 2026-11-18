@@ -474,3 +474,27 @@ Minding the wind cut the wind's kills by two thirds or more, and halved the time
 1. **The ogre is now the leading killer on floors 9 to 11** for Even (44) and second for the others. That matches its role: meeting plain ogres is meant to set up floor 12's giant.
 2. **Draughts kill 15 to 21 times a build for the non-casters.** The bot never casts at a draught because it is not hostile, and it does not step away from one, so it takes every slam. A player who knows "any spell seals it" would spend a Magic Bolt. It is the bot's blind spot, much as the wind was.
 3. **Mimics and wisps barely register:** mimics killed 4 climbers in 200 climbs and wisps none. Wisps add a little time in the dark (Even 1739 to 2156 turns).
+
+### The bot seals draughts (step 18 review, November 18, 2026)
+
+On the user's word ("Teach the bot"), the bot now bolts a draught standing next to it when it has the mana for a Magic Bolt (keeping enough for Return). That is what a player who knows "any spell seals it" would do. It sealed 2 to 3 draughts a climb. Changes are against the step 18 round above.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| reached floor 11's stairs up | 94 % (was 86) | 100 % (98) | 98 % (98) | 98 % (100) |
+| deaths a climb | 5.94 (7.12) | 2.26 (2.56) | 2.76 (2.88) | 1.90 (2.04) |
+| deaths on floors 9, 10, 11 | 51, 46, 55 | 18, 20, 31 | 23, 20, 42 | 18, 15, 9 |
+| killed by a draught | 4 (was 21) | 7 (18) | 4 (15) | 0 (0) |
+| killed by an ogre | 34 (44) | 6 (8) | 19 (21) | 13 (16) |
+| killed by a mimic | 3 | 0 | 1 | 0 |
+| killed by the wind | 33 | 23 | 28 | 1 |
+| turns on floors 9, 10, 11 | 2064, 1786, 1406 | 1613, 1546, 1359 | 1735, 1596, 1441 | 1481, 1290, 929 |
+
+Sealing draughts took them from 15 to 21 kills a build down to 4 to 7, and the Even build is back near its step 17 figure. The Caster's one miss ran out of turns rather than dying. The ogre stays the leading new killer.
+
+### Decided with the user (November 18, 2026)
+
+1. Draughts: the bot learned to seal them (above); the draught is kept as built.
+2. The mimic and the wisp: kept as they are, a surprise and a nuisance rather than killers.
+3. The ogre: its numbers are kept (health 30, hits 3 to 9).
+4. The four tenants' lines, trophy prices (tooth 12, glass 8, hinge 10) and pictures: approved.

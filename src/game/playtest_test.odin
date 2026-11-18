@@ -68,6 +68,7 @@ Bot_Stats :: struct {
 	lanterns:        int, // bought
 	army_turn:       int, // when floor 8 was reached (0: never)
 	casts:           [Spell]int, // spells cast in fights
+	draught_seals:   int, // draughts sealed with a bolt
 }
 
 @(private = "file")
@@ -821,7 +822,7 @@ test_playtest :: proc(t: ^testing.T) {
 		for b in builds {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns, keys9, key9_turns := 0, 0, 0, 0
-			dodges, wwaits := 0, 0
+			dodges, wwaits, seals := 0, 0, 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			casts: [Spell]int
 			wind: [10]int
@@ -861,6 +862,7 @@ test_playtest :: proc(t: ^testing.T) {
 				}
 				trips += s.trips
 				dodges += s.wind_dodges
+				seals += s.draught_seals
 				wwaits += s.wind_waits
 				for sp in Spell {
 					casts[sp] += s.casts[sp]
@@ -900,6 +902,7 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
 			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
 			fmt.printfln("minding the wind a climb: stepped aside %d, waited %d", dodges / runs, wwaits / runs)
+			fmt.printfln("draughts sealed a climb: %.1f", f64(seals) / f64(runs))
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
 			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs))
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
@@ -1004,9 +1007,6 @@ bot_minds_wind :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 }
 
 bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
-	if !hostile_in_view(g) {
-		return false
-	}
 	reserve := .Return in g.known ? SPELL[.Return].cost : 0
 	can :: proc(g: ^Game, sp: Spell, reserve: int) -> bool {
 		return sp in g.known && g.mana >= SPELL[sp].cost + reserve
@@ -1015,6 +1015,19 @@ bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		s.casts[sp] += 1
 		cast_spell(g, sp, d)
 		return true
+	}
+	// A draught next to you is sealed with a bolt, as a player who knows any spell seals it (step 18
+	// review): blows pass through it, so the bot would otherwise take every shove and slam.
+	if can(g, .Magic_Bolt, reserve) {
+		for d in DIRECTIONS {
+			if id := tenant_at(g, g.x + d.x, g.y + d.y); id != 0 && g.tenants[id].kind == .Draught {
+				s.draught_seals += 1
+				return do_cast(g, s, .Magic_Bolt, d)
+			}
+		}
+	}
+	if !hostile_in_view(g) {
+		return false
 	}
 	near, adjacent := 0, 0
 	for i in 1 ..< MAX_TENANTS {
