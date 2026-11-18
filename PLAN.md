@@ -213,7 +213,7 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
 
     **Bot round** (`PLAYTEST.md`): a first run left one Even climb stuck, overloaded on floor 11 after a cave bear drained its Strength, holding the war hammer and with nothing else to drop; the bot now drops the heaviest worn thing that is not a container (a bot fault). After that every build reaches floor 11's stairs up (the Caster 98 %, one climb out of turns), and deaths a climb fell to 5.6 (Even), 1.9 (Fighter), 2.2 (Nimble) and 1.9 (Caster).
 
-    **Claude's, to review:** the hammer's and scale mail's numbers beyond the decided ones (bulk, durability, worth), the pack of holding's limits, the stall's lines other than the decided three, and the pictures. The bot does not yet buy maps, take up the pack of holding, or swap to the new gear (step 23).
+    **Reviewed November 18, 2026:** kept as built: the war hammer (bulk 3.5 litres, durability 80, worth 70), the scale mail (12 litres, 110, 90), the pack of holding's limits (20 kg and 30 litres, 1 kg itself), the stall's greeting, the cartographer's description, the sage's line, and the four pictures. The bot does not yet buy maps, wear the pack of holding, or take the scale mail over armour it wears (step 23).
 20. **The town after the army** (item 5).
 21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.
 22. **Floor 12, the giant** (item 7).

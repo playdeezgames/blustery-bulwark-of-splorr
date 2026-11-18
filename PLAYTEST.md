@@ -516,3 +516,7 @@ A first run left one Even climb stuck on floor 11: a cave bear had drained its S
 | turns on floors 9, 10, 11 | 1841, 1534, 1278 | 1509, 1354, 1289 | 1663, 1385, 1256 | 1386, 1226, 815 |
 
 Every build but the Caster dies a little less on floors 9 to 11, most likely from the war hammer, though the change is small enough to be partly chance. The Caster's one miss ran out of turns. Nothing new kills anybody: the cartographer never moves and never fights.
+
+### Decided with the user (November 18, 2026)
+
+Step 19 is kept as built: the camp gear's numbers, the pack of holding's limits, the new lines and the pictures. The game is unchanged by the review.
