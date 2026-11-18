@@ -511,3 +511,60 @@ test_dump_deep :: proc(t: ^testing.T) {
 		write_ppm(DUMP_DEEP + "-tenants.ppm", fr)
 	}
 }
+
+// Floor 10's camp by eye (-define:DUMP_DEEP_CAMP=<prefix>): <prefix>-camp.ppm (the cartographer at her
+// camp, with a war hammer, scale mail and the pack of holding laid beside it) and <prefix>-maps.ppm
+// (her stall, after buying a map).
+DUMP_DEEP_CAMP :: #config(DUMP_DEEP_CAMP, "")
+
+@(test)
+test_dump_deep_camp :: proc(t: ^testing.T) {
+	when DUMP_DEEP_CAMP != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		for i in 0 ..< CARTOGRAPHER_FLOOR {
+			enter_floor(g, i, .Stairs_Down)
+		}
+		c := 0
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind == .Cartographer {
+				c = i
+			}
+		}
+		cx, cy := int(g.tenants[c].x), int(g.tenants[c].y)
+		for &tn, i in g.tenants {
+			if i != c && int(tn.floor) == g.current {
+				tn = {}
+			}
+		}
+		for k, i in ([?]Item_Kind{.War_Hammer, .Scale_Mail}) {
+			id := new_item(g, k)
+			it := &g.items[id]
+			it.place, it.floor, it.x, it.y = .Ground, i8(g.current), i16(cx - 1 + 2 * i), i16(cy + 3)
+		}
+		teleport(g, {cx, cy + 2})
+		g.gust_in = 99
+		say(g, "She mapped up to ten. She seems content with ten.")
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_DEEP_CAMP + "-camp.ppm", fr)
+		teleport(g, {cx, cy + 1})
+		receive_jools(g, 60)
+		command(g, .North)
+		rows: [MAX_ROWS]Row
+		n := shop_rows(g, &rows)
+		for i in 0 ..< n {
+			if rows[i].act == .Map && rows[i].arg == 4 {
+				g.menu_row = i
+				command(g, .Confirm)
+			}
+		}
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_DEEP_CAMP + "-maps.ppm", fr)
+	}
+}

@@ -498,3 +498,21 @@ Sealing draughts took them from 15 to 21 kills a build down to 4 to 7, and the E
 2. The mimic and the wisp: kept as they are, a surprise and a nuisance rather than killers.
 3. The ogre: its numbers are kept (health 30, hits 3 to 9).
 4. The four tenants' lines, trophy prices (tooth 12, glass 8, hinge 10) and pictures: approved.
+
+## Step 19: the deep camps, the cartographer and the pack of holding (November 18, 2026)
+
+50 climbs a build, to floor 11's stairs up, with the bot minding the wind and sealing draughts. Floors 9 to 11 now hold camps with a war hammer, a pack of holding and scale mail, and floor 10's cartographer. The bot picks up gear as before: it wields the war hammer, since it hits hardest, but takes the scale mail only when it wears no armour, and it does not buy maps or wear the pack of holding yet (step 23). Changes are against the step 18 review round.
+
+A first run left one Even climb stuck on floor 11: a cave bear had drained its Strength until its limit was 7.5 kg, and it carried 7.95 kg with nothing loose left to drop and no armour on, only the 5 kg war hammer in hand. The bot only ever dropped loose things or worn armour; it now drops the heaviest worn thing that is not a container. A bot fault; the game is unchanged.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| reached floor 11's stairs up | 100 % (was 94) | 100 % (100) | 100 % (98) | 98 % (98) |
+| deaths a climb | 5.60 (5.94) | 1.92 (2.26) | 2.24 (2.76) | 1.94 (1.90) |
+| deaths on floors 9, 10, 11 | 45, 48, 47 | 12, 12, 30 | 18, 17, 25 | 17, 16, 12 |
+| killed by an ogre | 35 (34) | 5 (6) | 12 (19) | 11 (13) |
+| killed by a draught | 5 (4) | 6 (7) | 3 (4) | 1 (0) |
+| killed by the wind | 23 (33) | 21 (23) | 17 (28) | 3 (1) |
+| turns on floors 9, 10, 11 | 1841, 1534, 1278 | 1509, 1354, 1289 | 1663, 1385, 1256 | 1386, 1226, 815 |
+
+Every build but the Caster dies a little less on floors 9 to 11, most likely from the war hammer, though the change is small enough to be partly chance. The Caster's one miss ran out of turns. Nothing new kills anybody: the cartographer never moves and never fights.

@@ -78,6 +78,10 @@ Item_Kind :: enum u8 {
 	Ogre_Tooth,
 	Wisp_Glass,
 	Mimic_Hinge,
+	// Earlier climbers' camps on floors 9 to 11 (slice 3 step 19).
+	War_Hammer,
+	Scale_Mail,
+	Pack_Holding, // half the weight of what it holds counts (camp.odin)
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -191,6 +195,9 @@ KIND := [Item_Kind]Kind_Info {
 	.Ogre_Tooth    = {name = "Ogre tooth", gfx = .Tooth, color = COLOR_WHITE, weight = 40, bulk = 30, trophy = true},
 	.Wisp_Glass    = {name = "Wisp glass", gfx = .Glass, color = COLOR_CYAN, weight = 20, bulk = 30, trophy = true},
 	.Mimic_Hinge   = {name = "Mimic hinge", gfx = .Hinge, color = COLOR_LIGHT, weight = 150, bulk = 40, trophy = true},
+	.War_Hammer    = {name = "War hammer", gfx = .War_Hammer, color = COLOR_LIGHT, weight = 5000, bulk = 3500, slot = .Weapon, dmin = 3, dmax = 10, durability = 80},
+	.Scale_Mail    = {name = "Scale mail", gfx = .Scale_Mail, color = COLOR_LIGHT, weight = 14000, bulk = 12000, slot = .Armour, armour = 5, durability = 110},
+	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
 	.Purse         = {name = "Purse", gfx = .Purse, color = COLOR_BROWN, weight = 50, bulk = 200, slot = .Purse, cap_weight = 6000, cap_bulk = 1200, coins_only = true},
@@ -285,11 +292,8 @@ weight_of :: proc(g: ^Game, id: int) -> int {
 	it := &g.items[id]
 	w := KIND[it.kind].weight * int(it.count)
 	if is_container(it.kind) {
-		for i in 1 ..< MAX_ITEMS {
-			if g.items[i].place == .Inside && int(g.items[i].parent) == id {
-				w += weight_of(g, i)
-			}
-		}
+		inner := contents_weight(g, id)
+		w += it.kind == .Pack_Holding ? inner / 2 : inner
 	}
 	return w
 }
@@ -303,8 +307,44 @@ bulk_of :: proc(g: ^Game, id: int) -> int {
 	return b
 }
 
+// What a container's contents weigh, in full (a pack of holding's limit counts it all).
 contents_weight :: proc(g: ^Game, id: int) -> int {
-	return weight_of(g, id) - KIND[g.items[id].kind].weight * int(g.items[id].count)
+	w := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].place == .Inside && int(g.items[i].parent) == id {
+			w += weight_of(g, i)
+		}
+	}
+	return w
+}
+
+// A pack of holding, or something holding one.
+has_holding :: proc(g: ^Game, id: int) -> bool {
+	if g.items[id].kind == .Pack_Holding {
+		return true
+	}
+	if is_container(g.items[id].kind) {
+		for i in 1 ..< MAX_ITEMS {
+			if g.items[i].place == .Inside && int(g.items[i].parent) == id && has_holding(g, i) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// A pack of holding, or inside one.
+in_holding :: proc(g: ^Game, id: int) -> bool {
+	for c, n := id, 0; c != 0 && n < 16; n += 1 {
+		if g.items[c].kind == .Pack_Holding {
+			return true
+		}
+		if g.items[c].place != .Inside {
+			return false
+		}
+		c = int(g.items[c].parent)
+	}
+	return false
 }
 
 contents_bulk :: proc(g: ^Game, id: int) -> int {
@@ -399,6 +439,9 @@ can_put_in :: proc(g: ^Game, id, container: int) -> (ok: bool, why: string) {
 	}
 	if ck.coins_only && k != .Jools {
 		return false, "A purse holds only coins."
+	}
+	if in_holding(g, container) && has_holding(g, id) {
+		return false, "A pack of holding will not hold another."
 	}
 	if ck.belt_slots > 0 {
 		if bulk_of(g, id) > BELT_SLOT_BULK {

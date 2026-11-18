@@ -30,6 +30,7 @@ Tenant_Kind :: enum u8 {
 	Wisp, // light and fast; its touch puts out yer light and does no harm
 	Mimic, // looks like a pack until you are next to it
 	Draught, // never fights; pushes you away from it; blows pass through, any spell seals it
+	Cartographer, // floor 10's camp (camp.odin): sells maps when bumped
 }
 
 Tenant_Info :: struct {
@@ -75,6 +76,7 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Ogre    = {name = "ogre", a = "an ogre", gfx = .Ogre, color = COLOR_LIGHT, health = 30, hit = 55, dmin = 3, dmax = 9, defence = 10, speed = 5, xp = 15, trophy = .Ogre_Tooth, chance = 50, first = 9, verb = "clubs", line = "An ogre. Exactly as tall as an ogre."},
 	.Wisp    = {name = "wisp", a = "a wisp", gfx = .Wisp, color = COLOR_WHITE, health = 5, hit = 65, defence = 25, speed = 20, xp = 4, light = true, erratic = true, trophy = .Wisp_Glass, chance = 50, first = 9, verb = "touches", line = "Owes rent from before. Long before."},
 	.Mimic   = {name = "mimic", a = "a mimic", gfx = .Mimic, color = COLOR_RED, health = 16, hit = 60, dmin = 2, dmax = 7, defence = 10, speed = 5, xp = 8, rare = true, trophy = .Mimic_Hinge, chance = 60, first = 9, verb = "bites", line = "Pays rent as furniture. Is furniture, mostly."},
+	.Cartographer = {name = "cartographer", a = "the cartographer", gfx = .Cartographer, color = COLOR_LIGHT, health = 14, hit = 60, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 4, peaceful = true, first = 99, verb = "swats", line = "She mapped up to ten. She seems content with ten."},
 	.Draught = {name = "draught", a = "a draught", gfx = .Draught, color = COLOR_CYAN, health = 1, speed = 10, xp = 3, peaceful = true, rare = true, first = 9, line = "A wind spirit, the town says. It is a draught."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
@@ -517,7 +519,7 @@ kill_tenant :: proc(g: ^Game, id: int) {
 		boss_falls(g, t)
 	} else if t.kind == .Sergeant {
 		sergeant_falls(g, t)
-	} else if t.kind == .Carny || t.kind == .Hermit {
+	} else if t.kind == .Carny || t.kind == .Hermit || t.kind == .Cartographer {
 		drop_at(g, t, .Jools, rng_range(&g.rng, 5, 20))
 	} else if info.trophy != .None && rng_int(&g.rng, 100) < info.chance {
 		drop_at(g, t, info.trophy, 1)

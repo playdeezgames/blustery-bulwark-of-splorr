@@ -42,6 +42,7 @@ Shop :: enum u8 {
 	Gate, // the bulwark gate, once the windchute is open
 	Hermit, // the hermit's camp on floor 6 (camp.odin)
 	Army_Door, // the carny at floor 8's door (army.odin)
+	Cartographer, // the cartographer's camp on floor 10 (camp.odin)
 }
 
 Shop_Info :: struct {
@@ -65,6 +66,7 @@ SHOP := [Shop]Shop_Info {
 	.Admission = {0, "The door to the Horde", "", "\"See the Undead Horde! Two Jools! Terrifying! Mostly!\""},
 	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to the floors you have reached."},
 	.Army_Door = {0, "The door to the Army", "", "\"See the Army of a Thousand! Three Jools! Count them yerself!\""},
+	.Cartographer = {0, "The cartographer's camp", "", "\"Maps of the floors you have seen. Fifteen Jools a floor.\""},
 	.Hermit  = {0, "The hermit's camp", "", "\"Twice the town's prices. The town is a long way down.\""},
 }
 
@@ -127,6 +129,9 @@ VALUE := #partial [Item_Kind]int {
 	.Ogre_Tooth      = 12,
 	.Wisp_Glass      = 8,
 	.Mimic_Hinge     = 10,
+	.War_Hammer      = 70,
+	.Scale_Mail      = 90,
+	.Pack_Holding    = 200,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
@@ -392,6 +397,7 @@ Act :: enum u8 {
 	Climb,
 	Chute,
 	Restore, // arg: an Attr the cave bear drained
+	Map, // arg: a floor index (the cartographer)
 }
 
 Row :: struct {
@@ -450,8 +456,8 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 	case .None:
 	case .General:
 		for k in GENERAL_STOCK {
-			if k == .Big_Pack && g.items[worn(g, .Pack)].kind == .Big_Pack {
-				continue // one is enough
+			if k == .Big_Pack && (g.items[worn(g, .Pack)].kind == .Big_Pack || g.items[worn(g, .Pack)].kind == .Pack_Holding) {
+				continue // one is enough, and a pack of holding is not swapped away
 			}
 			add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 		}
@@ -492,6 +498,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 					add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 				}
 			}
+		}
+		if g.army_dead && !g.sage_holding {
+			add_row(rows, &n, .Buy, int(Item_Kind.Pack_Holding), VALUE[.Pack_Holding], "Buy a Pack of holding")
 		}
 		if n == 0 {
 			add_row(rows, &n, .Talk, 0, 0, "Ask about the wind")
@@ -551,6 +560,8 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
 	case .Hermit:
 		hermit_rows(g, rows, &n)
+	case .Cartographer:
+		cartographer_rows(g, rows, &n)
 	case .Admission:
 		add_row(rows, &n, .Admit, 0, ADMISSION, "Pay to see the Horde")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
@@ -630,7 +641,17 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			}
 		} else if receive_item(g, k) {
 			pay(g, r.price)
-			say(g, "You buy a ", KIND[k].name, ".")
+			if k == .Pack_Holding {
+				g.sage_holding = true
+				say(g, "You buy a Pack of holding. \"Half of what goes in stays in. The weight, I mean.\"")
+			} else {
+				say(g, "You buy a ", KIND[k].name, ".")
+			}
+		}
+	case .Map:
+		if pay(g, r.price) {
+			map_floor(g, r.arg)
+			say(g, "The cartographer hands you a map of floor ", itoa(buf[:], g.floors[r.arg].number), ". Yer automap fills in.")
 		}
 	case .Sell:
 		name_buf: [32]u8
@@ -708,6 +729,8 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		case .Hermit:
 			say(g, "The hermit: ", HERMIT_LINES[g.talk % len(HERMIT_LINES)])
 			g.met_hermit = true
+		case .Cartographer:
+			say(g, "The cartographer: ", CARTOGRAPHER_LINES[g.talk % len(CARTOGRAPHER_LINES)])
 		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate, .Army_Door:
 		}
 		g.talk += 1

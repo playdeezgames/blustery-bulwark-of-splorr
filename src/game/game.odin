@@ -142,6 +142,8 @@ Game :: struct {
 	army_admitted: bool, // paid to see the Army
 	army_dead:   bool, // the sergeant fell
 	army_told:   bool, // the herald has proclaimed the rout (and pinned the Medal)
+	mapped:      bit_set[0 ..< FLOOR_COUNT], // floors (by index) whose map you bought from the cartographer
+	sage_holding: bool, // bought the sage's one pack of holding
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -346,6 +348,11 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Hermit {
 			g.shop_tenant = id
 			open_shop(g, .Hermit)
+			return false
+		}
+		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Cartographer {
+			g.shop_tenant = id
+			open_shop(g, .Cartographer)
 			return false
 		}
 		player_attack(g, id)

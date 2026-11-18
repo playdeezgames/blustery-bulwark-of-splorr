@@ -2,10 +2,10 @@
 // Urizen 1-bit tileset by vurmux, https://vurmux.itch.io/urizen-onebit-tileset, CC0 1.0.
 package game
 
-GFX_COUNT :: 72
+GFX_COUNT :: 75
 
 // One 12x12 mask per picture, one bit per pixel: bit (y*12 + x) of the three u64s, 48 bits each.
-GFX := [72][3]u64{
+GFX := [75][3]u64{
 	{0xF1EEDE6EC000, 0x7CE3ACC62F66, 0x5ECCEEC1E9DE}, // Wall (0, 2)
 	{0x222888222888, 0x222888222888, 0x222888222888}, // Floor (2, 5)
 	{0x802802FFE000, 0xB62B62B02B02, 0x000FFEB6EB6E}, // Stairs_Down (23, 0)
@@ -78,4 +78,7 @@ GFX := [72][3]u64{
 	{0x264198000000, 0x1F81F83FC30C, 0x0001081980F0}, // Tooth (8, 38)
 	{0x1100A0000000, 0x0400A0150190, 0x0001F00E0040}, // Glass (11, 20)
 	{0x200000000000, 0x00E0300C0700, 0x000000000004}, // Hinge (5, 38)
+	{0x5C07C0700000, 0x0100203C0240, 0x000004006008}, // War_Hammer (27, 7)
+	{0xEEE5140E0000, 0x0A0D560A0D56, 0x000040150150}, // Scale_Mail (27, 11)
+	{0x01E00A01C000, 0x35D31E00079C, 0x03479401431D}, // Cartographer (138, 0)
 }

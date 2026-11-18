@@ -16,7 +16,7 @@ camp_items :: proc(g: ^Game, index: int) -> (fire, bedroll, note, gear: int) {
 			bedroll = i
 		case .Note:
 			note = i
-		case .Iron_Helm, .Tower_Shield, .Chain_Mail:
+		case .Iron_Helm, .Tower_Shield, .Chain_Mail, .War_Hammer, .Pack_Holding, .Scale_Mail:
 			gear = i
 		}
 	}
@@ -24,17 +24,17 @@ camp_items :: proc(g: ^Game, index: int) -> (fire, bedroll, note, gear: int) {
 }
 
 @(test)
-test_floors_five_to_seven_have_a_camp :: proc(t: ^testing.T) {
+test_floors_five_to_seven_and_nine_to_eleven_have_a_camp :: proc(t: ^testing.T) {
 	for seed in u64(1) ..= 30 {
 		g := new_game(seed)
 		for i in 0 ..< BUILT_FLOORS {
 			enter_floor(g, i, .Stairs_Down)
 			fire, bedroll, note, gear := camp_items(g, i)
 			number := g.floors[i].number
-			if number >= CAMP_FLOORS[0] && number <= CAMP_FLOORS[1] { // floors 9 to 11 get camps in step 19
+			if is_camp_floor(number) {
 				testing.expectf(t, fire != 0 && bedroll != 0 && note != 0 && gear != 0, "seed %v floor %v: camp incomplete", seed, number)
 				testing.expect_value(t, g.items[gear].kind, camp_gear(number))
-				testing.expect_value(t, int(g.items[note].fuel), number - 4)
+				testing.expect_value(t, int(g.items[note].fuel), camp_note(number))
 			} else {
 				testing.expect(t, fire == 0 && note == 0)
 			}

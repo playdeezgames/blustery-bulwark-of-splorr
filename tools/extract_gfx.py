@@ -96,6 +96,9 @@ PICKS = [
     ('Tooth',        8, 38),
     ('Glass',       11, 20),  # a wine glass
     ('Hinge',        5, 38),  # a short bar (painted grey)
+    ('War_Hammer',  27, 7),   # a hammer with a long haft (slice 3 step 19)
+    ('Scale_Mail',  27, 11),
+    ('Cartographer', 138, 0), # a figure holding up a framed map
 ]
 
 def tile(col, row):

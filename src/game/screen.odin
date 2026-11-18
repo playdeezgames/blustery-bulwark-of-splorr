@@ -120,6 +120,9 @@ Gfx :: enum {
 	Tooth,
 	Glass,
 	Hinge,
+	War_Hammer,
+	Scale_Mail,
+	Cartographer,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

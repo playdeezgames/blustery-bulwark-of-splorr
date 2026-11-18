@@ -608,10 +608,11 @@ drop_one :: proc(g: ^Game) -> bool {
 		}
 	}
 	if heaviest == 0 {
-		// Nothing loose: the heaviest armour worn (a cave bear can drain Strength that far).
+		// Nothing loose: the heaviest thing worn that is not a container, armour or weapon (a cave
+		// bear can drain Strength that far, and floor 9's war hammer weighs 5 kg).
 		for i in 1 ..< MAX_ITEMS {
 			it := &g.items[i]
-			if it.place == .Worn && is_carried(g, i) && KIND[it.kind].armour > 0 && (heaviest == 0 || weight_of(g, i) > weight_of(g, heaviest)) {
+			if it.place == .Worn && is_carried(g, i) && !is_container(it.kind) && (heaviest == 0 || weight_of(g, i) > weight_of(g, heaviest)) {
 				heaviest = i
 			}
 		}
