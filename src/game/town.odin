@@ -132,6 +132,7 @@ VALUE := #partial [Item_Kind]int {
 	.War_Hammer      = 70,
 	.Scale_Mail      = 90,
 	.Pack_Holding    = 200,
+	.Spear           = 45,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
@@ -140,6 +141,13 @@ SMITH_STOCK := [?]Item_Kind{.Dagger, .Club, .Short_Sword, .Leather_Cap, .Boots, 
 // changes shop stock").
 GENERAL_LATER := [?]Item_Kind{.Lantern, .Oil_Flask, .Tinderbox}
 SMITH_LATER := [?]Item_Kind{.Mace, .Leather_Armour, .Cloak}
+// Once the army is routed the smith stocks more again (slice 3 step 20), and the general store sells
+// gust insurance (DESIGN.md beat 2: "shops sell gust insurance"): 120 Jools for 1000 turns, paying 2
+// Jools into yer purse for each wall slam. Nobody has checked whether it pays.
+SMITH_ARMY := [?]Item_Kind{.Spear, .War_Hammer, .Scale_Mail}
+INSURANCE_PRICE :: 120 // was 30 in the plan; raised at the user's word (November 18, 2026): the bot is slammed about 50 times in 1000 turns
+INSURANCE_TURNS :: 1000
+INSURANCE_PAYS :: 2
 SAGE_SHELF := [?]Item_Kind{.Potion_Healing, .Potion_Mana, .Potion_Sight, .Scroll_Return, .Scroll_Identify, .Scroll_Uncurse} // once named
 TEMPLE_RESTORE :: 25 // a drained attribute point back
 
@@ -398,6 +406,7 @@ Act :: enum u8 {
 	Chute,
 	Restore, // arg: an Attr the cave bear drained
 	Map, // arg: a floor index (the cartographer)
+	Insure, // gust insurance (the general store, after the army)
 }
 
 Row :: struct {
@@ -466,6 +475,13 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 			}
 		}
+		if g.army_dead {
+			if left := g.insured_to - g.turn; left > 0 {
+				add_row(rows, &n, .Insure, 0, INSURANCE_PRICE, "Gust insurance (", itoa(buf[:], left), " left)")
+			} else {
+				add_row(rows, &n, .Insure, 0, INSURANCE_PRICE, "Gust insurance, 1000 turns")
+			}
+		}
 	case .Smith:
 		for i in 1 ..< MAX_ITEMS {
 			if is_carried(g, i) && KIND[g.items[i].kind].durability > 0 && repair_price(g, i) > 0 {
@@ -477,6 +493,11 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		}
 		if g.boss_dead {
 			for k in SMITH_LATER {
+				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+			}
+		}
+		if g.army_dead {
+			for k in SMITH_ARMY {
 				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 			}
 		}
@@ -647,6 +668,11 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			} else {
 				say(g, "You buy a ", KIND[k].name, ".")
 			}
+		}
+	case .Insure:
+		if pay(g, r.price) {
+			g.insured_to = max(g.insured_to, g.turn) + INSURANCE_TURNS
+			say(g, "Insured against His Lordship's breath. \"Two Jools a slam. Very reasonable.\"")
 		}
 	case .Map:
 		if pay(g, r.price) {

@@ -99,6 +99,7 @@ PICKS = [
     ('War_Hammer',  27, 7),   # a hammer with a long haft (slice 3 step 19)
     ('Scale_Mail',  27, 11),
     ('Cartographer', 138, 0), # a figure holding up a framed map
+    ('Spear',       28, 8),   # a plain spear (slice 3 step 20; painted brown)
 ]
 
 def tile(col, row):

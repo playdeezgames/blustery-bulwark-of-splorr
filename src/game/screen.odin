@@ -123,6 +123,7 @@ Gfx :: enum {
 	War_Hammer,
 	Scale_Mail,
 	Cartographer,
+	Spear,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

@@ -82,6 +82,8 @@ Item_Kind :: enum u8 {
 	War_Hammer,
 	Scale_Mail,
 	Pack_Holding, // half the weight of what it holds counts (camp.odin)
+	// The smith's stock after the army (slice 3 step 20).
+	Spear,
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -197,6 +199,7 @@ KIND := [Item_Kind]Kind_Info {
 	.Mimic_Hinge   = {name = "Mimic hinge", gfx = .Hinge, color = COLOR_LIGHT, weight = 150, bulk = 40, trophy = true},
 	.War_Hammer    = {name = "War hammer", gfx = .War_Hammer, color = COLOR_LIGHT, weight = 5000, bulk = 3500, slot = .Weapon, dmin = 3, dmax = 10, durability = 80},
 	.Scale_Mail    = {name = "Scale mail", gfx = .Scale_Mail, color = COLOR_LIGHT, weight = 14000, bulk = 12000, slot = .Armour, armour = 5, durability = 110},
+	.Spear         = {name = "Spear", gfx = .Spear, color = COLOR_BROWN, weight = 1800, bulk = 3000, slot = .Weapon, dmin = 2, dmax = 8, durability = 50},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},

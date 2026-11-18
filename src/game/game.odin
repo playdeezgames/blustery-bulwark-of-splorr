@@ -144,6 +144,7 @@ Game :: struct {
 	army_told:   bool, // the herald has proclaimed the rout (and pinned the Medal)
 	mapped:      bit_set[0 ..< FLOOR_COUNT], // floors (by index) whose map you bought from the cartographer
 	sage_holding: bool, // bought the sage's one pack of holding
+	insured_to:  int, // gust insurance runs until this turn (town.odin)
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).

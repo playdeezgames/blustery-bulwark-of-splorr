@@ -153,7 +153,7 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
 4. **A pack of holding:** half the weight of what it holds counts (Castle of the Winds' pack of holding). It does not go inside another pack of holding. One lies at floor 10's camp, and once the army is routed the sage sells one for 200.
 5. **The town after the army:**
    - **smith:** a war hammer 70, scale mail 90 and a spear (2 to 8, light enough to keep a load low) 45.
-   - **general store:** **gust insurance**, sold as in DESIGN.md beat 2. It costs 30 Jools for 1000 turns and pays 2 Jools into yer purse for each wall slam. It pays, but on average it pays out less than it costs, and the clerk never says so.
+   - **general store:** **gust insurance**, sold as in DESIGN.md beat 2. It costs 30 Jools for 1000 turns (120 since November 18, 2026; see step 20) and pays 2 Jools into yer purse for each wall slam. It pays, but on average it pays out less than it costs, and the clerk never says so.
 6. **Levels 9 to 12 and four spells**, offered from level 9:
    - **Uncurse** (6): frees everything you wear, as the scroll does (DESIGN.md lists Remove Curse as a spell).
    - **Clairvoyance** (5): shows the map within 12 cells of you.
@@ -214,7 +214,14 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     **Bot round** (`PLAYTEST.md`): a first run left one Even climb stuck, overloaded on floor 11 after a cave bear drained its Strength, holding the war hammer and with nothing else to drop; the bot now drops the heaviest worn thing that is not a container (a bot fault). After that every build reaches floor 11's stairs up (the Caster 98 %, one climb out of turns), and deaths a climb fell to 5.6 (Even), 1.9 (Fighter), 2.2 (Nimble) and 1.9 (Caster).
 
     **Reviewed November 18, 2026:** kept as built: the war hammer (bulk 3.5 litres, durability 80, worth 70), the scale mail (12 litres, 110, 90), the pack of holding's limits (20 kg and 30 litres, 1 kg itself), the stall's greeting, the cartographer's description, the sage's line, and the four pictures. The bot does not yet buy maps, wear the pack of holding, or take the scale mail over armour it wears (step 23).
-20. **The town after the army** (item 5).
+20. **Done November 18, 2026.** **The town after the army:**
+    - **The smith** adds a spear (2 to 8, 1.8 kg, worth 45), a war hammer (70) and scale mail (90) once the army is routed.
+    - **Gust insurance** at the general store, also after the army: 1000 turns of cover, which a second purchase adds on top. Each gust that slams you into a wall or a tenant then pays 2 Jools into yer purse ("Yer gust insurance pays 2 Jools."). Buying it: "Insured against His Lordship's breath. \"Two Jools a slam. Very reasonable.\"" The row shows the turns left.
+    - **The price, changed at the user's word (November 18, 2026):** 120 Jools, not the planned 30. The bot, minding the wind, is slammed about 50 times in 1000 turns on the floors, so at 30 the policy would pay about 100 for 30 instead of paying out less than it costs. Time in town still counts against the 1000 turns.
+    - The spear's picture is a plain Urizen spear, painted brown. 152 native tests (`army_town_test.odin`). Checked in the browser: the build loads, showing "Slice 3, step 20", with no console errors.
+    - No bot round: the bot does not buy any of it yet (step 23), so its climbs are as in step 19.
+
+    **Claude's, to review:** the spear's weight, bulk and durability (1.8 kg, 3 litres, 50), the two insurance lines, and the picture.
 21. **Levels 9 to 12 and the four spells** (item 6), and the spell list's layout.
 22. **Floor 12, the giant** (item 7).
 23. **The bot and playtest round 6** (item 8), with screenshots.

@@ -190,6 +190,9 @@ gust :: proc(g: ^Game) {
 			if g.mode == .Dead {
 				return
 			}
+			if g.turn < g.insured_to && receive_jools(g, INSURANCE_PAYS) {
+				say(g, "Yer gust insurance pays 2 Jools.")
+			}
 		} else {
 			if heavy {
 				say(g, "A gust drags you and yer load ", COMPASS[direction_index(d)], ".")
