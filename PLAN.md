@@ -243,4 +243,6 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - **Pictures** from Urizen: a plain wooden box for the crate, and a framed sheet for the Certificate.
     - 170 native tests (`giant_test.odin`; `DUMP_GIANT` draws the giant up, the giant knocked off, and the notice). Checked in the browser: the build loads, showing "Slice 3, step 22", with no console errors; floor 12 not reached there.
     - **Bot round:** the same figures as steps 19 and 21 to the last digit. The bot's climb still ends at floor 11's stairs up (`BOT_TOP`), so it never enters floor 12; it meets the giant in step 23.
+
+    **Reviewed November 19, 2026:** kept as built: the giant's numbers (health 40, 40 XP, every turn on the crate, 4 to 10 from two cells), its choice off the crate (it clubs you if yer next to it, otherwise goes back for the crate), the crate's 4 kg and 20 litres, the new lines and the pictures. The game is unchanged by the review.
 23. **The bot and playtest round 6** (item 8), with screenshots.
