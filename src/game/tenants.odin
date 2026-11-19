@@ -31,6 +31,7 @@ Tenant_Kind :: enum u8 {
 	Mimic, // looks like a pack until you are next to it
 	Draught, // never fights; pushes you away from it; blows pass through, any spell seals it
 	Cartographer, // floor 10's camp (camp.odin): sells maps when bumped
+	Giant, // floor 12's boss (giant.odin): an ogre on a crate
 }
 
 Tenant_Info :: struct {
@@ -78,6 +79,7 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Mimic   = {name = "mimic", a = "a mimic", gfx = .Mimic, color = COLOR_RED, health = 16, hit = 60, dmin = 2, dmax = 7, defence = 10, speed = 5, xp = 8, rare = true, trophy = .Mimic_Hinge, chance = 60, first = 9, verb = "bites", line = "Pays rent as furniture. Is furniture, mostly."},
 	.Cartographer = {name = "cartographer", a = "the cartographer", gfx = .Cartographer, color = COLOR_LIGHT, health = 14, hit = 60, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 4, peaceful = true, first = 99, verb = "swats", line = "She mapped up to ten. She seems content with ten."},
 	.Draught = {name = "draught", a = "a draught", gfx = .Draught, color = COLOR_CYAN, health = 1, speed = 10, xp = 3, peaceful = true, rare = true, first = 9, line = "A wind spirit, the town says. It is a draught."},
+	.Giant   = {name = "giant", a = "the Giant", gfx = .Ogre, color = COLOR_LIGHT, health = 40, hit = 55, dmin = 3, dmax = 9, defence = 10, speed = 5, xp = 40, first = 99, verb = "clubs", line = "An ogre on a crate. From down here it looks very tall."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -254,7 +256,7 @@ tenants_act :: proc(g: ^Game) {
 		if t.kind == .None || int(t.floor) != g.current {
 			continue
 		}
-		t.energy += i16(TENANT[t.kind].speed)
+		t.energy += i16(giant_on_crate(g, t) ? 10 : TENANT[t.kind].speed) // on its crate the giant acts every turn
 		for t.energy >= 10 && t.kind != .None {
 			t.energy -= 10
 			tenant_act(g, i)
@@ -306,6 +308,9 @@ tenant_act :: proc(g: ^Game, id: int) {
 	if tenant_sees_you(g, t) {
 		t.awake = true
 		t.tx, t.ty = i16(g.x), i16(g.y)
+	}
+	if t.kind == .Giant && giant_act(g, id) {
+		return
 	}
 	// A bailiff with yer Jools runs from you.
 	if t.kind == .Bailiff && held_jools(g, id) > 0 {
@@ -383,7 +388,8 @@ tenant_attack :: proc(g: ^Game, id: int) {
 		}
 		return
 	}
-	say(g, "The ", info.name, " ", info.verb, " you.")
+	up := giant_on_crate(g, t)
+	say(g, "The ", info.name, " ", info.verb, up ? " you from its crate." : " you.")
 	if rng_int(&g.rng, ARMOUR_WEAR) == 0 {
 		pieces: [len(Slot)]int
 		n := 0
@@ -397,7 +403,7 @@ tenant_attack :: proc(g: ^Game, id: int) {
 			wear_down(g, pieces[rng_int(&g.rng, n)])
 		}
 	}
-	hurt(g, rng_range(&g.rng, info.dmin, info.dmax), info.a)
+	hurt(g, up ? rng_range(&g.rng, GIANT_DMIN, GIANT_DMAX) : rng_range(&g.rng, info.dmin, info.dmax), info.a)
 	if t.kind == .Bear && g.mode != .Dead && g.attr[.Strength] > 3 && rng_int(&g.rng, BEAR_DRAIN) == 0 {
 		g.attr[.Strength] -= 1
 		g.drained[.Strength] += 1
@@ -519,6 +525,8 @@ kill_tenant :: proc(g: ^Game, id: int) {
 		boss_falls(g, t)
 	} else if t.kind == .Sergeant {
 		sergeant_falls(g, t)
+	} else if t.kind == .Giant {
+		giant_falls(g, t)
 	} else if t.kind == .Carny || t.kind == .Hermit || t.kind == .Cartographer {
 		drop_at(g, t, .Jools, rng_range(&g.rng, 5, 20))
 	} else if info.trophy != .None && rng_int(&g.rng, 100) < info.chance {
@@ -565,6 +573,9 @@ blow_tenants :: proc(g: ^Game) -> (moved: int) {
 		if t.kind != .None && int(t.floor) == g.current && TENANT[t.kind].prop && rng_int(&g.rng, TOPPLE_CHANCE) == 0 {
 			topple(g, i, true)
 		}
+		if giant_on_crate(g, t) && int(t.floor) == g.current && rng_int(&g.rng, CRATE_TIP) == 0 {
+			tip_crate(g, i, d, true)
+		}
 	}
 	return
 }
@@ -590,6 +601,13 @@ draw_tenants :: proc(f: ^Frame, g: ^Game) {
 			draw_gfx(f, KIND[.Pack].gfx, sx, sy, KIND[.Pack].color)
 			continue
 		}
+		if giant_on_crate(g, t) {
+			// The top of the crate in the lower half of the cell, and the giant standing on it, half a
+			// cell taller than everyone else.
+			draw_gfx_rows(f, KIND[.Crate].gfx, sx, sy + GIANT_LIFT, sensed ? COLOR_MID : KIND[.Crate].color, 0, TILE - GIANT_LIFT)
+			draw_gfx_rows(f, TENANT[t.kind].gfx, sx, sy - GIANT_LIFT, sensed ? COLOR_MID : TENANT[t.kind].color, 0, TILE)
+			continue
+		}
 		draw_gfx(f, TENANT[t.kind].gfx, sx, sy, sensed ? COLOR_MID : TENANT[t.kind].color)
 	}
 }
@@ -602,7 +620,11 @@ inspect_tenant :: proc(g: ^Game, id: int) {
 		return
 	}
 	hurt := int(t.health) * 2 < info.health
-	say(g, "A ", info.name, hurt ? " (hurt). " : ". ", info.line)
+	line := info.line
+	if t.kind == .Giant && !g.giant_up {
+		line = TENANT[.Ogre].line
+	}
+	say(g, "A ", info.name, hurt ? " (hurt). " : ". ", line)
 }
 
 // A draught next to you pushes you a cell away from it; into a wall or a tenant it slams you, as a

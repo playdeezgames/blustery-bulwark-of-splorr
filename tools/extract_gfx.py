@@ -100,6 +100,8 @@ PICKS = [
     ('Scale_Mail',  27, 11),
     ('Cartographer', 138, 0), # a figure holding up a framed map
     ('Spear',       28, 8),   # a plain spear (slice 3 step 20; painted brown)
+    ('Crate',        1, 40),  # a plain wooden box (slice 3 step 22; painted brown)
+    ('Certificate',  4, 37),  # a framed sheet (painted white)
 ]
 
 def tile(col, row):

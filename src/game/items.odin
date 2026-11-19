@@ -84,6 +84,10 @@ Item_Kind :: enum u8 {
 	Pack_Holding, // half the weight of what it holds counts (camp.odin)
 	// The smith's stock after the army (slice 3 step 20).
 	Spear,
+	// Floor 12, the giant (slice 3 step 22; giant.odin).
+	Crate, // the giant's crate: empty, so the wind catches it
+	Key_Thirteen, // the giant's key to floor 13
+	Certificate, // the herald's, for felling the giant
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -200,6 +204,9 @@ KIND := [Item_Kind]Kind_Info {
 	.War_Hammer    = {name = "War hammer", gfx = .War_Hammer, color = COLOR_LIGHT, weight = 5000, bulk = 3500, slot = .Weapon, dmin = 3, dmax = 10, durability = 80},
 	.Scale_Mail    = {name = "Scale mail", gfx = .Scale_Mail, color = COLOR_LIGHT, weight = 14000, bulk = 12000, slot = .Armour, armour = 5, durability = 110},
 	.Spear         = {name = "Spear", gfx = .Spear, color = COLOR_BROWN, weight = 1800, bulk = 3000, slot = .Weapon, dmin = 2, dmax = 8, durability = 50},
+	.Crate         = {name = "Empty crate", gfx = .Crate, color = COLOR_BROWN, weight = 4000, bulk = 20000},
+	.Key_Thirteen  = {name = "Key to floor 13", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
+	.Certificate   = {name = "Certificate", gfx = .Certificate, color = COLOR_WHITE, weight = 20, bulk = 50, trophy = true},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},
@@ -609,8 +616,14 @@ pick_up :: proc(g: ^Game, id: int) {
 	} else if g.items[id].kind == .Key {
 		say(g, "You pick up the ", name, ".")
 	} else if g.items[id].kind == .Key_Nine {
-		// No notice since step 17: the end of the stretch moves to the key to floor 13 (step 22).
+		// No notice since step 17: the end of the stretch moved to the key to floor 13 (step 22).
 		say(g, "You pick up the ", name, ".")
+	} else if g.items[id].kind == .Key_Thirteen {
+		say(g, "You pick up the ", name, ".")
+		if !g.stretch3_done {
+			g.stretch3_done = true
+			g.mode = .Notice
+		}
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {
@@ -712,7 +725,8 @@ blow_items :: proc(g: ^Game) -> (moved: int) {
 	d := wind_blow(f)
 	for i in 1 ..< MAX_ITEMS {
 		it := &g.items[i]
-		if it.place != .Ground || int(it.floor) != g.current || weight_of(g, i) > LIGHT_ITEM {
+		loose := it.kind == .Crate && !g.giant_up // the empty crate blows along when nobody stands on it
+		if it.place != .Ground || int(it.floor) != g.current || (weight_of(g, i) > LIGHT_ITEM && !loose) {
 			continue
 		}
 		before := [2]i16{it.x, it.y}

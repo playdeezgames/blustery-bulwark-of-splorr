@@ -43,6 +43,7 @@ Shop :: enum u8 {
 	Hermit, // the hermit's camp on floor 6 (camp.odin)
 	Army_Door, // the carny at floor 8's door (army.odin)
 	Cartographer, // the cartographer's camp on floor 10 (camp.odin)
+	Giant_Door, // the carny at floor 12's door (giant.odin)
 }
 
 Shop_Info :: struct {
@@ -66,6 +67,7 @@ SHOP := [Shop]Shop_Info {
 	.Admission = {0, "The door to the Horde", "", "\"See the Undead Horde! Two Jools! Terrifying! Mostly!\""},
 	.Gate    = {0, "The bulwark gate", "", "A windchute hums beside the stairs. It blows up to the floors you have reached."},
 	.Army_Door = {0, "The door to the Army", "", "\"See the Army of a Thousand! Three Jools! Count them yerself!\""},
+	.Giant_Door = {0, "The door to the Giant", "", "\"See the Giant! Four Jools! Mind yer head!\""},
 	.Cartographer = {0, "The cartographer's camp", "", "\"Maps of the floors you have seen. Fifteen Jools a floor.\""},
 	.Hermit  = {0, "The hermit's camp", "", "\"Twice the town's prices. The town is a long way down.\""},
 }
@@ -133,6 +135,7 @@ VALUE := #partial [Item_Kind]int {
 	.Scale_Mail      = 90,
 	.Pack_Holding    = 200,
 	.Spear           = 45,
+	.Certificate     = 5,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
@@ -277,8 +280,12 @@ proclaim :: proc(g: ^Game) {
 			n^ += copy(text[n^:], s)
 		}
 	}
-	medal := false
+	medal, certificate := false, false
 	switch {
+	case g.giant_dead && !g.giant_told:
+		add(text[:], &n, "His Lordship has felled a giant, as foretold.")
+		g.giant_told = true
+		certificate = true
 	case g.army_dead && !g.army_told:
 		add(text[:], &n, "His Lordship has routed an army of a thousand, as foretold.")
 		g.army_told = true
@@ -302,6 +309,9 @@ proclaim :: proc(g: ^Game) {
 	say(g, "The town cheers the lord.")
 	if medal {
 		give_medal(g)
+	}
+	if certificate {
+		give_certificate(g)
 	}
 }
 
@@ -455,7 +465,7 @@ repair_price :: proc(g: ^Game, id: int) -> int {
 // Things carried that a shop could take: not worn, not coins, not a container with anything in it.
 sellable :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
-	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.kind != .Key_Nine && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
+	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.kind != .Key_Nine && it.kind != .Key_Thirteen && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
 }
 
 shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
@@ -589,11 +599,17 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 	case .Army_Door:
 		add_row(rows, &n, .Admit, 0, ARMY_ADMISSION, "Pay to see the Army")
 		add_row(rows, &n, .Shove, 0, 0, "Shove past")
+	case .Giant_Door:
+		add_row(rows, &n, .Admit, 0, GIANT_ADMISSION, "Pay to see the Giant")
+		add_row(rows, &n, .Shove, 0, 0, "Shove past")
 	case .Gate:
 		add_row(rows, &n, .Climb, 0, 0, "Climb to floor 1")
 		add_row(rows, &n, .Chute, BOSS_INDEX, 0, "Ride the windchute to floor 4")
 		if g.deepest >= ARMY_INDEX + 1 {
 			add_row(rows, &n, .Chute, ARMY_INDEX, 0, "Ride the windchute to floor 8")
+		}
+		if g.deepest >= GIANT_INDEX + 1 {
+			add_row(rows, &n, .Chute, GIANT_INDEX, 0, "Ride the windchute to floor 12")
 		}
 	}
 	add_row(rows, &n, .Leave, 0, 0, "Leave")
@@ -757,7 +773,7 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			g.met_hermit = true
 		case .Cartographer:
 			say(g, "The cartographer: ", CARTOGRAPHER_LINES[g.talk % len(CARTOGRAPHER_LINES)])
-		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate, .Army_Door:
+		case .None, .General, .Smith, .Junk, .Bank, .Herald, .Carny, .Admission, .Gate, .Army_Door, .Giant_Door:
 		}
 		g.talk += 1
 	case .Train:
@@ -785,10 +801,12 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 		}
 	case .Admit:
 		if pay(g, r.price) {
-			army := g.shop == .Army_Door
+			door := g.shop
 			leave_shop(g)
-			if army {
+			if door == .Army_Door {
 				army_admit(g)
+			} else if door == .Giant_Door {
+				giant_admit(g)
 			} else {
 				admit(g)
 			}

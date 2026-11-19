@@ -596,3 +596,52 @@ test_dump_spell_list :: proc(t: ^testing.T) {
 		write_ppm(DUMP_SPELL_LIST + "-end.ppm", fr)
 	}
 }
+
+// Floor 12 by eye (-define:DUMP_GIANT=<prefix>): <prefix>-up.ppm (the giant on its crate, two cells
+// off), <prefix>-off.ppm (after a gale: the giant at ogre height, the crate blown east) and
+// <prefix>-notice.ppm (the end of the third stretch).
+DUMP_GIANT :: #config(DUMP_GIANT, "")
+
+@(test)
+test_dump_giant :: proc(t: ^testing.T) {
+	when DUMP_GIANT != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		enter_floor(g, GIANT_INDEX, .Stairs_Down)
+		id := 0
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind == .Giant {
+				id = i
+			}
+		}
+		gx, gy := int(g.tenants[id].x), int(g.tenants[id].y)
+		teleport(g, {gx - 2, gy})
+		g.tenants[id].awake = true
+		g.gust_in = 99
+		g.health = max_health(g)
+		tenant_act(g, id)
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_GIANT + "-up.ppm", fr)
+		g.mana = 99
+		cast_spell(g, .Gale, {1, 0})
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_GIANT + "-off.ppm", fr)
+		kill_tenant(g, id)
+		for i in 1 ..< MAX_ITEMS {
+			if g.items[i].kind == .Key_Thirteen {
+				teleport(g, {int(g.items[i].x), int(g.items[i].y)})
+				pick_up(g, i)
+			}
+		}
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_GIANT + "-notice.ppm", fr)
+	}
+}

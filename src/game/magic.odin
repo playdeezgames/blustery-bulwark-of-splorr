@@ -547,6 +547,12 @@ cast_gale :: proc(g: ^Game, d: [2]int) {
 			seal_draught(g, id)
 			continue
 		}
+		if giant_on_crate(g, t) {
+			t.awake = true
+			t.tx, t.ty = i16(g.x), i16(g.y)
+			tip_crate(g, id, d, false)
+			continue
+		}
 		if disguised(t) {
 			say(g, "The pack was a mimic!")
 		} else if !hostile(t) {
@@ -628,6 +634,9 @@ spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 	}
 	t.awake = true
 	t.tx, t.ty = i16(g.x), i16(g.y)
+	if giant_on_crate(g, t) && (what == "gust ball" || what == "squall") {
+		tip_crate(g, id, {clamp(int(t.x) - g.x, -1, 1), clamp(int(t.y) - g.y, -1, 1)}, false)
+	}
 	t.health -= i16(max(1, dmg))
 	if t.health <= 0 {
 		kill_tenant(g, id)

@@ -331,9 +331,13 @@ test_floors_five_to_seven_climb_to_floor_eight_and_nine_to_eleven_to_a_sign :: p
 		teleport(g, floor_of(g).up)
 		command(g, .Confirm)
 	}
-	testing.expect_value(t, floor_of(g).number, 11)
-	testing.expect_value(t, g.deepest, 11)
-	testing.expect(t, strings.has_prefix(message(&g.last_said), "Above: scaffolding, and a sign. \"Floor 12."))
+	// Floor 11's stairs up lead to floor 12, the giant's hall (step 22), whose door up is locked.
+	testing.expect_value(t, floor_of(g).number, 12)
+	testing.expect_value(t, g.deepest, 12)
+	teleport(g, floor_of(g).up)
+	command(g, .Confirm)
+	testing.expect_value(t, floor_of(g).number, 12)
+	testing.expect(t, strings.has_prefix(message(&g.last_said), "The door to floor 13 is locked."))
 	// Floor 5's stairs down lead to floor 4's door.
 	enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
 	command(g, .Confirm)

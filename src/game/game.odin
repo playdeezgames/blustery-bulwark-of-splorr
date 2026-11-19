@@ -41,7 +41,7 @@ DIRECTION := [Command][2]int {
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
-BUILT_FLOORS :: 11 // floors that exist so far (slice 3 step 17): floor 12 is still being built
+BUILT_FLOORS :: 12 // floors that exist so far (slice 3 step 22): floor 13 is still being built
 
 Mode :: enum u8 {
 	Play,
@@ -53,7 +53,7 @@ Mode :: enum u8 {
 	Cast, // the list of known spells
 	Aim, // a direction for an aimed spell
 	Shop, // inside a town shop (or at a carny's stall)
-	Notice, // the end of the stretch (the key to floor 9), once
+	Notice, // the end of the stretch (the key to floor 13), once
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -146,6 +146,12 @@ Game :: struct {
 	sage_holding: bool, // bought the sage's one pack of holding
 	insured_to:  int, // gust insurance runs until this turn (town.odin)
 	spell_scroll: int, // the first spell row shown when the list is longer than the screen (magic.odin)
+	giant_ticket: int, // the carny at floor 12's door (giant.odin)
+	giant_admitted: bool, // paid to see the Giant
+	giant_up:    bool, // the giant stands on its crate
+	giant_dead:  bool,
+	giant_told:  bool, // the herald has proclaimed it (and handed over the Certificate)
+	stretch3_done: bool, // the end-of-stretch notice for the key to floor 13 has been shown
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -205,6 +211,8 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 		build_boss_floor(g)
 	} else if !f.made && i == ARMY_INDEX {
 		build_army_floor(g)
+	} else if !f.made && i == GIANT_INDEX {
+		build_giant_floor(g)
 	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
@@ -214,7 +222,7 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 			populate_tenants(g, i, &r)
 		}
 	}
-	if i != BOSS_INDEX && i != ARMY_INDEX {
+	if i != BOSS_INDEX && i != ARMY_INDEX && i != GIANT_INDEX {
 		restock(g, i)
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
@@ -342,6 +350,8 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 				open_shop(g, .Admission)
 			case id == g.army_ticket && !g.army_admitted:
 				open_shop(g, .Army_Door)
+			case id == g.giant_ticket && !g.giant_admitted:
+				open_shop(g, .Giant_Door)
 			case:
 				open_shop(g, .Carny)
 			}
@@ -474,6 +484,8 @@ use_here :: proc(g: ^Game) {
 			door_to_floor_five(g)
 		} else if g.current == ARMY_INDEX {
 			door_to_floor_nine(g)
+		} else if g.current == GIANT_INDEX {
+			door_to_floor_thirteen(g)
 		} else if g.current + 1 < BUILT_FLOORS {
 			enter_floor(g, g.current + 1, .Stairs_Down)
 			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")

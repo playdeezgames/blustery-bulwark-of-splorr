@@ -520,3 +520,7 @@ Every build but the Caster dies a little less on floors 9 to 11, most likely fro
 ### Decided with the user (November 18, 2026)
 
 Step 19 is kept as built: the camp gear's numbers, the pack of holding's limits, the new lines and the pictures. The game is unchanged by the review.
+
+## Step 22: floor 12, the giant (November 19, 2026)
+
+50 climbs a build. Floor 11's stairs up now climb to floor 12, but the bot's climb still ends there (`BOT_TOP` in `playtest_test.odin`), since it does not yet know how to knock the giant off its crate (step 23). The figures are those of steps 19 and 21 to the last digit: 100, 100, 100 and 98 % reach floor 11's stairs up, with 5.60, 1.92, 2.24 and 1.94 deaths a climb. Building floor 12 draws no random numbers before you arrive, so nothing earlier moved.

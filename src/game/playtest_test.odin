@@ -12,6 +12,8 @@ package game
 import "core:fmt"
 import "core:testing"
 
+BOT_TOP :: GIANT_INDEX - 1 // the bot's climb ends at floor 11's stairs up until it learns the giant (step 23)
+
 _ :: fmt
 
 PLAYTEST :: #config(PLAYTEST, false)
@@ -29,7 +31,7 @@ BOT_WIND :: #config(BOT_WIND, true) // the bot minds the wind (step 17 review); 
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // reached floor 11's stairs up, the top of slice 3 so far (step 17)
+	won:             bool, // reached floor 11's stairs up (BOT_TOP): the bot meets the giant in step 23
 	turn_won:        int,
 	key9_turn:       int, // when the key to floor 9 was picked up (0: never)
 	key_turn:        int, // when the key to floor 5 was picked up (0: never)
@@ -718,8 +720,8 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if s.key9_turn == 0 && has_kind(g, .Key_Nine) {
 			s.key9_turn = g.turn
 		}
-		if g.current == BUILT_FLOORS - 1 && cell_at(g, g.x, g.y) == .Stairs_Up {
-			s.won = true // the top floor built so far
+		if g.current == BOT_TOP && cell_at(g, g.x, g.y) == .Stairs_Up {
+			s.won = true // the top of the bot's climb
 			s.turn_won = g.turn
 			break
 		}
@@ -901,7 +903,7 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
-			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BUILT_FLOORS, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BOT_TOP + 1, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
 			fmt.printfln("minding the wind a climb: stepped aside %d, waited %d", dodges / runs, wwaits / runs)
 			fmt.printfln("draughts sealed a climb: %.1f", f64(seals) / f64(runs))
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)

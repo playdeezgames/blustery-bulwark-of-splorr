@@ -124,6 +124,8 @@ Gfx :: enum {
 	Scale_Mail,
 	Cartographer,
 	Spear,
+	Crate,
+	Certificate,
 }
 
 cls :: proc(f: ^Frame, c: u8) {
@@ -158,6 +160,16 @@ fill_rect :: proc(f: ^Frame, x, y, w, h: int, c: u8) {
 draw_gfx :: proc(f: ^Frame, g: Gfx, x, y: int, color: u8) {
 	mask := GFX[g]
 	for i in 0 ..< TILE * TILE {
+		if mask[i / 48] & (1 << uint(i % 48)) != 0 {
+			set_px(f, x + i % TILE, y + i / TILE, color)
+		}
+	}
+}
+
+// Rows row0 ..< row1 of a picture, each drawn where it would be in the whole picture at (x, y).
+draw_gfx_rows :: proc(f: ^Frame, g: Gfx, x, y: int, color: u8, row0, row1: int) {
+	mask := GFX[g]
+	for i in row0 * TILE ..< row1 * TILE {
 		if mask[i / 48] & (1 << uint(i % 48)) != 0 {
 			set_px(f, x + i % TILE, y + i / TILE, color)
 		}
