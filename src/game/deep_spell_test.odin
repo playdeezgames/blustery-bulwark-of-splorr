@@ -23,10 +23,10 @@ open_hall :: proc(g: ^Game, r: int) {
 
 @(test)
 test_the_slice_three_spells_come_at_level_nine :: proc(t: ^testing.T) {
-	for s in ([?]Spell{.Uncurse, .Clairvoyance, .Teleport, .Squall}) {
+	for s in ([?]Spell{.Uncurse, .Find_Stairs, .Teleport, .Squall}) {
 		testing.expect_value(t, spell_level(s), 9)
 	}
-	testing.expect_value(t, [4]int{SPELL[.Uncurse].cost, SPELL[.Clairvoyance].cost, SPELL[.Teleport].cost, SPELL[.Squall].cost}, [4]int{6, 5, 7, 8})
+	testing.expect_value(t, [4]int{SPELL[.Uncurse].cost, SPELL[.Find_Stairs].cost, SPELL[.Teleport].cost, SPELL[.Squall].cost}, [4]int{6, 2, 7, 8})
 	testing.expect(t, SPELL[.Squall].aimed && !SPELL[.Teleport].aimed)
 	for s in Spell {
 		testing.expect(t, len(SPELL[s].use) <= 23)
@@ -48,35 +48,21 @@ test_uncurse_frees_what_you_wear :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_clairvoyance_maps_twelve_cells_round_you :: proc(t: ^testing.T) {
-	g := new_game()
-	defer free(g)
-	enter_floor(g, 8, .Stairs_Down)
-	f := floor_of(g)
-	g.mana = 20
-	cast_spell(g, .Clairvoyance, {0, 0})
-	px, py := g.x, g.y // Clairvoyance does not move you
-	for y in 0 ..< FLOOR_H {
-		for x in 0 ..< FLOOR_W {
-			if f.cells[y][x] == .Wall {
-				continue
-			}
-			d := max(abs(x - px), abs(y - py))
-			if d <= CLAIRVOYANCE_RANGE {
-				testing.expectf(t, f.seen[y][x], "%v,%v (%v away) not mapped", x, y, d)
-			}
-		}
+test_find_the_stairs_draws_the_way_up :: proc(t: ^testing.T) {
+	for seed in u64(1) ..= 5 {
+		g := new_game(seed)
+		enter_floor(g, 8, .Stairs_Down)
+		f := floor_of(g)
+		testing.expect(t, !f.seen[f.up.y][f.up.x])
+		g.mana = 20
+		cast_spell(g, .Find_Stairs, {0, 0})
+		testing.expect(t, f.seen[f.up.y][f.up.x])
+		testing.expect_value(t, message(&g.last_said), "A draught runs ahead to the stairs up. Yer map shows the way.")
+		// The way it drew can be walked: a route over seen cells reaches the stairs.
+		path: [MAX_PATH][2]int
+		testing.expect(t, find_path(f, {g.x, g.y}, f.up, &path) > 0)
+		free(g)
 	}
-	// Somewhere far off stays unseen.
-	far := false
-	for y in 0 ..< FLOOR_H {
-		for x in 0 ..< FLOOR_W {
-			if f.cells[y][x] != .Wall && max(abs(x - px), abs(y - py)) > CLAIRVOYANCE_RANGE + 10 && !f.seen[y][x] {
-				far = true
-			}
-		}
-	}
-	testing.expect(t, far)
 }
 
 @(test)

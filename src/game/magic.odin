@@ -25,7 +25,7 @@ Spell :: enum u8 {
 	Blink,
 	// From level 9 (slice 3 step 21).
 	Uncurse,
-	Clairvoyance,
+	Find_Stairs, // Clairvoyance until the step 21 review (never pushed)
 	Teleport,
 	Squall,
 }
@@ -54,7 +54,7 @@ SPELL := [Spell]Spell_Info {
 	.Sense_Things  = {"Sense Things", 3, false, true, "show items, 30 turns"},
 	.Blink         = {"Blink", 4, true, true, "jump 4; wind bends it"},
 	.Uncurse       = {"Uncurse", 6, false, true, "free what you wear"},
-	.Clairvoyance  = {"Clairvoyance", 5, false, true, "map 12 cells round you"},
+	.Find_Stairs   = {"Find the Stairs", 2, false, true, "show the way up"},
 	.Teleport      = {"Teleport", 7, false, true, "far across the floor"},
 	.Squall        = {"Squall", 8, true, true, "big blast, spares you"},
 }
@@ -64,7 +64,7 @@ spell_level :: proc(s: Spell) -> int {
 	#partial switch s {
 	case .Gale, .Calm, .Sense_Things, .Blink:
 		return SLICE2_SPELL_LEVEL
-	case .Uncurse, .Clairvoyance, .Teleport, .Squall:
+	case .Uncurse, .Find_Stairs, .Teleport, .Squall:
 		return SLICE3_SPELL_LEVEL
 	}
 	return 1
@@ -80,7 +80,6 @@ WARD_ARMOUR :: 3
 SENSE_TURNS :: 30
 SLICE2_SPELL_LEVEL :: 5
 SLICE3_SPELL_LEVEL :: 9
-CLAIRVOYANCE_RANGE :: 12 // cells round you that Clairvoyance maps
 TELEPORT_MIN :: 20 // Teleport lands at least this far away (Hop goes only 2 to 6)
 SQUALL_RANGE :: 4 // a squall flies like a gust ball, drifting every second cell
 GALE_RANGE :: 6 // cells along the line it shoves
@@ -327,9 +326,8 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 		blink(g, d)
 	case .Uncurse:
 		say(g, uncurse_worn(g) ? "A weight lifts. What you wear will come off now." : "Nothing you wear was cursed.")
-	case .Clairvoyance:
-		reveal(floor_of(g), g.x - CLAIRVOYANCE_RANGE, g.y - CLAIRVOYANCE_RANGE, g.x + CLAIRVOYANCE_RANGE, g.y + CLAIRVOYANCE_RANGE)
-		say(g, "The floor round you draws itself on yer map.")
+	case .Find_Stairs:
+		find_stairs(g)
 	case .Teleport:
 		teleport_far(g)
 	case .Squall:
@@ -352,8 +350,8 @@ uncurse_worn :: proc(g: ^Game) -> bool {
 	return lifted
 }
 
-// Marks a box of a floor as seen: every open cell in it, and the walls round them (Clairvoyance,
-// and the cartographer's maps).
+// Marks a box of a floor as seen: every open cell in it, and the walls round them (the
+// cartographer's maps, and each cell on the way Find the Stairs draws).
 reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
 	for y in max(0, y0) ..= min(FLOOR_H - 1, y1) {
 		for x in max(0, x0) ..= min(FLOOR_W - 1, x1) {
@@ -369,6 +367,48 @@ reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
 			}
 		}
 	}
+}
+
+// Find the Stairs (the step 21 review, November 19, 2026, in place of Clairvoyance, since the
+// cartographer sells maps): the shortest way to the floor's stairs up, over every open cell seen or
+// not, is drawn on yer map with the stairs at its end. Tenants do not block it; walls do.
+find_stairs :: proc(g: ^Game) {
+	f := floor_of(g)
+	goal := f.up
+	from: [FLOOR_H][FLOOR_W][2]i16
+	reached: [FLOOR_H][FLOOR_W]bool
+	queue: [FLOOR_H * FLOOR_W][2]int
+	head, tail := 0, 0
+	queue[tail] = {g.x, g.y}
+	tail += 1
+	reached[g.y][g.x] = true
+	for head < tail {
+		c := queue[head]
+		head += 1
+		if c == goal {
+			break
+		}
+		for d in DIRECTIONS {
+			n := c + d
+			if n.x < 0 || n.y < 0 || n.x >= FLOOR_W || n.y >= FLOOR_H || reached[n.y][n.x] || !passable(f.cells[n.y][n.x]) {
+				continue
+			}
+			reached[n.y][n.x] = true
+			from[n.y][n.x] = {i16(c.x), i16(c.y)}
+			queue[tail] = n
+			tail += 1
+		}
+	}
+	if !reached[goal.y][goal.x] {
+		say(g, "The spell finds no way up from here.")
+		return
+	}
+	for c := goal; c != {g.x, g.y}; {
+		reveal(f, c.x, c.y, c.x, c.y)
+		p := from[c.y][c.x]
+		c = {int(p.x), int(p.y)}
+	}
+	say(g, "A draught runs ahead to the stairs up. Yer map shows the way.")
 }
 
 // Teleport: to a random open cell at least TELEPORT_MIN away, with nobody on it.

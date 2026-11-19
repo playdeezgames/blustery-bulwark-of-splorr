@@ -156,7 +156,7 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
    - **general store:** **gust insurance**, sold as in DESIGN.md beat 2. It costs 30 Jools for 1000 turns (120 since November 18, 2026; see step 20) and pays 2 Jools into yer purse for each wall slam. It pays, but on average it pays out less than it costs, and the clerk never says so.
 6. **Levels 9 to 12 and four spells**, offered from level 9:
    - **Uncurse** (6): frees everything you wear, as the scroll does (DESIGN.md lists Remove Curse as a spell).
-   - **Clairvoyance** (5): shows the map within 12 cells of you.
+   - **Clairvoyance** (5): shows the map within 12 cells of you. (Replaced by Find the Stairs, 2, at the step 21 review.)
    - **Teleport** (7): to a random open cell on the floor at least 20 cells away (Hop goes only 2 to 6).
    - **Squall** (8, aimed): a bigger gust ball, 4 cells out, bursting for 3 to 8 over three by three, and it does not hurt you. Like the gust ball, it drifts every 2nd cell.
 
@@ -232,6 +232,6 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - 159 native tests (`deep_spell_test.odin`). Checked in the browser: the build loads, showing "Slice 3, step 21", with no console errors.
     - **Bot round:** the same figures as step 19 to the last digit. The bot ends its climbs at about level 30, so it learns all four, but it never casts them (step 23), and learning draws no random numbers.
 
-    **Claude's, to review:** the four spells' one-line uses and messages, Teleport's 400 tries, and the scrolling layout.
+    **Reviewed November 19, 2026:** the user found Clairvoyance underpowered and, with maps for sale from the cartographer, not worth its slot. It is replaced by **Find the Stairs** (2 mana, "show the way up"): the shortest way from you to the floor's stairs up, through cells seen or not, is drawn on yer map with the stairs at its end, so a click can walk it ("A draught runs ahead to the stairs up. Yer map shows the way."; with no way up, "The spell finds no way up from here."). Tenants do not block the way it draws; walls do. Kept as built: the other three spells' uses and messages, Teleport's 400 tries and the scrolling list. 159 native tests.
 22. **Floor 12, the giant** (item 7).
 23. **The bot and playtest round 6** (item 8), with screenshots.
