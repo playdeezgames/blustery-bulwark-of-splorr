@@ -545,3 +545,7 @@ Step 19 is kept as built: the camp gear's numbers, the pack of holding's limits,
 | end level | 33.9 | 32.0 | 32.9 | 32.2 |
 
 The giant is the easiest of the three boss floors for the bot so far: it arrives at level 30 or more, and about half the time it carries the crate off. Floors 9 to 11 shifted a little against step 19 (the squall and the pack of holding change the climbs). The leading killers are still goblins, ogres, giant ants and cave bears on floors 5 to 11, and the wind for every build but the Caster.
+
+### Decided with the user (November 19, 2026)
+
+The giant, gust insurance at 120 Jools and the bot's gaps (maps, the smith's new stock, scale mail, Uncurse, Find the Stairs, Teleport) are left as they are; the floor 12 screenshot is approved. The game is unchanged by the review.
