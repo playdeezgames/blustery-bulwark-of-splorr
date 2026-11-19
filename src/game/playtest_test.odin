@@ -12,7 +12,6 @@ package game
 import "core:fmt"
 import "core:testing"
 
-BOT_TOP :: GIANT_INDEX - 1 // the bot's climb ends at floor 11's stairs up until it learns the giant (step 23)
 
 _ :: fmt
 
@@ -31,7 +30,7 @@ BOT_WIND :: #config(BOT_WIND, true) // the bot minds the wind (step 17 review); 
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // reached floor 11's stairs up (BOT_TOP): the bot meets the giant in step 23
+	won:             bool, // took the key to floor 13, the top of slice 3 (step 23)
 	turn_won:        int,
 	key9_turn:       int, // when the key to floor 9 was picked up (0: never)
 	key_turn:        int, // when the key to floor 5 was picked up (0: never)
@@ -71,6 +70,12 @@ Bot_Stats :: struct {
 	army_turn:       int, // when floor 8 was reached (0: never)
 	casts:           [Spell]int, // spells cast in fights
 	draught_seals:   int, // draughts sealed with a bolt
+	giant_turn:      int, // when floor 12 was reached (0: never)
+	giant_knocks:    int, // spells cast to knock the giant off its crate
+	giant_waits:     int, // turns waited out of its reach for a gust to tip the crate
+	crates:          int, // times the bot picked up the crate
+	holding:         bool, // wore a pack of holding
+	giant_seen:      bool,
 }
 
 @(private = "file")
@@ -86,6 +91,8 @@ Goal :: enum u8 {
 	Item,
 	Frontier,
 	Stairs_Up,
+	Spot, // a cell the bot has picked for itself (floor 12: out of the giant's reach)
+	Crate, // the giant's crate, loose
 }
 
 // What the bot knows about the floor this turn, built once per decision.
@@ -115,7 +122,7 @@ look_around :: proc(g: ^Game) {
 		if hostile(t) {
 			v.goal[t.y][t.x] += {.Hostile}
 		}
-		if (i == g.ticket && !g.admitted) || (i == g.army_ticket && !g.army_admitted) {
+		if (i == g.ticket && !g.admitted) || (i == g.army_ticket && !g.army_admitted) || (i == g.giant_ticket && !g.giant_admitted) {
 			v.goal[t.y][t.x] += {.Ticket}
 		}
 	}
@@ -124,8 +131,11 @@ look_around :: proc(g: ^Game) {
 		if it.place != .Ground || int(it.floor) != g.current {
 			continue
 		}
-		if it.kind == .Key || it.kind == .Key_Nine {
+		if it.kind == .Key || it.kind == .Key_Nine || it.kind == .Key_Thirteen {
 			v.goal[it.y][it.x] += {.Key}
+		}
+		if it.kind == .Crate {
+			v.goal[it.y][it.x] += {.Crate}
 		}
 		c := f.cells[it.y][it.x]
 		if c != .Stairs_Up && c != .Stairs_Down && worth_taking(g, i) {
@@ -199,7 +209,7 @@ bfs :: proc(g: ^Game, want: Goal) -> Plan {
 worth_taking :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
 	k := it.kind
-	if k == .Old_Bones || k == .None || KIND[k].fixed {
+	if k == .Old_Bones || k == .None || k == .Crate || KIND[k].fixed { // the crate is taken only on floor 12's terms (bot_giant)
 		return false
 	}
 	if KIND[k].slot != .None && k != .Torch && !is_container(k) && worn(g, KIND[k].slot) != 0 && KIND[k].dmax == 0 {
@@ -338,8 +348,16 @@ shop_town :: proc(g: ^Game, s: ^Bot_Stats) {
 		}
 	}
 	for spare_torches(g) < 2 && buy(g, s, .Torch) {}
+	// After the army, the sage's pack of holding once there is money for it (floor 10's camp has
+	// one too); then it goes on in place of the old pack.
+	if g.army_dead && !g.sage_holding && !has_kind(g, .Pack_Holding) && carried_jools(g) >= VALUE[.Pack_Holding] + 40 {
+		if buy(g, s, .Pack_Holding) {
+			g.sage_holding = true
+		}
+	}
+	bot_wears_holding(g)
 	// A Big pack once there is money for it and the usual shopping after.
-	if g.items[worn(g, .Pack)].kind != .Big_Pack && carried_jools(g) >= VALUE[.Big_Pack] + 30 {
+	if pk := g.items[worn(g, .Pack)].kind; pk != .Big_Pack && pk != .Pack_Holding && carried_jools(g) >= VALUE[.Big_Pack] + 30 {
 		before := carried_jools(g)
 		if swap_pack(g) {
 			pay(g, VALUE[.Big_Pack])
@@ -377,7 +395,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		g.menu_row = 0
 		best := 99
 		for i in 0 ..< n {
-			for want, rank in ([?]Spell{.Mend, .Return, .Magic_Bolt, .Ward, .Gale, .Gust_Ball}) {
+			for want, rank in ([?]Spell{.Mend, .Return, .Magic_Bolt, .Ward, .Gale, .Gust_Ball, .Squall}) {
 				if list[i] == want && rank < best {
 					g.menu_row, best = i, rank
 				}
@@ -400,6 +418,12 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	case .Shop:
 		if g.shop == .Admission {
 			if carried_jools(g) >= ADMISSION {
+				choose_row(g, .Admit)
+			} else {
+				choose_row(g, .Shove)
+			}
+		} else if g.shop == .Giant_Door {
+			if carried_jools(g) >= GIANT_ADMISSION {
 				choose_row(g, .Admit)
 			} else {
 				choose_row(g, .Shove)
@@ -440,6 +464,9 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	s.floor_turns[g.current] += 1
 	look_around(g)
+	if g.current == GIANT_INDEX && !g.giant_dead && bot_giant(g, s) {
+		return true
+	}
 	if bot_casts(g, s) {
 		return true
 	}
@@ -523,7 +550,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			if it.place != .Ground || int(it.floor) != g.current || int(it.x) != g.x || int(it.y) != g.y {
 				continue
 			}
-			if it.kind == .Key || it.kind == .Key_Nine {
+			if it.kind == .Key || it.kind == .Key_Nine || it.kind == .Key_Thirteen {
 				pick = i
 				break
 			}
@@ -533,7 +560,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 		if pick != 0 {
 			pick_up(g, pick)
-			if (g.items[pick].kind == .Key || g.items[pick].kind == .Key_Nine) && g.items[pick].place == .Ground {
+			if (g.items[pick].kind == .Key || g.items[pick].kind == .Key_Nine || g.items[pick].kind == .Key_Thirteen) && g.items[pick].place == .Ground {
 				drop_one(g) // no room for the key: make some
 			}
 			best_weapon(g)
@@ -543,7 +570,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	// Go somewhere: the key, a hostile in view, things, the unexplored, then the stairs up.
 	plan := bfs(g, .Key)
 	// On floor 8 the sergeant has the key: hunt it, seen or not.
-	if !plan.ok && (hostile_in_view(g) || (g.current == ARMY_INDEX && !g.army_dead)) {
+	if !plan.ok && (hostile_in_view(g) || (g.current == ARMY_INDEX && !g.army_dead) || (g.current == GIANT_INDEX && !g.giant_dead && s.giant_seen)) {
 		plan = bfs(g, .Hostile)
 	}
 	if !plan.ok {
@@ -576,6 +603,13 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 				}
 				return false
 			}
+			if g.current == GIANT_INDEX && !has_kind(g, .Key_Thirteen) {
+				s.stuck = true // explored floor 12 without the key
+				when BOT_DEBUG {
+					fmt.printfln("NOKEY floor 12 seed %d turn %d giant_dead %v", g.seed, g.turn, g.giant_dead)
+				}
+				return false
+			}
 			command(g, .Confirm)
 			return true
 		}
@@ -587,7 +621,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	// Never walk into a peaceful tenant (that opens a stall or knocks bones over): wait instead.
 	nx, ny := g.x + plan.dir.x, g.y + plan.dir.y
-	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) && !(id == g.army_ticket && !g.army_admitted) {
+	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) && !(id == g.army_ticket && !g.army_admitted) && !(id == g.giant_ticket && !g.giant_admitted) {
 		command(g, .Wait)
 		return true
 	}
@@ -601,7 +635,7 @@ drop_one :: proc(g: ^Game) -> bool {
 	heaviest, trophy := 0, false
 	for i in 1 ..< MAX_ITEMS {
 		k := g.items[i].kind
-		if k == .None || k == .Key || k == .Key_Nine || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
+		if k == .None || k == .Key || k == .Key_Nine || k == .Key_Thirteen || (k == .Crate && !g.giant_dead) || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
 			continue
 		}
 		t := KIND[k].trophy
@@ -720,8 +754,11 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if s.key9_turn == 0 && has_kind(g, .Key_Nine) {
 			s.key9_turn = g.turn
 		}
-		if g.current == BOT_TOP && cell_at(g, g.x, g.y) == .Stairs_Up {
-			s.won = true // the top of the bot's climb
+		if s.giant_turn == 0 && g.current == GIANT_INDEX {
+			s.giant_turn = g.turn
+		}
+		if has_kind(g, .Key_Thirteen) {
+			s.won = true // the key to floor 13: the top of slice 3
 			s.turn_won = g.turn
 			break
 		}
@@ -777,6 +814,7 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		}
 	}
 	s.turns = g.turn
+	s.holding = g.items[worn(g, .Pack)].kind == .Pack_Holding
 	s.wind = g.wind_seen
 	s.deepest = g.deepest
 	s.level = g.level
@@ -826,6 +864,7 @@ test_playtest :: proc(t: ^testing.T) {
 			won, deaths, runs, turns_won, stuck := 0, 0, PLAYTEST_RUNS, 0, 0
 			keys, key_turns, keys9, key9_turns := 0, 0, 0, 0
 			dodges, wwaits, seals := 0, 0, 0
+			giants, giant_turns, knocks, gwaits, crates, holdings := 0, 0, 0, 0, 0, 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			casts: [Spell]int
 			wind: [10]int
@@ -863,6 +902,14 @@ test_playtest :: proc(t: ^testing.T) {
 					armies += 1
 					army_turns += s.army_turn
 				}
+				if s.giant_turn > 0 {
+					giants += 1
+					giant_turns += s.giant_turn
+				}
+				knocks += s.giant_knocks
+				gwaits += s.giant_waits
+				crates += s.crates
+				holdings += s.holding ? 1 : 0
 				trips += s.trips
 				dodges += s.wind_dodges
 				seals += s.draught_seals
@@ -903,11 +950,13 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("got the key to floor 5: %d%% (avg turn %d)", keys * 100 / runs, keys > 0 ? key_turns / keys : 0)
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
-			fmt.printfln("reached floor %d's stairs up: %d%% (avg turn %d); stuck %d; ran out of turns %d", BOT_TOP + 1, won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("reached floor 12: %d%% (avg turn %d)", giants * 100 / runs, giants > 0 ? giant_turns / giants : 0)
+			fmt.printfln("took the key to floor 13: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			fmt.printfln("the giant a climb: knocked off by a spell %.1f, waited for a gust %.1f, crate taken %.1f; wore a pack of holding at the end %d%%", f64(knocks) / f64(runs), f64(gwaits) / f64(runs), f64(crates) / f64(runs), holdings * 100 / runs)
 			fmt.printfln("minding the wind a climb: stepped aside %d, waited %d", dodges / runs, wwaits / runs)
 			fmt.printfln("draughts sealed a climb: %.1f", f64(seals) / f64(runs))
 			fmt.printfln("trips to town by Return %.1f a climb; lanterns bought %d%%", f64(trips) / f64(runs), lanterns * 100 / runs)
-			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs))
+			fmt.printfln("fighting spells a climb: bolt %.1f, ward %.1f, gale %.1f, gust ball %.1f, squall %.1f", f64(casts[.Magic_Bolt]) / f64(runs), f64(casts[.Ward]) / f64(runs), f64(casts[.Gale]) / f64(runs), f64(casts[.Gust_Ball]) / f64(runs), f64(casts[.Squall]) / f64(runs))
 			fmt.printfln("deaths: %.2f a run; runs with a death %d%%; by floor (town=0) %v", f64(deaths) / f64(runs), first_death_runs * 100 / runs, death_floors[:BUILT_FLOORS + 1])
 			fmt.printfln("wind a climb: gusts %d; pushed %d (%d cells); slams %d; held by load %d; snuffed %d; things moved %d; tenants moved %d; pushed into a hostile's reach %d, out of it %d", wind[0] / runs, wind[1] / runs, wind[2] / runs, wind[3] / runs, wind[4] / runs, wind[5] / runs, wind[6] / runs, wind[7] / runs, wind[8] / runs, wind[9] / runs)
 			fmt.printf("causes:")
@@ -939,11 +988,11 @@ count_of :: proc(g: ^Game, k: Tenant_Kind) -> int {
 
 // Where a bolt (or gust ball) aimed `d` goes, as cast_bolt moves it: the tenant it meets first, and
 // the cell it ends on. The bot aims with the wind in mind (the wind study's drift).
-bot_bolt :: proc(g: ^Game, d: [2]int, ball: bool) -> (hit: int, end: [2]int) {
+bot_bolt :: proc(g: ^Game, d: [2]int, ball: bool, squall := false) -> (hit: int, end: [2]int) {
 	f := floor_of(g)
 	w := wind_blow(f)
 	along := w == d || w == -d
-	reach := (ball ? BALL_RANGE : BOLT_RANGE) + d.x * w.x + d.y * w.y
+	reach := (squall ? SQUALL_RANGE : ball ? BALL_RANGE : BOLT_RANGE) + d.x * w.x + d.y * w.y
 	drift := ball ? BALL_DRIFT : BOLT_DRIFT
 	pos := [2]int{g.x, g.y}
 	move :: proc(g: ^Game, f: ^Floor, pos: ^[2]int, by: [2]int) -> (hit: int, wall: bool) {
@@ -1065,6 +1114,23 @@ bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			return do_cast(g, s, .Gale, best)
 		}
 	}
+	// A squall at a knot of tenants: it spares you, so it may burst right beside you.
+	if can(g, .Squall, reserve) {
+		for d in DIRECTIONS {
+			_, end := bot_bolt(g, d, true, true)
+			n := 0
+			for dy in -1 ..= 1 {
+				for dx in -1 ..= 1 {
+					if id := tenant_at(g, end.x + dx, end.y + dy); id != 0 && hostile(&g.tenants[id]) {
+						n += 1
+					}
+				}
+			}
+			if n >= 2 {
+				return do_cast(g, s, .Squall, d)
+			}
+		}
+	}
 	if can(g, .Gust_Ball, reserve) {
 		for d in DIRECTIONS {
 			_, end := bot_bolt(g, d, true)
@@ -1094,4 +1160,162 @@ bot_casts :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 	}
 	return false
+}
+
+GIANT_WAIT :: 3 // the bot waits for a gust this far from the giant on its crate, just out of its reach
+
+// Floor 12 (step 23): knock the giant off its crate with a gale, a squall or a gust ball when one
+// will reach it; otherwise wait out of its reach for a gust to tip the crate. Once it is off, run
+// for the crate if the bot will get there first (the giant is slow) and carry it off; then, or if
+// the giant is nearer the crate, fight it as the ogre it is. True when it acted.
+bot_giant :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
+	id := 0
+	for i in 1 ..< MAX_TENANTS {
+		if g.tenants[i].kind == .Giant && int(g.tenants[i].floor) == GIANT_INDEX {
+			id = i
+		}
+	}
+	if id == 0 {
+		return false
+	}
+	t := &g.tenants[id]
+	if g.vis[t.y][t.x] {
+		s.giant_seen = true
+	}
+	if !s.giant_seen {
+		return false // not found yet: explore
+	}
+	cheb :: proc(a, b: [2]int) -> int {
+		return max(abs(a.x - b.x), abs(a.y - b.y))
+	}
+	you := [2]int{g.x, g.y}
+	at := [2]int{int(t.x), int(t.y)}
+	far := cheb(you, at)
+	reserve := .Return in g.known ? SPELL[.Return].cost : 0
+	can :: proc(g: ^Game, sp: Spell, reserve: int) -> bool {
+		return sp in g.known && g.mana >= SPELL[sp].cost + reserve
+	}
+	knock :: proc(g: ^Game, s: ^Bot_Stats, sp: Spell, d: [2]int) -> bool {
+		s.casts[sp] += 1
+		s.giant_knocks += 1
+		cast_spell(g, sp, d)
+		return true
+	}
+	f := floor_of(g)
+	if g.giant_up {
+		if can(g, .Gale, reserve) {
+			for d in DIRECTIONS {
+				for k in 1 ..= GALE_RANGE {
+					c := you + k * d
+					if !passable(floor_cell(f, c.x, c.y)) {
+						break
+					}
+					if c == at {
+						return knock(g, s, .Gale, d)
+					}
+				}
+			}
+		}
+		if can(g, .Squall, reserve) {
+			for d in DIRECTIONS {
+				if hit, _ := bot_bolt(g, d, true, true); hit == id {
+					return knock(g, s, .Squall, d)
+				}
+			}
+		}
+		if can(g, .Gust_Ball, reserve) && far >= 3 {
+			for d in DIRECTIONS {
+				if hit, end := bot_bolt(g, d, true); hit == id && cheb(end, you) > 1 {
+					return knock(g, s, .Gust_Ball, d)
+				}
+			}
+		}
+		if far <= 1 {
+			return false // next to it already: the usual fight
+		}
+		// Out of its reach, where the coming gust will not push you into it or slam you, and
+		// downwind of it if the bot can get there: a tipped crate blows that way, toward the bot.
+		w := wind_blow(f)
+		downwind :: proc(c, at, w: [2]int) -> bool {
+			return (c.x - at.x) * w.x + (c.y - at.y) * w.y > 0
+		}
+		if giant_safe(g, you, at, w) && downwind(you, at, w) {
+			s.giant_waits += 1
+			command(g, .Wait)
+			return true
+		}
+		v := &bot_view
+		for pass in 0 ..< 2 {
+			for y in 0 ..< FLOOR_H {
+				for x in 0 ..< FLOOR_W {
+					if f.seen[y][x] && passable(f.cells[y][x]) && v.tenant[y][x] == 0 && giant_safe(g, {x, y}, at, w) && (pass == 1 || downwind({x, y}, at, w)) {
+						v.goal[y][x] += {.Spot}
+					}
+				}
+			}
+			if plan := bfs(g, .Spot); plan.ok {
+				command(g, step_dir(plan.dir))
+				return true
+			}
+			if giant_safe(g, you, at, w) {
+				s.giant_waits += 1
+				command(g, .Wait) // no way round to its downwind side: wait here
+				return true
+			}
+		}
+		return false
+	}
+	crate := loose_crate(g)
+	if crate == 0 {
+		return false // carried off: it is only an ogre now
+	}
+	c := [2]int{int(g.items[crate].x), int(g.items[crate].y)}
+	if c == you {
+		pick_up(g, crate)
+		if is_carried(g, crate) {
+			s.crates += 1
+		} else if !drop_one(g) {
+			return false
+		}
+		return true
+	}
+	// The giant moves every other turn: the bot gets there first if it is less than twice as far.
+	if cheb(you, c) < 2 * cheb(at, c) {
+		if plan := bfs(g, .Crate); plan.ok {
+			command(g, step_dir(plan.dir))
+			return true
+		}
+	}
+	return false
+}
+
+// A cell out of the giant's reach even after the coming gust's push, where that push slams nobody.
+giant_safe :: proc(g: ^Game, c, at, w: [2]int) -> bool {
+	pushed := c + gust_push(GIANT_INDEX + 1) * w
+	return max(abs(c.x - at.x), abs(c.y - at.y)) >= GIANT_WAIT && max(abs(pushed.x - at.x), abs(pushed.y - at.y)) > GIANT_REACH && !gust_slams(g, c.x, c.y)
+}
+
+// Puts on a pack of holding the bot carries (bought from the sage, or found on floor 10), in town:
+// the old pack comes off, what fits moves across, and the old pack stays behind with the rest.
+bot_wears_holding :: proc(g: ^Game) {
+	h := 0
+	for i in 1 ..< MAX_ITEMS {
+		if g.items[i].kind == .Pack_Holding && is_carried(g, i) && g.items[i].place != .Worn {
+			h = i
+		}
+	}
+	if h == 0 {
+		return
+	}
+	old := worn(g, .Pack)
+	drop(g, h)
+	if old != 0 {
+		drop(g, old)
+	}
+	wear(g, h, .Pack)
+	for i in 1 ..< MAX_ITEMS {
+		if old != 0 && g.items[i].place == .Inside && int(g.items[i].parent) == old {
+			put_in(g, i, h)
+		}
+	}
 }

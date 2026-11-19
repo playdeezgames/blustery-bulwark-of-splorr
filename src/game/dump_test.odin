@@ -618,6 +618,8 @@ test_dump_giant :: proc(t: ^testing.T) {
 			}
 		}
 		gx, gy := int(g.tenants[id].x), int(g.tenants[id].y)
+		say(g, "You climb to floor 12.")
+		say(g, "The carny steps aside. \"Right this way! Mind yer head!\"")
 		teleport(g, {gx - 2, gy})
 		g.tenants[id].awake = true
 		g.gust_in = 99

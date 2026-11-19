@@ -524,3 +524,24 @@ Step 19 is kept as built: the camp gear's numbers, the pack of holding's limits,
 ## Step 22: floor 12, the giant (November 19, 2026)
 
 50 climbs a build. Floor 11's stairs up now climb to floor 12, but the bot's climb still ends there (`BOT_TOP` in `playtest_test.odin`), since it does not yet know how to knock the giant off its crate (step 23). The figures are those of steps 19 and 21 to the last digit: 100, 100, 100 and 98 % reach floor 11's stairs up, with 5.60, 1.92, 2.24 and 1.94 deaths a climb. Building floor 12 draws no random numbers before you arrive, so nothing earlier moved.
+
+## Round 6: all of slice 3 (step 23, November 19, 2026)
+
+50 climbs a build, done when the bot takes the key to floor 13 (24,000 turns at most). On floor 12 the bot knocks the giant off its crate with a gale, a squall or a gust ball when it can, otherwise waits 3 cells off, downwind, for a gust to tip the crate; then it runs for the crate when it will get there first, and fights the giant next to it. It now also learns and casts Squall and buys or wears a pack of holding. A first try waited 5 cells upwind and spent up to 716 turns a climb waiting, the giant climbing back before the bot reached the crate.
+
+| | Even | Fighter | Nimble | Caster |
+|---|---|---|---|---|
+| took the key to floor 13 | 96 % (2 out of turns) | 98 % (1) | 100 % | 98 % (1) |
+| turn the key was taken (avg) | 14830 | 12472 | 13950 | 14301 |
+| deaths a climb | 5.60 | 2.12 | 2.62 | 2.02 |
+| deaths on floors 9, 10, 11, 12 | 50, 44, 50, 7 | 20, 13, 26, 1 | 22, 16, 33, 9 | 19, 12, 12, 3 |
+| killed by the Giant | 7 | 1 | 9 | 3 |
+| turns on floor 12 (avg) | 98 | 98 | 98 | 89 |
+| giant knocked off by a spell, a climb | 1.1 | 0.6 | 0.8 | 1.2 |
+| turns waited for a gust, a climb | 14.8 | 29.6 | 12.5 | 9.6 |
+| crate carried off, a climb | 0.5 | 0.6 | 0.5 | 0.3 |
+| squalls cast, a climb | 8.7 | 3.5 | 4.9 | 8.0 |
+| wearing a pack of holding at the end | 38 % | 48 % | 26 % | 14 % |
+| end level | 33.9 | 32.0 | 32.9 | 32.2 |
+
+The giant is the easiest of the three boss floors for the bot so far: it arrives at level 30 or more, and about half the time it carries the crate off. Floors 9 to 11 shifted a little against step 19 (the squall and the pack of holding change the climbs). The leading killers are still goblins, ogres, giant ants and cave bears on floors 5 to 11, and the wind for every build but the Caster.
