@@ -253,3 +253,65 @@ Proposed by Claude and decided by the user item by item on November 17, 2026: al
     - **Screenshots:** `tools/make_shots.sh` adds `09-giant.png` (the giant clubbing you from its crate); the other shots now show "Slice 3, step 23". 170 native tests. Checked in the browser: the build loads, showing "Slice 3, step 23", with no console errors.
 
     **Reviewed November 19, 2026:** kept as built: the giant as it is (the easiest boss floor for the bot, which arrives near level 30), gust insurance at 120 Jools, the bot without maps, the smith's new stock, scale mail, Uncurse, Find the Stairs or Teleport, and the floor 12 screenshot. **Slice 3 is complete.**
+
+## Slice 4: the top and the ending (proposed and decided November 20, 2026)
+
+Proposed by Claude and decided by the user item by item on November 20, 2026: items 1 to 9 were accepted as proposed, and the user brought sound and the second ring slot into the slice (items 10 and 11). Nothing is built yet. Every number is a starting value, to review step by step as in slices 1 to 3.
+
+**Goal:** the key to floor 13 opens the last stretch, and the slice finishes the game. There are two more generated floors (13 and 14), where a gust finally pushes 3 cells, then two hand-built floors. Floor 15 holds "His Lordship's champion, undefeated" (DESIGN.md beat 4), who has never fought anyone and is relieved to stop (beat 5). Floor 16 is the top: the windiest floor in the game, a few guards the herald hired, and the lord, a mild old man who never says a word (beat 6). Back in town you tell the herald, who believes every word he wrote (beat 7), and the game ends there. You can play on afterwards.
+
+**Already in place:** saves have room for all 16 floors (`FLOOR_COUNT` is 16), and fields added at the end of the game state load into older saves, so no climber starts over. The wind tables (`GUST_PERIOD`, `SNUFF_CHANCE`, `LOAD_HOLD`) stop at floor 12 and grow to 16.
+
+**In the slice**
+
+1. **Floors 13 and 14:** generated at 64 by 44. Gusts come every 6 and 5 turns (5 on floor 15, 4 on floor 16). A lit torch is snuffed 80 and 80 % of the time (85 and 90 % above). A heavy load holds against 10 gusts in 100 (10, then 5 on floor 16). **A gust pushes 3 cells from floor 13** (DESIGN.md: "higher floors have a shorter N and a stronger push"); a heavy load that does not hold still drags one cell less, so 2.
+2. **New tenants from floor 13: the boasts that never got a floor.** DESIGN.md beat 4 kept three cheap boasts unused (the dragon, the demon, the hundred-eyed beast); up here they are ordinary tenants, paying rent like everyone else:
+   - **"Dragon":** a very large lizard. Health 32, 3 to 10, to hit 60, defence 15, heavy (gusts do not move it), 18 XP. "A very large lizard. Its name tag says Dragon." Trophy: a name tag, 15.
+   - **"demon":** a goat. Health 22, 2 to 8, to hit 65. It charges: from 2 or 3 cells away in a straight line it rushes up and butts you a cell back (into a wall or a tenant, a slam for 1 to 3). 12 XP. "His Lordship's demon, the town says. A goat with opinions." Trophy: a goat horn, 10.
+   - **"hundred-eyed beast":** a peacock. Health 10, 1 to 4, fast, light (gusts carry it), picked half as often. When it sees you it screams, and every hostile tenant within 10 cells wakes and knows where you are. 8 XP. "A hundred eyes, the town says. Painted on." Trophy: a peacock feather, 12.
+3. **Earlier climbers:** camps on floors 13 and 14, laid out as before, each with a note and one piece of gear. Nobody has camped higher.
+   - floor 13: "Day 230. Two floors to the champion. Everyone says he is undefeated. Nobody says by whom." Gear: a **long sword** (3 to 11, 2.5 kg).
+   - floor 14: "Turned back here. I could hear somebody upstairs, dusting." Gear: a **wind cloak** (cloak slot, 1.5 kg): a gust pushes you a cell less.
+4. **The town after the giant:**
+   - **smith:** a long sword 100 and **plate armour** (armour 7, 22 kg) 160.
+   - **general store:** an **anchor-weight** (DESIGN.md beat 2: the town sells anchor-weights), 8 kg, 25 Jools. It does nothing but weigh 8 kg, which is the point. "Holds you down. Also down."
+   - **sage:** a wind cloak, once, for 150.
+5. **Levels 13 and up: three spells**, offered from level 13:
+   - **Heal** (8): restores half yer health (Mend heals a little).
+   - **Shelter** (6): for 40 turns gusts never push you; they still snuff yer light. A long Anchor.
+   - **Tempest** (10, aimed): a gale's line, 6 cells, every tenant on it takes 3 to 9 and is shoved 2 cells. The strongest attack in the game.
+
+   With 21 spells the list keeps scrolling (13 rows), as built in step 21.
+6. **Floor 15, "His Lordship's champion, undefeated":**
+   - **The layout:** a hand-built hall, very tidy (the cartographer's line "Floor fifteen? I hear it is very tidy."), with an empty trophy cabinet. No carny: nobody sells tickets because nobody has ever come. A sign at the door: "Undefeated. Please wipe yer feet."
+   - **The champion:** health 60, 3 to 11, defence 25, 60 XP. He has never fought anyone: his chance to hit starts at 30 and rises by 5 each turn he fights, up to 75 ("He is getting the hang of this."). A quick fight is a kind one; a long one is not.
+   - **He yields, never dies:** at a quarter of his health he sits down: "Thank you. Nineteen years undefeated. It was heavy." He drops the **key to floor 16** and, asked, says nobody has been higher, yer mentor included: they stopped here together, and the mentor went down. Then he leaves for town.
+   - **After:** the herald proclaims "His Lordship has crushed the treacherous champion, as foretold." The windchute gains floor 15. From then on the champion sits with the mentor in the tavern, with lines of his own, and nobody remarks on it.
+7. **Floor 16, the top:**
+   - **The door:** floor 15's stairs up open with the key ("The key turns.") or without it ("The door opens."). It was never locked, and nothing says so (beat 5).
+   - **The roof:** hand-built and open, the strongest wind in the game: a gust every 4 turns, pushing 3, and after each gust the wind turns a quarter ("The wind backs round."), so no wall stays a safe one.
+   - **The guards:** six **hired guards** (health 20, 2 to 7, to hit 60, defence 15, 10 XP), the only tenants up here. "Hired by the herald. Paid by the hour, in advance." Trophy: a contract, 6.
+   - **The lord:** a very old man in a chair with a cup of tea, at the far end. He never speaks and cannot be harmed ("You cannot bring yerself to."). Bumping him: "He looks up, nods, and goes back to his tea." Meeting him shows a notice: "His Lordship. He has never said a word."
+8. **The ending:** back in town after meeting the lord, the herald's stall has a new row, "Tell him what is at the top". He listens, and believes every word he wrote: "Then who blows the wind? His Lordship, surely. Who else could?" Then an end screen: "The end. The bulwark sits on the windiest crag in the land. The wind is only wind." (the one honest thing in the game, beat 6), with the climb's turns, deaths, level and kills, and "Enter/OK to play on." The herald's next proclamation is the same as ever.
+9. **The bot** climbs the whole game: done when it sees the end screen. On floor 15 it fights the champion; on floor 16 it fights the guards and walks to the lord. **Playtest round 7** at 50 climbs a build, plus screenshots of floors 15 and 16 and the end screen.
+10. **Sound** (brought in by the user): a handful of small jsfxr effects (the vault's `Tech/jsfxr sound effects.md`), made by a seeded script kept in `tools/` so the set can be regenerated: the gust warning, a gust, a slam, a blow landing, a miss, being hurt, picking up, a spell cast, a level gained, a key turning, and the herald's fanfare. The game's rules only name the sound; the JS shim plays it. Browsers start sound only after a first key or click, which the creation screen always has. A key toggles sound off and on (shown on the panel and remembered with the save); which key, and whether it starts on, are settled at build time.
+11. **The second ring slot** (brought in by the user): the paper doll has had both ring rows since slice 1 (Ring_Left and Ring_Right), and a ring fits either; the earlier slices' "not in the slice" lines were wrong to list it. What is missing is a reason to wear two: only the Guard ring and the cursed Draught ring exist. Two rings join them, found from floor 9 and sold by the general store after the giant, numbers Claude's to review:
+    - **Steady ring:** a gust pushes you a cell less (it stacks with the wind cloak, never below 1).
+    - **Lamp ring:** gusts snuff yer light half as often (it stacks with the lantern).
+
+    A ring picked up goes on the right hand when the left is taken.
+
+**Not in the slice:** elemental damage and resistances, LootLocker scores, a new climb after the ending (New Game+). The itch.io release (copy, cover, devlog) is separate work after the slice.
+
+### Proposed build order
+
+24. **Floors 13 and 14** and the wind tables to floor 16 (item 1), with the 3-cell push.
+25. **The three tenants** (item 2).
+26. **The camps, the wind cloak and the town after the giant** (items 3 and 4).
+27. **The three spells** (item 5).
+28. **Floor 15, the champion** (item 6), and the tavern after.
+29. **Floor 16, the top and the lord** (item 7).
+30. **The ending** (item 8).
+31. **Two rings** for the second ring slot (item 11).
+32. **Sound** (item 10).
+33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.
