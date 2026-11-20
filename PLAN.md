@@ -312,6 +312,8 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **The push:** from floor 13 a gust pushes 3 cells ("A gust hurls you E."), and light things and tenants go 3 too; a heavy load that does not hold drags you 2.
     - 175 native tests (`high_test.odin`; `DUMP_HIGH` draws floor 13 just after a gust hurls you). Checked in the browser: the build loads, showing "Slice 4, step 24", with no console errors; floor 13 not reached there, so it was checked in the frame dump.
     - **Bot round:** the same figures as round 6 to the last digit (the key to floor 13 in 96, 98, 100 and 98 % of climbs; 5.60, 2.12, 2.62 and 2.02 deaths a climb). Its climb still ends with the key, so it never enters floor 13; floors 1 to 12 and their wind are untouched. It climbs on in step 33.
+
+    **Reviewed November 20, 2026:** kept as built: the wind table for floors 13 to 16, the 3-cell push with a heavy load dragging 2, and the tenant counts on floors 13 and 14. The game is unchanged by the review.
 25. **The three tenants** (item 2).
 26. **The camps, the wind cloak and the town after the giant** (items 3 and 4).
 27. **The three spells** (item 5).
