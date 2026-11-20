@@ -102,6 +102,11 @@ PICKS = [
     ('Spear',       28, 8),   # a plain spear (slice 3 step 20; painted brown)
     ('Crate',        1, 40),  # a plain wooden box (slice 3 step 22; painted brown)
     ('Certificate',  4, 37),  # a framed sheet (painted white)
+    ('Lizard',      13, 14),  # a long-necked lizard (slice 4 step 25: the "Dragon"; painted green)
+    ('Goat',         0, 16),  # a horned beast (the "demon")
+    ('Peacock',      8, 16),  # a crested bird (the "hundred-eyed beast"; painted cyan)
+    ('Horn',         6, 38),  # a curved horn
+    ('Tag',          7, 37),  # a small label (painted yellow)
 ]
 
 def tile(col, row):

@@ -126,6 +126,11 @@ Gfx :: enum {
 	Spear,
 	Crate,
 	Certificate,
+	Lizard, // slice 4 step 25
+	Goat,
+	Peacock,
+	Horn,
+	Tag,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

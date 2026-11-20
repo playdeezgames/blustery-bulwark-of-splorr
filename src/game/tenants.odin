@@ -32,6 +32,10 @@ Tenant_Kind :: enum u8 {
 	Draught, // never fights; pushes you away from it; blows pass through, any spell seals it
 	Cartographer, // floor 10's camp (camp.odin): sells maps when bumped
 	Giant, // floor 12's boss (giant.odin): an ogre on a crate
+	// From floor 13 (slice 4 step 25): the boasts that never got a floor (DESIGN.md beat 4).
+	Lizard, // the "Dragon": heavy, hits hard
+	Goat, // the "demon": charges from 2 or 3 cells in a line and butts you back a cell
+	Peacock, // the "hundred-eyed beast": light and fast; its scream wakes the floor
 }
 
 Tenant_Info :: struct {
@@ -80,6 +84,9 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Cartographer = {name = "cartographer", a = "the cartographer", gfx = .Cartographer, color = COLOR_LIGHT, health = 14, hit = 60, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 4, peaceful = true, first = 99, verb = "swats", line = "She mapped up to ten. She seems content with ten."},
 	.Draught = {name = "draught", a = "a draught", gfx = .Draught, color = COLOR_CYAN, health = 1, speed = 10, xp = 3, peaceful = true, rare = true, first = 9, line = "A wind spirit, the town says. It is a draught."},
 	.Giant   = {name = "giant", a = "the Giant", gfx = .Ogre, color = COLOR_LIGHT, health = 40, hit = 55, dmin = 3, dmax = 9, defence = 10, speed = 5, xp = 40, first = 99, verb = "clubs", line = "An ogre on a crate. From down here it looks very tall."},
+	.Lizard  = {name = "Dragon", a = "a lizard called Dragon", gfx = .Lizard, color = 6, health = 32, hit = 60, dmin = 3, dmax = 10, defence = 15, speed = 10, xp = 18, trophy = .Name_Tag, chance = 50, first = 13, verb = "bites", line = "A very large lizard. Its name tag says Dragon."},
+	.Goat    = {name = "demon", a = "His Lordship's demon", gfx = .Goat, color = COLOR_LIGHT, health = 22, hit = 65, dmin = 2, dmax = 8, defence = 10, speed = 10, xp = 12, trophy = .Goat_Horn, chance = 50, first = 13, verb = "butts", line = "His Lordship's demon, the town says. A goat with opinions."},
+	.Peacock = {name = "hundred-eyed beast", a = "the hundred-eyed beast", gfx = .Peacock, color = 10, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 20, xp = 8, light = true, rare = true, trophy = .Peacock_Feather, chance = 50, first = 13, verb = "pecks", line = "A hundred eyes, the town says. Painted on."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -306,6 +313,9 @@ tenant_act :: proc(g: ^Game, id: int) {
 		return
 	}
 	if tenant_sees_you(g, t) {
+		if t.kind == .Peacock && !t.awake {
+			peacock_screams(g, id)
+		}
 		t.awake = true
 		t.tx, t.ty = i16(g.x), i16(g.y)
 	}
@@ -334,6 +344,9 @@ tenant_act :: proc(g: ^Game, id: int) {
 	}
 	if abs(int(t.x) - g.x) <= 1 && abs(int(t.y) - g.y) <= 1 {
 		tenant_attack(g, id)
+		return
+	}
+	if t.kind == .Goat && goat_charges(g, id) {
 		return
 	}
 	// Close in on where it last saw you, by the step that brings it nearest.
@@ -655,4 +668,75 @@ seal_draught :: proc(g: ^Game, id: int) {
 	g.xp += TENANT[.Draught].xp
 	say(g, "The draught is sealed.")
 	check_level(g)
+}
+
+PEACOCK_CALL :: 10 // the hundred-eyed beast's scream wakes hostile tenants this many cells round it
+GOAT_CHARGE :: 3 // the demon charges from this far, in a straight line
+SLAM_MIN :: 1 // a butt into a wall or a tenant hurts this much more
+SLAM_MAX :: 3
+
+// The hundred-eyed beast sees you and screams: every hostile tenant on the floor within
+// PEACOCK_CALL cells wakes and knows where you are (slice 4 step 25).
+peacock_screams :: proc(g: ^Game, id: int) {
+	p := g.tenants[id]
+	for i in 1 ..< MAX_TENANTS {
+		t := &g.tenants[i]
+		if i == id || t.kind == .None || int(t.floor) != g.current || !hostile(t) || TENANT[t.kind].prop || disguised(t) {
+			continue
+		}
+		if max(abs(int(t.x) - int(p.x)), abs(int(t.y) - int(p.y))) <= PEACOCK_CALL {
+			t.awake = true
+			t.tx, t.ty = i16(g.x), i16(g.y)
+		}
+	}
+	stop_travel(g)
+	say(g, "The hundred-eyed beast screams. Everything near heard that.")
+}
+
+// The demon, 2 or 3 cells off in a straight line with nothing between, rushes up and butts you
+// a cell back (into a wall or a tenant, a slam). False when it has no line to charge along.
+goat_charges :: proc(g: ^Game, id: int) -> bool {
+	t := &g.tenants[id]
+	dx, dy := g.x - int(t.x), g.y - int(t.y)
+	far := max(abs(dx), abs(dy))
+	if far < 2 || far > GOAT_CHARGE || !(dx == 0 || dy == 0 || abs(dx) == abs(dy)) {
+		return false
+	}
+	d := [2]int{clamp(dx, -1, 1), clamp(dy, -1, 1)}
+	for k in 1 ..< far {
+		if !tenant_can_enter(g, int(t.x) + k * d.x, int(t.y) + k * d.y) {
+			return false
+		}
+	}
+	t.x, t.y = i16(g.x - d.x), i16(g.y - d.y)
+	info := TENANT[t.kind]
+	chance := clamp(info.hit - 4 * armour_worn(g) - DEX_DODGE * (g.attr[.Dexterity] - ATTR_BASE), 5, 95)
+	if g.vis[t.y][t.x] {
+		say(g, "The demon charges.")
+	}
+	if rng_int(&g.rng, 100) >= chance {
+		say(g, "The demon misses.")
+		return true
+	}
+	stop_travel(g)
+	hurt(g, rng_range(&g.rng, info.dmin, info.dmax), info.a)
+	if g.mode == .Dead {
+		return true
+	}
+	nx, ny := g.x + d.x, g.y + d.y
+	blocked := ""
+	if !passable(cell_at(g, nx, ny)) {
+		blocked = "the wall"
+	} else if other := tenant_at(g, nx, ny); other != 0 {
+		blocked = TENANT[g.tenants[other].kind].a
+	}
+	if blocked != "" {
+		say(g, "The demon butts you into ", blocked, ".")
+		hurt(g, rng_range(&g.rng, SLAM_MIN, SLAM_MAX), info.a)
+		return true
+	}
+	g.x, g.y = nx, ny
+	say(g, "The demon butts you ", COMPASS[direction_index(d)], ".")
+	refresh_view(g)
+	return true
 }

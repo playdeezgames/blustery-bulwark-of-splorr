@@ -314,7 +314,14 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit (the key to floor 13 in 96, 98, 100 and 98 % of climbs; 5.60, 2.12, 2.62 and 2.02 deaths a climb). Its climb still ends with the key, so it never enters floor 13; floors 1 to 12 and their wind are untouched. It climbs on in step 33.
 
     **Reviewed November 20, 2026:** kept as built: the wind table for floors 13 to 16, the 3-cell push with a heavy load dragging 2, and the tenant counts on floors 13 and 14. The game is unchanged by the review.
-25. **The three tenants** (item 2).
+25. **Done November 20, 2026.** **The three tenants** (item 2), on floors 13 and 14 alongside the older kinds:
+    - **"Dragon":** a lizard (health 32, 3 to 10, to hit 60, defence 15, 18 XP), heavy, so gusts leave it be. "A very large lizard. Its name tag says Dragon." It leaves a name tag (worth 15) half the time; it kills you as "a lizard called Dragon".
+    - **"demon":** a goat (health 22, 2 to 8, to hit 65, defence 10, 12 XP). Two or three cells off in a straight line (across, down or diagonal) with nothing between, it charges ("The demon charges."): it rushes up beside you and, if it lands, butts you a cell back ("The demon butts you E."). Into a wall or a tenant it is a slam for 1 to 3 more ("The demon butts you into the wall."). Next to you it butts like anyone else, without the shove. "His Lordship's demon, the town says. A goat with opinions." A goat horn (10), half the time.
+    - **"hundred-eyed beast":** a peacock (health 10, 1 to 4, to hit 55, defence 10, 8 XP), light and fast and picked half as often. The first time it sees you it screams ("The hundred-eyed beast screams. Everything near heard that."): every hostile tenant within 10 cells of it wakes and knows where you are, seen or not. "A hundred eyes, the town says. Painted on." A peacock feather (12), half the time.
+    - **Pictures** from Urizen: a long-necked lizard painted green, a horned goat, a crested bird painted blue, a curved horn, and a small tag painted yellow; the feather is the crow's, painted blue.
+    - Numbers not in the plan, Claude's picks for review: each trophy drops half the time; the lizard acts every turn; the goat's defence 10; the peacock's to-hit 55 and defence 10; a charge's to-hit is the goat's own.
+    - 178 native tests (`high_test.odin`; `DUMP_HIGH` now also draws the three round you, the beast screaming). Checked in the browser: the build loads, showing "Slice 4, step 25", with no console errors.
+    - **Bot round:** the same figures as round 6 to the last digit; the bot never enters floor 13 (step 33), and stocking floors 1 to 12 draws the same kinds as before.
 26. **The camps, the wind cloak and the town after the giant** (items 3 and 4).
 27. **The three spells** (item 5).
 28. **Floor 15, the champion** (item 6), and the tavern after.

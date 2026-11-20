@@ -88,6 +88,10 @@ Item_Kind :: enum u8 {
 	Crate, // the giant's crate: empty, so the wind catches it
 	Key_Thirteen, // the giant's key to floor 13
 	Certificate, // the herald's, for felling the giant
+	// Trophies of the tenants from floor 13 (slice 4 step 25).
+	Name_Tag, // the "Dragon"'s
+	Goat_Horn, // the "demon"'s
+	Peacock_Feather, // the "hundred-eyed beast"'s
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -207,6 +211,9 @@ KIND := [Item_Kind]Kind_Info {
 	.Crate         = {name = "Empty crate", gfx = .Crate, color = COLOR_BROWN, weight = 4000, bulk = 20000},
 	.Key_Thirteen  = {name = "Key to floor 13", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
 	.Certificate   = {name = "Certificate", gfx = .Certificate, color = COLOR_WHITE, weight = 20, bulk = 50, trophy = true},
+	.Name_Tag      = {name = "Name tag \"Dragon\"", gfx = .Tag, color = COLOR_YELLOW, weight = 10, bulk = 10, trophy = true},
+	.Goat_Horn     = {name = "Goat horn", gfx = .Horn, color = COLOR_WHITE, weight = 200, bulk = 80, trophy = true},
+	.Peacock_Feather = {name = "Peacock feather", gfx = .Feather, color = 10, weight = 5, bulk = 30, trophy = true},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
 	.Belt          = {name = "Belt", gfx = .Belt, color = COLOR_BROWN, weight = 300, bulk = 400, slot = .Belt, belt_slots = 4},

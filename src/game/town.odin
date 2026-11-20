@@ -136,6 +136,9 @@ VALUE := #partial [Item_Kind]int {
 	.Pack_Holding    = 200,
 	.Spear           = 45,
 	.Certificate     = 5,
+	.Name_Tag        = 15,
+	.Goat_Horn       = 10,
+	.Peacock_Feather = 12,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}

@@ -128,3 +128,134 @@ test_floors_thirteen_and_fourteen_fit_with_all_their_tenants :: proc(t: ^testing
 		free(g)
 	}
 }
+
+// Slice 4 step 25: the three boasts that never got a floor, as ordinary tenants from floor 13.
+
+@(test)
+test_the_three_boasts_live_from_floor_thirteen :: proc(t: ^testing.T) {
+	for k in ([?]Tenant_Kind{.Lizard, .Goat, .Peacock}) {
+		testing.expect_value(t, TENANT[k].first, 13)
+	}
+	testing.expect(t, !TENANT[.Lizard].light) // heavy: gusts do not move it
+	testing.expect_value(t, TENANT[.Lizard].health, 32)
+	testing.expect_value(t, TENANT[.Lizard].xp, 18)
+	testing.expect(t, TENANT[.Peacock].light && TENANT[.Peacock].rare && TENANT[.Peacock].speed == 20)
+	testing.expect_value(t, VALUE[.Name_Tag], 15)
+	testing.expect_value(t, VALUE[.Goat_Horn], 10)
+	testing.expect_value(t, VALUE[.Peacock_Feather], 12)
+	testing.expect(t, KIND[.Name_Tag].trophy && KIND[.Goat_Horn].trophy && KIND[.Peacock_Feather].trophy)
+	// None of them below floor 13; all of them on floors 13 and 14, over a few seeds.
+	seen: [Tenant_Kind]int
+	for seed in ([?]u64{1, 2, 3, 4, 5}) {
+		g := new_game(seed)
+		g.no_tenants = false
+		for i in 0 ..< BUILT_FLOORS {
+			enter_floor(g, i, .Stairs_Down)
+		}
+		for i in 1 ..< MAX_TENANTS {
+			tn := g.tenants[i]
+			if tn.kind == .Lizard || tn.kind == .Goat || tn.kind == .Peacock {
+				testing.expect(t, int(tn.floor) >= GIANT_INDEX + 1)
+				seen[tn.kind] += 1
+			}
+		}
+		free(g)
+	}
+	testing.expect(t, seen[.Lizard] > 0 && seen[.Goat] > 0 && seen[.Peacock] > 0)
+	testing.expect(t, seen[.Peacock] < seen[.Goat]) // picked half as often
+	g := open_room()
+	defer free(g)
+	id := new_tenant(g, .Lizard, g.current, 24, 20)
+	inspect_tenant(g, id)
+	testing.expect_value(t, message(&g.last_said), "A Dragon. A very large lizard. Its name tag says Dragon.")
+}
+
+@(test)
+test_the_demon_charges_and_butts_you_back :: proc(t: ^testing.T) {
+	g := open_room()
+	defer free(g)
+	g.lit = true
+	charged, butted := 0, 0
+	for _ in 0 ..< 200 {
+		teleport(g, {20, 20})
+		g.health = max_health(g)
+		g.mode = .Play
+		for i in 1 ..< MAX_TENANTS {
+			g.tenants[i] = {}
+		}
+		id := new_tenant(g, .Goat, g.current, 17, 20) // three cells west, in line
+		g.tenants[id].awake = true
+		g.tenants[id].tx, g.tenants[id].ty = 20, 20
+		hp := g.health
+		tenant_act(g, id)
+		testing.expect_value(t, [2]i16{g.tenants[id].x, g.tenants[id].y}, [2]i16{19, 20}) // it rushed up
+		charged += 1
+		if g.health < hp {
+			butted += 1
+			testing.expect_value(t, [2]int{g.x, g.y}, [2]int{21, 20}) // a cell back, away from it
+			testing.expect_value(t, message(&g.last_said), "The demon butts you E.")
+		} else {
+			testing.expect_value(t, [2]int{g.x, g.y}, [2]int{20, 20})
+		}
+	}
+	testing.expect(t, butted > 60 && butted < 180)
+	// Not in a straight line (a knight's move off): it walks instead.
+	for i in 1 ..< MAX_TENANTS {
+		g.tenants[i] = {}
+	}
+	teleport(g, {20, 20})
+	id := new_tenant(g, .Goat, g.current, 17, 19)
+	g.tenants[id].awake = true
+	g.tenants[id].tx, g.tenants[id].ty = 20, 20
+	tenant_act(g, id)
+	testing.expect_value(t, [2]i16{g.tenants[id].x, g.tenants[id].y}, [2]i16{18, 20})
+	// Against a wall: a slam that hurts more.
+	slammed := false
+	for _ in 0 ..< 100 {
+		for i in 1 ..< MAX_TENANTS {
+			g.tenants[i] = {}
+		}
+		teleport(g, {FLOOR_W - 2, 20})
+		g.health = max_health(g)
+		gid := new_tenant(g, .Goat, g.current, FLOOR_W - 4, 20)
+		g.tenants[gid].awake = true
+		g.tenants[gid].tx, g.tenants[gid].ty = i16(g.x), 20
+		tenant_act(g, gid)
+		if g.health < max_health(g) {
+			testing.expect_value(t, g.x, FLOOR_W - 2)
+			testing.expect_value(t, message(&g.last_said), "The demon butts you into the wall.")
+			slammed = true
+			break
+		}
+	}
+	testing.expect(t, slammed)
+}
+
+@(test)
+test_the_hundred_eyed_beast_screams_and_wakes_the_floor :: proc(t: ^testing.T) {
+	g := open_room()
+	defer free(g)
+	g.lit = true
+	p := new_tenant(g, .Peacock, g.current, 24, 20)
+	near := new_tenant(g, .Goblin, g.current, 30, 25) // 6 cells from it, out of yer sight
+	far := new_tenant(g, .Goblin, g.current, 40, 35) // 16 cells from it
+	friend := new_tenant(g, .Carny, g.current, 26, 22) // peaceful: it does not care
+	tenant_act(g, p)
+	testing.expect(t, g.tenants[p].awake)
+	testing.expect(t, g.tenants[near].awake)
+	testing.expect_value(t, [2]i16{g.tenants[near].tx, g.tenants[near].ty}, [2]i16{20, 20})
+	testing.expect(t, !g.tenants[far].awake)
+	testing.expect(t, !g.tenants[friend].awake)
+	said := false
+	for i in 0 ..< LOG_LINES {
+		if strings.has_prefix(message(&g.log[i]), "The hundred-eyed beast screams.") {
+			said = true
+		}
+	}
+	testing.expect(t, said)
+	// Once awake it does not scream again.
+	g.tenants[far].awake = false
+	g.tenants[far].x, g.tenants[far].y = 30, 26
+	tenant_act(g, p)
+	testing.expect(t, !g.tenants[far].awake)
+}

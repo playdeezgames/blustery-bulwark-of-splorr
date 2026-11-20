@@ -649,7 +649,8 @@ test_dump_giant :: proc(t: ^testing.T) {
 }
 
 // Floor 13 by eye (-define:DUMP_HIGH=<prefix>): <prefix>-hurl.ppm (just through the door from
-// floor 12, then hurled three cells by a gust).
+// floor 12, then hurled three cells by a gust) and <prefix>-boasts.ppm (the Dragon, the demon and
+// the hundred-eyed beast round you, the beast screaming).
 DUMP_HIGH :: #config(DUMP_HIGH, "")
 
 @(test)
@@ -676,5 +677,29 @@ test_dump_high :: proc(t: ^testing.T) {
 		draw_game(fr, g)
 		resolve(fr)
 		write_ppm(DUMP_HIGH + "-hurl.ppm", fr)
+		// The three boasts round you in an open stretch of floor 13, lit: the demon three cells off in
+		// line, about to charge.
+		for i in 1 ..< MAX_TENANTS {
+			if int(g.tenants[i].floor) == g.current {
+				g.tenants[i] = {}
+			}
+		}
+		for y in g.y - 3 ..= g.y + 3 {
+			for x in g.x - 4 ..= g.x + 4 {
+				if x > 0 && y > 0 && x < f.w - 1 && y < f.h - 1 {
+					f.cells[y][x] = .Floor
+				}
+			}
+		}
+		new_tenant(g, .Lizard, g.current, g.x + 2, g.y - 2)
+		new_tenant(g, .Goat, g.current, g.x - 3, g.y)
+		peacock := new_tenant(g, .Peacock, g.current, g.x + 3, g.y + 1)
+		g.lit = true
+		refresh_view(g)
+		say(g, "A Dragon. A very large lizard. Its name tag says Dragon.")
+		tenant_act(g, peacock)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGH + "-boasts.ppm", fr)
 	}
 }
