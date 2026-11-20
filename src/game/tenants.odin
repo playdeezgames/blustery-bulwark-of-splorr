@@ -99,6 +99,7 @@ Tenant :: struct {
 	awake:    bool, // has seen you and is after you
 	angry:    bool, // a peaceful tenant you struck
 	still:    bool, // stays where it is unless angered (the carny at floor 4's door)
+	screamed: bool, // the hundred-eyed beast has screamed (once only; fills a padding byte, so saves keep their shape)
 	tx, ty:   i16, // where it last saw you
 }
 
@@ -313,7 +314,8 @@ tenant_act :: proc(g: ^Game, id: int) {
 		return
 	}
 	if tenant_sees_you(g, t) {
-		if t.kind == .Peacock && !t.awake {
+		if t.kind == .Peacock && !t.screamed {
+			t.screamed = true
 			peacock_screams(g, id)
 		}
 		t.awake = true
@@ -675,7 +677,7 @@ GOAT_CHARGE :: 3 // the demon charges from this far, in a straight line
 SLAM_MIN :: 1 // a butt into a wall or a tenant hurts this much more
 SLAM_MAX :: 3
 
-// The hundred-eyed beast sees you and screams: every hostile tenant on the floor within
+// The hundred-eyed beast sees you for the first time and screams: every hostile tenant on the floor within
 // PEACOCK_CALL cells wakes and knows where you are (slice 4 step 25).
 peacock_screams :: proc(g: ^Game, id: int) {
 	p := g.tenants[id]

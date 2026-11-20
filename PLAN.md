@@ -322,6 +322,8 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Numbers not in the plan, Claude's picks for review: each trophy drops half the time; the lizard acts every turn; the goat's defence 10; the peacock's to-hit 55 and defence 10; a charge's to-hit is the goat's own.
     - 178 native tests (`high_test.odin`; `DUMP_HIGH` now also draws the three round you, the beast screaming). Checked in the browser: the build loads, showing "Slice 4, step 25", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit; the bot never enters floor 13 (step 33), and stocking floors 1 to 12 draws the same kinds as before.
+
+    **Reviewed November 20, 2026:** kept as built: the numbers Claude picked, the demon's charge, the scream and the pictures. One fix at review: the beast screamed again each time it lost you and found you, though the build notes said only the first time; it now screams once (a flag in a spare padding byte of each tenant, so saves keep their shape).
 26. **The camps, the wind cloak and the town after the giant** (items 3 and 4).
 27. **The three spells** (item 5).
 28. **Floor 15, the champion** (item 6), and the tavern after.

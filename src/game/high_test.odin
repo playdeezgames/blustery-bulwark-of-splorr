@@ -253,9 +253,12 @@ test_the_hundred_eyed_beast_screams_and_wakes_the_floor :: proc(t: ^testing.T) {
 		}
 	}
 	testing.expect(t, said)
-	// Once awake it does not scream again.
+	// It screams only once, even after losing you and finding you again.
 	g.tenants[far].awake = false
 	g.tenants[far].x, g.tenants[far].y = 30, 26
+	g.tenants[p].awake = false
 	tenant_act(g, p)
+	testing.expect(t, g.tenants[p].awake)
 	testing.expect(t, !g.tenants[far].awake)
+	testing.expect_value(t, size_of(Tenant), 18) // the flag took a padding byte
 }

@@ -561,3 +561,7 @@ Step 24 is kept as built: the wind table for floors 13 to 16, the 3-cell push (a
 ## Step 25: the tenants from floor 13 (November 20, 2026)
 
 50 climbs a build: the same figures as round 6 to the last digit. The three new tenants live only from floor 13, which the bot does not enter until step 33.
+
+### Decided with the user (November 20, 2026)
+
+Step 25 is kept as built: the numbers, the demon's charge, the scream and the pictures. The hundred-eyed beast now screams only the first time it sees you, as described (it had screamed again after losing you).
