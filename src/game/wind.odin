@@ -9,26 +9,27 @@ package game
 
 COMPASS := [8]string{"N", "S", "W", "E", "NW", "NE", "SW", "SE"} // same order as DIRECTIONS
 
-// Turns between gusts, by floor number (1 to 12; floors 5 to 8 from slice 2, 9 to 12 from slice 3).
-// Higher is windier.
-GUST_PERIOD := [12]int{12, 11, 10, 8, 9, 8, 8, 8, 7, 7, 6, 6}
+// Turns between gusts, by floor number (1 to 16; floors 5 to 8 from slice 2, 9 to 12 from slice 3,
+// 13 to 16 from slice 4). Higher is windier.
+GUST_PERIOD := [16]int{12, 11, 10, 8, 9, 8, 8, 8, 7, 7, 6, 6, 6, 5, 5, 4}
 GUST_WARNING :: 2 // turns of warning before a gust
 
 // Chance in 100 that a gust blows out a lit torch, by floor number.
-SNUFF_CHANCE := [12]int{25, 35, 45, 60, 50, 55, 60, 65, 65, 70, 70, 75}
+SNUFF_CHANCE := [16]int{25, 35, 45, 60, 50, 55, 60, 65, 65, 70, 70, 75, 80, 80, 85, 90}
 
 // Chance in 100 that a heavy load holds you against a gust, by floor number (the wind study,
 // November 15, 2026: a load that always held made the wind vanish for anyone who loots). When it
 // does not hold, the load still drags: the gust moves you one cell less, but at least one.
-LOAD_HOLD := [12]int{60, 55, 50, 45, 40, 35, 30, 25, 20, 20, 15, 15}
+LOAD_HOLD := [16]int{60, 55, 50, 45, 40, 35, 30, 25, 20, 20, 15, 15, 10, 10, 10, 5}
 
 load_hold :: proc(number: int) -> int {
 	return LOAD_HOLD[clamp(number, 1, len(LOAD_HOLD)) - 1]
 }
 
-// Cells a gust pushes you (and light things and tenants), by floor number: 2 from floor 5.
+// Cells a gust pushes you (and light things and tenants), by floor number: 2 from floor 5, 3 from
+// floor 13 (slice 4; DESIGN.md "higher floors have a shorter N and a stronger push").
 gust_push :: proc(number: int) -> int {
-	return number >= 5 ? 2 : 1
+	return number >= 13 ? 3 : number >= 5 ? 2 : 1
 }
 
 TORCH_TURNS :: 300 // a fresh torch

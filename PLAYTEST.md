@@ -549,3 +549,7 @@ The giant is the easiest of the three boss floors for the bot so far: it arrives
 ### Decided with the user (November 19, 2026)
 
 The giant, gust insurance at 120 Jools and the bot's gaps (maps, the smith's new stock, scale mail, Uncurse, Find the Stairs, Teleport) are left as they are; the floor 12 screenshot is approved. The game is unchanged by the review.
+
+## Step 24: floors 13 and 14 (November 20, 2026)
+
+50 climbs a build. The bot's climb still ends when it takes the key to floor 13, so it never goes through the door; the figures are those of round 6 to the last digit (96, 98, 100 and 98 % take the key; 5.60, 2.12, 2.62 and 2.02 deaths a climb). Nothing on floors 1 to 12 changed: the wind tables only grew past floor 12, and the 3-cell push starts at floor 13. The bot meets floors 13 to 16 in step 33.

@@ -41,7 +41,7 @@ DIRECTION := [Command][2]int {
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
-BUILT_FLOORS :: 12 // floors that exist so far (slice 3 step 22): floor 13 is still being built
+BUILT_FLOORS :: 14 // floors that exist so far (slice 4 step 24): floor 15 is still being built
 
 Mode :: enum u8 {
 	Play,

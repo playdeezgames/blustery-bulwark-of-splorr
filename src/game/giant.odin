@@ -199,15 +199,17 @@ giant_falls :: proc(g: ^Game, t: Tenant) {
 	}
 }
 
-// The stairs up on floor 12: the door to floor 13, which opens on scaffolding for now. Once opened
-// it stays open, as on floors 4 and 8.
+// The stairs up on floor 12: the door to floor 13 (slice 4 step 24). Once opened it stays open, as
+// on floors 4 and 8.
 door_to_floor_thirteen :: proc(g: ^Game) {
-	if GIANT_INDEX not_in g.unlocked && has_kind(g, .Key_Thirteen) {
-		g.unlocked += {GIANT_INDEX}
-		say(g, "The key turns. The door stays open.")
-	}
 	if GIANT_INDEX in g.unlocked {
-		say(g, "Above: scaffolding, and a sign. \"Floor 13. Coming soon, by order of His Lordship.\"")
+		enter_floor(g, GIANT_INDEX + 1, .Stairs_Down)
+		say(g, "You climb to floor 13. The wind is stronger.")
+	} else if has_kind(g, .Key_Thirteen) {
+		g.unlocked += {GIANT_INDEX}
+		enter_floor(g, GIANT_INDEX + 1, .Stairs_Down)
+		say(g, "The key turns. The door stays open.")
+		say(g, "You climb to floor 13. The wind is stronger.")
 	} else {
 		say(g, "The door to floor 13 is locked. The giant has the key, they say.")
 	}

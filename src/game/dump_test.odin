@@ -647,3 +647,34 @@ test_dump_giant :: proc(t: ^testing.T) {
 		write_ppm(DUMP_GIANT + "-notice.ppm", fr)
 	}
 }
+
+// Floor 13 by eye (-define:DUMP_HIGH=<prefix>): <prefix>-hurl.ppm (just through the door from
+// floor 12, then hurled three cells by a gust).
+DUMP_HIGH :: #config(DUMP_HIGH, "")
+
+@(test)
+test_dump_high :: proc(t: ^testing.T) {
+	when DUMP_HIGH != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		enter_floor(g, GIANT_INDEX, .Stairs_Down)
+		g.unlocked += {GIANT_INDEX}
+		teleport(g, floor_of(g).up)
+		command(g, .Confirm)
+		f := floor_of(g)
+		start := open_run(f, 3)
+		teleport(g, start)
+		g.lit = true
+		g.gust_in = 1
+		for i in 1 ..< MAX_TENANTS {
+			g.tenants[i].awake = false
+		}
+		end_turn(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGH + "-hurl.ppm", fr)
+	}
+}

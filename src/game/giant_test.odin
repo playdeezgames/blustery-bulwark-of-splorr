@@ -241,8 +241,8 @@ test_the_giant_drops_the_key_and_the_stretch_ends :: proc(t: ^testing.T) {
 	teleport(g, floor_of(g).up)
 	command(g, .Confirm)
 	testing.expect(t, GIANT_INDEX in g.unlocked)
-	testing.expect(t, strings.has_prefix(message(&g.last_said), "Above: scaffolding, and a sign. \"Floor 13."))
-	testing.expect_value(t, g.current, GIANT_INDEX)
+	testing.expect_value(t, message(&g.last_said), "You climb to floor 13. The wind is stronger.")
+	testing.expect_value(t, g.current, GIANT_INDEX + 1)
 }
 
 @(test)
