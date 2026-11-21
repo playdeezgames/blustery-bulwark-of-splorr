@@ -569,3 +569,7 @@ Step 25 is kept as built: the numbers, the demon's charge, the scream and the pi
 ## Step 26: the last camps and the town after the giant (November 21, 2026)
 
 50 climbs a build: the same figures as round 6 to the last digit. The bot's climb ends with the key to floor 13, so it never shops after the giant or reaches floors 13 and 14.
+
+### Decided with the user (November 21, 2026)
+
+Step 26 is kept as built: the gear's numbers, the wind cloak stacking with a heavy load, the lines and the pictures. The game is unchanged by the review.

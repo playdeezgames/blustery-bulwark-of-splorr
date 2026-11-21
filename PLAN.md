@@ -334,6 +334,8 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Claude's picks for review: the long sword's durability 90 and 4 litres; the plate's durability 140 and 16 litres; the anchor-weight's 2.5 litres; the wind cloak's durability 60 and armour 1; the sage's line.
     - 181 native tests (`high_town_test.odin`; `DUMP_HIGH` now also draws floor 13's camp, its note read). Checked in the browser: the build loads, showing "Slice 4, step 26", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit: the climb ends as the giant falls, so the bot never shops after it or reaches the camps.
+
+    **Reviewed November 21, 2026:** kept as built: the numbers Claude picked, the wind cloak stacking with a heavy load (never below one cell), the two lines and the pictures. The game is unchanged by the review.
 27. **The three spells** (item 5).
 28. **Floor 15, the champion** (item 6), and the tavern after.
 29. **Floor 16, the top and the lord** (item 7).
