@@ -139,6 +139,10 @@ VALUE := #partial [Item_Kind]int {
 	.Name_Tag        = 15,
 	.Goat_Horn       = 10,
 	.Peacock_Feather = 12,
+	.Long_Sword      = 100,
+	.Plate_Armour    = 160,
+	.Anchor_Weight   = 25,
+	.Wind_Cloak      = 150,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}
@@ -151,6 +155,9 @@ SMITH_LATER := [?]Item_Kind{.Mace, .Leather_Armour, .Cloak}
 // gust insurance (DESIGN.md beat 2: "shops sell gust insurance"): 120 Jools for 1000 turns, paying 2
 // Jools into yer purse for each wall slam. Nobody has checked whether it pays.
 SMITH_ARMY := [?]Item_Kind{.Spear, .War_Hammer, .Scale_Mail}
+// Once the giant is felled (slice 4 step 26): the smith's best, the general store's anchor-weight
+// (DESIGN.md beat 2: the town sells anchor-weights) and the sage's one wind cloak.
+SMITH_GIANT := [?]Item_Kind{.Long_Sword, .Plate_Armour}
 INSURANCE_PRICE :: 120 // was 30 in the plan; raised at the user's word (November 18, 2026): the bot is slammed about 50 times in 1000 turns
 INSURANCE_TURNS :: 1000
 INSURANCE_PAYS :: 2
@@ -488,6 +495,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 			}
 		}
+		if g.giant_dead {
+			add_row(rows, &n, .Buy, int(Item_Kind.Anchor_Weight), VALUE[.Anchor_Weight], "Buy an Anchor-weight")
+		}
 		if g.army_dead {
 			if left := g.insured_to - g.turn; left > 0 {
 				add_row(rows, &n, .Insure, 0, INSURANCE_PRICE, "Gust insurance (", itoa(buf[:], left), " left)")
@@ -514,6 +524,11 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
 			}
 		}
+		if g.giant_dead {
+			for k in SMITH_GIANT {
+				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy ", KIND[k].name)
+			}
+		}
 		for i in 1 ..< MAX_ITEMS {
 			if sellable(g, i) && KIND[g.items[i].kind].durability > 0 {
 				add_row(rows, &n, .Sell, i, -max(1, VALUE[g.items[i].kind] / 2), "Sell ", item_name(g, i))
@@ -535,6 +550,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		}
 		if g.army_dead && !g.sage_holding {
 			add_row(rows, &n, .Buy, int(Item_Kind.Pack_Holding), VALUE[.Pack_Holding], "Buy a Pack of holding")
+		}
+		if g.giant_dead && !g.sage_cloak {
+			add_row(rows, &n, .Buy, int(Item_Kind.Wind_Cloak), VALUE[.Wind_Cloak], "Buy the Wind cloak")
 		}
 		if n == 0 {
 			add_row(rows, &n, .Talk, 0, 0, "Ask about the wind")
@@ -684,6 +702,11 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 			if k == .Pack_Holding {
 				g.sage_holding = true
 				say(g, "You buy a Pack of holding. \"Half of what goes in stays in. The weight, I mean.\"")
+			} else if k == .Wind_Cloak && g.shop == .Sage {
+				g.sage_cloak = true
+				say(g, "You buy the Wind cloak. \"The wind gets a little less of you.\"")
+			} else if k == .Anchor_Weight {
+				say(g, "You buy an Anchor-weight. \"Holds you down. Also down.\"")
 			} else {
 				say(g, "You buy a ", KIND[k].name, ".")
 			}

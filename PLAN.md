@@ -324,7 +324,16 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit; the bot never enters floor 13 (step 33), and stocking floors 1 to 12 draws the same kinds as before.
 
     **Reviewed November 20, 2026:** kept as built: the numbers Claude picked, the demon's charge, the scream and the pictures. One fix at review: the beast screamed again each time it lost you and found you, though the build notes said only the first time; it now screams once (a flag in a spare padding byte of each tenant, so saves keep their shape).
-26. **The camps, the wind cloak and the town after the giant** (items 3 and 4).
+26. **Done November 21, 2026.** **The camps, the wind cloak and the town after the giant** (items 3 and 4):
+    - **The camps:** floors 13 and 14 each have a camp laid out as before (a cold fire, a bedroll, a note and a piece of gear), the last in the bulwark. Floor 13: "Day 230. Two floors to the champion. Everyone says he is undefeated. Nobody says by whom." and a **long sword** (3 to 11, 2.5 kg). Floor 14: "Turned back here. I could hear somebody upstairs, dusting." and a **wind cloak**.
+    - **The wind cloak** (cloak slot, 1.5 kg, armour 1, like the plain cloak): every gust pushes you a cell less, never less than one. It takes its cell after a heavy load's, so on floor 13 a heavy load that gives drags you 1, and on floors 1 to 4 it changes nothing.
+    - **The smith after the giant:** a long sword for 100 and **plate armour** (armour 7, 22 kg) for 160.
+    - **The general store:** an **anchor-weight**, 8 kg, 25 Jools, as many as you like. It does nothing but weigh 8 kg. "You buy an Anchor-weight. \"Holds you down. Also down.\""
+    - **The sage:** the wind cloak, once, for 150: "You buy the Wind cloak. \"The wind gets a little less of you.\""
+    - **Pictures** from Urizen: a long broad blade, the heaviest-looking mail, and a ship's anchor painted grey; the wind cloak is the plain cloak painted cyan.
+    - Claude's picks for review: the long sword's durability 90 and 4 litres; the plate's durability 140 and 16 litres; the anchor-weight's 2.5 litres; the wind cloak's durability 60 and armour 1; the sage's line.
+    - 181 native tests (`high_town_test.odin`; `DUMP_HIGH` now also draws floor 13's camp, its note read). Checked in the browser: the build loads, showing "Slice 4, step 26", with no console errors.
+    - **Bot round:** the same figures as round 6 to the last digit: the climb ends as the giant falls, so the bot never shops after it or reaches the camps.
 27. **The three spells** (item 5).
 28. **Floor 15, the champion** (item 6), and the tavern after.
 29. **Floor 16, the top and the lord** (item 7).

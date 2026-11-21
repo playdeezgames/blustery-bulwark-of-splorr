@@ -16,7 +16,7 @@ camp_items :: proc(g: ^Game, index: int) -> (fire, bedroll, note, gear: int) {
 			bedroll = i
 		case .Note:
 			note = i
-		case .Iron_Helm, .Tower_Shield, .Chain_Mail, .War_Hammer, .Pack_Holding, .Scale_Mail:
+		case .Iron_Helm, .Tower_Shield, .Chain_Mail, .War_Hammer, .Pack_Holding, .Scale_Mail, .Long_Sword, .Wind_Cloak:
 			gear = i
 		}
 	}
@@ -24,7 +24,7 @@ camp_items :: proc(g: ^Game, index: int) -> (fire, bedroll, note, gear: int) {
 }
 
 @(test)
-test_floors_five_to_seven_and_nine_to_eleven_have_a_camp :: proc(t: ^testing.T) {
+test_floors_five_to_seven_nine_to_eleven_and_thirteen_to_fourteen_have_a_camp :: proc(t: ^testing.T) {
 	for seed in u64(1) ..= 30 {
 		g := new_game(seed)
 		for i in 0 ..< BUILT_FLOORS {

@@ -156,6 +156,9 @@ gust :: proc(g: ^Game) {
 	} else {
 		heavy := load_anchors(g)
 		cells := heavy ? max(1, gust_push(f.number) - 1) : gust_push(f.number)
+		if g.items[worn(g, .Cloak)].kind == .Wind_Cloak {
+			cells = max(1, cells - 1) // the wind cloak: a cell less, never none
+		}
 		reach_before := hostile_in_reach(g)
 		// Pushed cell by cell; a wall or a tenant in the way stops you, and "costs a little"
 		// (DESIGN.md).

@@ -107,6 +107,9 @@ PICKS = [
     ('Peacock',      8, 16),  # a crested bird (the "hundred-eyed beast"; painted cyan)
     ('Horn',         6, 38),  # a curved horn
     ('Tag',          7, 37),  # a small label (painted yellow)
+    ('Long_Sword',  26, 6),   # a long broad blade (slice 4 step 26)
+    ('Plate_Armour', 26, 11), # the heaviest-looking of the mail
+    ('Anchor',      19, 40),  # a ship's anchor (painted grey)
 ]
 
 def tile(col, row):

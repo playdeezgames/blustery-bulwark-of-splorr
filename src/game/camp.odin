@@ -9,15 +9,20 @@ package game
 
 CAMP_FLOORS :: [2]int{5, 7}
 DEEP_CAMP_FLOORS :: [2]int{9, 11}
+HIGH_CAMP_FLOORS :: [2]int{13, 14} // slice 4 step 26: nobody has camped higher
 CARTOGRAPHER_FLOOR :: 10
 MAP_PRICE :: 15
 
 is_camp_floor :: proc(number: int) -> bool {
-	return (number >= CAMP_FLOORS[0] && number <= CAMP_FLOORS[1]) || (number >= DEEP_CAMP_FLOORS[0] && number <= DEEP_CAMP_FLOORS[1])
+	return (number >= CAMP_FLOORS[0] && number <= CAMP_FLOORS[1]) || (number >= DEEP_CAMP_FLOORS[0] && number <= DEEP_CAMP_FLOORS[1]) ||
+		(number >= HIGH_CAMP_FLOORS[0] && number <= HIGH_CAMP_FLOORS[1])
 }
 
-// Which note a camp holds (1 to 6), by floor number.
+// Which note a camp holds (1 to 8), by floor number.
 camp_note :: proc(number: int) -> int {
+	if number >= HIGH_CAMP_FLOORS[0] {
+		return number - HIGH_CAMP_FLOORS[0] + 7
+	}
 	if number >= DEEP_CAMP_FLOORS[0] {
 		return number - DEEP_CAMP_FLOORS[0] + 4
 	}
@@ -37,17 +42,23 @@ camp_gear :: proc(number: int) -> Item_Kind {
 		return .War_Hammer
 	case 10:
 		return .Pack_Holding
+	case 13:
+		return .Long_Sword
+	case 14:
+		return .Wind_Cloak
 	}
 	return .Scale_Mail
 }
 
-NOTES := [6]string {
+NOTES := [8]string {
 	"Day 40. The wind is louder up here. Nobody is louder than His Lordship. Not even the wind.",
 	"Rules of this camp: wipe yer feet. Leave the kettle. Do not mention His Lordship.",
 	"Day 112. From the stairwell I saw a lamp lit, very high up. Somebody up there keeps late hours and has no visitors.",
 	"Day 160. Fewer camps up here. Fewer climbers, or fewer who stop to cook.",
 	"Ogres on this floor. The big one upstairs is an ogre too, they say, only taller. I did not go up to measure.",
 	"Someone on fifteen calls himself undefeated. I did not ask him to prove it.",
+	"Day 230. Two floors to the champion. Everyone says he is undefeated. Nobody says by whom.",
+	"Turned back here. I could hear somebody upstairs, dusting.",
 }
 
 CARTOGRAPHER_LINES := [?]string {
@@ -81,7 +92,7 @@ read_note :: proc(g: ^Game, which: int) {
 	say(g, "The note reads: \"", NOTES[clamp(which, 1, len(NOTES)) - 1], "\"")
 }
 
-// Lays out a floor's camp (floors 5 to 7 and 9 to 11) from the floor's seed, after its other things:
+// Lays out a floor's camp (floors 5 to 7, 9 to 11 and 13 to 14) from the floor's seed, after its other things:
 // in a room that is neither the arrival room nor the stairs up. The hermit joins floor 6's and the
 // cartographer floor 10's when tenants are on.
 make_camp :: proc(g: ^Game, index: int) {

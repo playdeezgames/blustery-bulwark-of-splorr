@@ -131,6 +131,9 @@ Gfx :: enum {
 	Peacock,
 	Horn,
 	Tag,
+	Long_Sword, // slice 4 step 26
+	Plate_Armour,
+	Anchor,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

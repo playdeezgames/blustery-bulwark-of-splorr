@@ -565,3 +565,7 @@ Step 24 is kept as built: the wind table for floors 13 to 16, the 3-cell push (a
 ### Decided with the user (November 20, 2026)
 
 Step 25 is kept as built: the numbers, the demon's charge, the scream and the pictures. The hundred-eyed beast now screams only the first time it sees you, as described (it had screamed again after losing you).
+
+## Step 26: the last camps and the town after the giant (November 21, 2026)
+
+50 climbs a build: the same figures as round 6 to the last digit. The bot's climb ends with the key to floor 13, so it never shops after the giant or reaches floors 13 and 14.

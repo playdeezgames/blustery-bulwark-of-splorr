@@ -650,7 +650,8 @@ test_dump_giant :: proc(t: ^testing.T) {
 
 // Floor 13 by eye (-define:DUMP_HIGH=<prefix>): <prefix>-hurl.ppm (just through the door from
 // floor 12, then hurled three cells by a gust) and <prefix>-boasts.ppm (the Dragon, the demon and
-// the hundred-eyed beast round you, the beast screaming).
+// the hundred-eyed beast round you, the beast screaming) and <prefix>-camp.ppm (floor 13's camp,
+// its note read).
 DUMP_HIGH :: #config(DUMP_HIGH, "")
 
 @(test)
@@ -701,5 +702,21 @@ test_dump_high :: proc(t: ^testing.T) {
 		draw_game(fr, g)
 		resolve(fr)
 		write_ppm(DUMP_HIGH + "-boasts.ppm", fr)
+		// Floor 13's camp: standing by it, the note read.
+		camp := new_game()
+		defer free(camp)
+		enter_floor(camp, GIANT_INDEX + 1, .Stairs_Down)
+		for i in 1 ..< MAX_ITEMS {
+			it := camp.items[i]
+			if it.kind == .Note && it.place == .Ground && int(it.floor) == camp.current {
+				teleport(camp, {int(it.x), int(it.y) + 1})
+				read_note(camp, int(it.fuel))
+			}
+		}
+		camp.lit = true
+		refresh_view(camp)
+		draw_game(fr, camp)
+		resolve(fr)
+		write_ppm(DUMP_HIGH + "-camp.ppm", fr)
 	}
 }
