@@ -50,10 +50,12 @@ test_every_spell_is_offered :: proc(t: ^testing.T) {
 	g := new_game()
 	defer free(g)
 	list: [len(Spell)]Spell
-	testing.expect_value(t, learnable(g, &list), len(Spell) - 8) // slice 2's four wait for level 5, slice 3's for 9
+	testing.expect_value(t, learnable(g, &list), len(Spell) - 11) // slice 2's four wait for level 5, slice 3's for 9, slice 4's three for 13
 	g.level = SLICE2_SPELL_LEVEL
-	testing.expect_value(t, learnable(g, &list), len(Spell) - 4)
+	testing.expect_value(t, learnable(g, &list), len(Spell) - 7)
 	g.level = SLICE3_SPELL_LEVEL
+	testing.expect_value(t, learnable(g, &list), len(Spell) - 3)
+	g.level = SLICE4_SPELL_LEVEL
 	testing.expect_value(t, learnable(g, &list), len(Spell))
 }
 

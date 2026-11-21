@@ -153,6 +153,7 @@ Game :: struct {
 	giant_told:  bool, // the herald has proclaimed it (and handed over the Certificate)
 	stretch3_done: bool, // the end-of-stretch notice for the key to floor 13 has been shown
 	sage_cloak:    bool, // bought the sage's one wind cloak (slice 4 step 26)
+	shelter_turns: int, // Shelter: gusts never push you (slice 4 step 27)
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).

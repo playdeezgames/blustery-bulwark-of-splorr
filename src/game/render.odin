@@ -282,6 +282,11 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		w = print(f, "Things  ", x, y, COLOR_CYAN)
 		print(f, itoa(buf[:], g.sense_items), x + w, y, COLOR_CYAN)
 	}
+	if g.shelter_turns > 0 {
+		y += 9
+		w = print(f, "Shelter ", x, y, COLOR_CYAN)
+		print(f, itoa(buf[:], g.shelter_turns), x + w, y, COLOR_CYAN)
+	}
 	if g.mode == .Inventory {
 		hints := [?]string{"Enter: take/put/use", "Right: open", "Left: back", "Esc/I: close"}
 		for h, i in hints {
@@ -295,7 +300,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 4, step 26", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 4, step 27", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

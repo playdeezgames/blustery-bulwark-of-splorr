@@ -573,3 +573,7 @@ Step 25 is kept as built: the numbers, the demon's charge, the scream and the pi
 ### Decided with the user (November 21, 2026)
 
 Step 26 is kept as built: the gear's numbers, the wind cloak stacking with a heavy load, the lines and the pictures. The game is unchanged by the review.
+
+## Step 27: Heal, Shelter and Tempest (November 21, 2026)
+
+50 climbs a build: the same figures as round 6 to the last digit. The bot learns the three new spells once it has the older eighteen, but casts none of them until step 33.

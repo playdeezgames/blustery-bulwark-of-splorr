@@ -569,8 +569,8 @@ test_dump_deep_camp :: proc(t: ^testing.T) {
 	}
 }
 
-// The spell list with all 18 spells by eye (-define:DUMP_SPELL_LIST=<prefix>): <prefix>-top.ppm (the
-// first rows, more below) and <prefix>-end.ppm (scrolled to Squall, more above).
+// The spell list with all 21 spells by eye (-define:DUMP_SPELL_LIST=<prefix>): <prefix>-top.ppm (the
+// first rows, more below) and <prefix>-end.ppm (scrolled to Tempest, more above).
 DUMP_SPELL_LIST :: #config(DUMP_SPELL_LIST, "")
 
 @(test)
@@ -584,7 +584,7 @@ test_dump_spell_list :: proc(t: ^testing.T) {
 			g.known += {s}
 		}
 		g.learns = 0
-		g.level = 12
+		g.level = 13
 		g.mana = 14
 		open_cast(g)
 		draw_game(fr, g)
@@ -650,8 +650,8 @@ test_dump_giant :: proc(t: ^testing.T) {
 
 // Floor 13 by eye (-define:DUMP_HIGH=<prefix>): <prefix>-hurl.ppm (just through the door from
 // floor 12, then hurled three cells by a gust) and <prefix>-boasts.ppm (the Dragon, the demon and
-// the hundred-eyed beast round you, the beast screaming) and <prefix>-camp.ppm (floor 13's camp,
-// its note read).
+// the hundred-eyed beast round you, the beast screaming) <prefix>-tempest.ppm (a tempest at the demon,
+// Shelter running) and <prefix>-camp.ppm (floor 13's camp, its note read).
 DUMP_HIGH :: #config(DUMP_HIGH, "")
 
 @(test)
@@ -702,6 +702,14 @@ test_dump_high :: proc(t: ^testing.T) {
 		draw_game(fr, g)
 		resolve(fr)
 		write_ppm(DUMP_HIGH + "-boasts.ppm", fr)
+		// A tempest west at the demon, under Shelter (shown on the panel).
+		g.mana = 99
+		g.shelter_turns = SHELTER_TURNS
+		cast_gale(g, {-1, 0}, true)
+		refresh_view(g)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_HIGH + "-tempest.ppm", fr)
 		// Floor 13's camp: standing by it, the note read.
 		camp := new_game()
 		defer free(camp)

@@ -149,6 +149,9 @@ gust :: proc(g: ^Game) {
 	}
 	if .Push in g.wind_off {
 		// studied without the push
+	} else if g.shelter_turns > 0 {
+		say(g, "A gust batters at you. Yer shelter holds.")
+		g.wind_seen.held += 1
 	} else if g.anchor_spell || (load_anchors(g) && rng_int(&g.rng, 100) < load_hold(f.number)) {
 		say(g, "A gust tugs at you. ", g.anchor_spell ? "Yer spell" : "Yer load", " holds you down.")
 		g.anchor_spell = false

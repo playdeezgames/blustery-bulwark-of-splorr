@@ -222,7 +222,7 @@ wake :: proc(g: ^Game) {
 	g.mode = .Play
 	g.health = max_health(g)
 	g.mana = max_mana(g)
-	g.ward_turns, g.sense_turns, g.anchor_spell = 0, 0, false
+	g.ward_turns, g.sense_turns, g.anchor_spell, g.shelter_turns = 0, 0, false, 0
 	g.hunger = 0 // the temple fed you while you lay there
 	for &t in g.tenants {
 		t.awake = false

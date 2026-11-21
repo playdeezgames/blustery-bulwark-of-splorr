@@ -28,6 +28,10 @@ Spell :: enum u8 {
 	Find_Stairs, // Clairvoyance until the step 21 review (never pushed)
 	Teleport,
 	Squall,
+	// From level 13 (slice 4 step 27).
+	Heal,
+	Shelter,
+	Tempest,
 }
 
 Spell_Info :: struct {
@@ -57,11 +61,17 @@ SPELL := [Spell]Spell_Info {
 	.Find_Stairs   = {"Find the Stairs", 2, false, true, "show the way up"},
 	.Teleport      = {"Teleport", 7, false, true, "far across the floor"},
 	.Squall        = {"Squall", 8, true, true, "big blast, spares you"},
+	.Heal          = {"Heal", 8, false, true, "half yer health back"},
+	.Shelter       = {"Shelter", 6, false, true, "no pushing, 40 turns"},
+	.Tempest       = {"Tempest", 10, true, true, "hurt and shove a line"},
 }
 
-// The level a spell can first be chosen at: slice 2's four from level 5, slice 3's from level 9.
+// The level a spell can first be chosen at: slice 2's four from level 5, slice 3's from level 9,
+// slice 4's three from level 13.
 spell_level :: proc(s: Spell) -> int {
 	#partial switch s {
+	case .Heal, .Shelter, .Tempest:
+		return SLICE4_SPELL_LEVEL
 	case .Gale, .Calm, .Sense_Things, .Blink:
 		return SLICE2_SPELL_LEVEL
 	case .Uncurse, .Find_Stairs, .Teleport, .Squall:
@@ -80,6 +90,11 @@ WARD_ARMOUR :: 3
 SENSE_TURNS :: 30
 SLICE2_SPELL_LEVEL :: 5
 SLICE3_SPELL_LEVEL :: 9
+SLICE4_SPELL_LEVEL :: 13
+SHELTER_TURNS :: 40 // Shelter: gusts never push you (they still snuff yer light)
+TEMPEST_SHOVE :: 2 // cells a tempest shoves each tenant on its line (GALE_RANGE long), wind or no wind
+TEMPEST_DMIN :: 3
+TEMPEST_DMAX :: 9
 TELEPORT_MIN :: 20 // Teleport lands at least this far away (Hop goes only 2 to 6)
 SQUALL_RANGE :: 4 // a squall flies like a gust ball, drifting every second cell
 GALE_RANGE :: 6 // cells along the line it shoves
@@ -332,6 +347,16 @@ cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 		teleport_far(g)
 	case .Squall:
 		cast_bolt(g, d, true, true)
+	case .Heal:
+		before := g.health
+		g.health = min(max_health(g), g.health + max_health(g) / 2 + spell_bonus(g))
+		buf: [8]u8
+		say(g, "You heal ", itoa(buf[:], g.health - before), " health.")
+	case .Shelter:
+		g.shelter_turns = SHELTER_TURNS
+		say(g, "The wind slides off you.")
+	case .Tempest:
+		cast_gale(g, d, true)
 	}
 	if turn {
 		end_turn(g)
@@ -513,10 +538,12 @@ cast_bolt :: proc(g: ^Game, d: [2]int, ball: bool, squall := false) {
 // Gale: a blast along one of eight lines. Every tenant within GALE_RANGE on it is shoved away from
 // you GALE_SHOVE cells, more with the wind behind the blast and less against it; one stopped by a
 // wall or another tenant is slammed (1 to 3). Propped-up bones fall over. The line does not bend.
-cast_gale :: proc(g: ^Game, d: [2]int) {
+// A tempest (slice 4 step 27) is a gale that hurts: each tenant on the line takes 3 to 9 and is
+// shoved TEMPEST_SHOVE cells whatever the wind, and a slam adds its 1 to 3.
+cast_gale :: proc(g: ^Game, d: [2]int, tempest := false) {
 	f := floor_of(g)
 	w := wind_blow(f)
-	shove := max(1, GALE_SHOVE + d.x * w.x + d.y * w.y)
+	shove := tempest ? TEMPEST_SHOVE : max(1, GALE_SHOVE + d.x * w.x + d.y * w.y)
 	g.fx_len, g.fx_blast = 0, false
 	// Who stands on the line, farthest first (so the far ones move out of the near ones' way).
 	ids: [GALE_RANGE]int
@@ -535,7 +562,7 @@ cast_gale :: proc(g: ^Game, d: [2]int) {
 			n += 1
 		}
 	}
-	say(g, "A gale tears out of yer hands.")
+	say(g, tempest ? "A tempest tears out of yer hands." : "A gale tears out of yer hands.")
 	for i := n - 1; i >= 0; i -= 1 {
 		id := ids[i]
 		t := &g.tenants[id]
@@ -570,7 +597,13 @@ cast_gale :: proc(g: ^Game, d: [2]int) {
 			t.x, t.y = i16(nx), i16(ny)
 			moved += 1
 		}
-		if moved < shove {
+		if tempest {
+			dmg := rng_range(&g.rng, TEMPEST_DMIN, TEMPEST_DMAX) + spell_bonus(g)
+			if moved < shove {
+				dmg += rng_range(&g.rng, 1, 3)
+			}
+			spell_hit(g, id, dmg, "tempest")
+		} else if moved < shove {
 			spell_hit(g, id, rng_range(&g.rng, 1, 3), "gale")
 		}
 	}
@@ -663,6 +696,12 @@ magic_turn :: proc(g: ^Game) {
 		g.calm_turns -= 1
 		if g.calm_turns == 0 {
 			say(g, "The calm round you lifts.")
+		}
+	}
+	if g.shelter_turns > 0 {
+		g.shelter_turns -= 1
+		if g.shelter_turns == 0 {
+			say(g, "Yer shelter gives way. The wind has you again.")
 		}
 	}
 	if g.turn % mana_period(g) == 0 && g.mana < max_mana(g) {
