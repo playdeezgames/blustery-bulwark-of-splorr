@@ -346,7 +346,17 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit. The bot reaches level 32 to 34 and learns the three after the older eighteen, but casts none of them until step 33.
 
     **Reviewed November 21, 2026:** kept as built: the Intelligence bonus on Heal and Tempest, Tempest's slam, Shelter stopping gusts only, the lines and the notes. At the user's word Find the Stairs is now **Find Stairs**, which fits before its cost; a new test keeps every spell's name clear of the cost column. 186 native tests.
-28. **Floor 15, the champion** (item 6), and the tavern after.
+28. **Done November 21, 2026.** **Floor 15, the champion** (item 6), and the tavern after:
+    - **The hall:** floor 14's stairs up climb to floor 15, a hand-built hall 36 cells long with the wind from the west, toward the champion and the stairs up. "A sign by the door: \"Undefeated. Please wipe yer feet.\"" No carny, no other tenant, no restocking. An empty trophy cabinet stands by the north wall (fixed, like a camp's fire): "A trophy cabinet, dusted daily. Nothing in it."
+    - **The champion** (health 60, 3 to 11, defence 25, 60 XP; "His Lordship's champion. Undefeated, nineteen years.") stands guard before the stairs up until he sees you. His chance to hit starts at 30 and rises 5 for every turn he fights, hit or miss, to 75 ("He is getting the hang of this." when he gets there). The count lasts the whole climb, so a second try meets a better champion.
+    - **He yields, never dies:** any blow or spell that leaves him at 15 or less, or would kill him outright, sits him down: "The champion sits down. \"Thank you. Nineteen years undefeated. It was heavy.\"" and "He gives you the key to floor 16." (at yer feet if you have no room). His 60 XP is yers, but he is not counted a kill. Seated, he does not fight, a spell only ruffles his hair, and a gale goes round him.
+    - **Asked,** by bumping him: "\"Nobody has been higher. Not yer mentor either. We stopped here together, and they went down.\"" and "He dusts where he sat and goes to town." He goes when you leave the floor, too.
+    - **The door to floor 16:** floor 15's stairs up open with the key ("The key turns.") or without it ("The door opens."); then scaffolding and a sign for floor 16 until step 29.
+    - **After:** the herald proclaims "His Lordship has crushed the treacherous champion, as foretold." The windchute gains floor 15. The tavern has a new row, "Talk to the champion", with three lines of his own (nineteen years of polishing; undefeated is easy if you live very far up; he and the mentor stopped on fifteen together). Nobody remarks on it.
+    - **Pictures** from Urizen: a figure with a blade, painted gold, and a glass-fronted cabinet, painted brown.
+    - Changes from the plan, Claude's for review: he hands you the key rather than dropping it (so it does not lie under him); the XP lines come before his speech, and the key and departure lines were cut to one log line each, so all of it stays in the four-line log.
+    - 192 native tests (`champion_test.odin`; `DUMP_CHAMPION` draws the hall, his yielding and the tavern). Checked in the browser: the build loads, showing "Slice 4, step 28", with no console errors.
+    - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 (step 33 takes it to the top).
 29. **Floor 16, the top and the lord** (item 7).
 30. **The ending** (item 8).
 31. **Two rings** for the second ring slot (item 11).

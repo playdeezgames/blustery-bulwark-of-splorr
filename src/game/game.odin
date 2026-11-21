@@ -41,7 +41,7 @@ DIRECTION := [Command][2]int {
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
-BUILT_FLOORS :: 14 // floors that exist so far (slice 4 step 24): floor 15 is still being built
+BUILT_FLOORS :: 15 // floors that exist so far (slice 4 step 28): floor 16 is still being built
 
 Mode :: enum u8 {
 	Play,
@@ -154,6 +154,9 @@ Game :: struct {
 	stretch3_done: bool, // the end-of-stretch notice for the key to floor 13 has been shown
 	sage_cloak:    bool, // bought the sage's one wind cloak (slice 4 step 26)
 	shelter_turns: int, // Shelter: gusts never push you (slice 4 step 27)
+	champion_fights:  int, // turns the champion has fought (champion.odin): his aim improves with each
+	champion_yielded: bool, // he sat down and gave up the key to floor 16
+	champion_told:    bool, // the herald has proclaimed it
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -215,6 +218,8 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 		build_army_floor(g)
 	} else if !f.made && i == GIANT_INDEX {
 		build_giant_floor(g)
+	} else if !f.made && i == CHAMPION_INDEX {
+		build_champion_floor(g)
 	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
@@ -224,8 +229,11 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 			populate_tenants(g, i, &r)
 		}
 	}
-	if i != BOSS_INDEX && i != ARMY_INDEX && i != GIANT_INDEX {
+	if i != BOSS_INDEX && i != ARMY_INDEX && i != GIANT_INDEX && i != CHAMPION_INDEX {
 		restock(g, i)
+	}
+	if i != CHAMPION_INDEX {
+		champion_leaves(g) // once he has yielded, he goes down to town when you go
 	}
 	at := arrive == .Stairs_Up ? f.up : f.down
 	g.x, g.y = at.x, at.y
@@ -364,6 +372,10 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 			open_shop(g, .Hermit)
 			return false
 		}
+		if g.tenants[id].kind == .Champion_Seated {
+			champion_talks(g, id)
+			return false
+		}
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Cartographer {
 			g.shop_tenant = id
 			open_shop(g, .Cartographer)
@@ -488,9 +500,14 @@ use_here :: proc(g: ^Game) {
 			door_to_floor_nine(g)
 		} else if g.current == GIANT_INDEX {
 			door_to_floor_thirteen(g)
+		} else if g.current == CHAMPION_INDEX {
+			door_to_floor_sixteen(g)
 		} else if g.current + 1 < BUILT_FLOORS {
 			enter_floor(g, g.current + 1, .Stairs_Down)
 			say(g, "You climb to floor ", itoa(buf[:], g.current + 1), ". The wind is stronger.")
+			if g.current == CHAMPION_INDEX {
+				say(g, "A sign by the door: \"Undefeated. Please wipe yer feet.\"")
+			}
 		} else {
 			say(g, "Above: scaffolding, and a sign. \"Floor ", itoa(buf[:], g.current + 2), ". Coming soon, by order of His Lordship.\"")
 		}

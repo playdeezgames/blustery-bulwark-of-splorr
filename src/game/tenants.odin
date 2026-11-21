@@ -36,6 +36,9 @@ Tenant_Kind :: enum u8 {
 	Lizard, // the "Dragon": heavy, hits hard
 	Goat, // the "demon": charges from 2 or 3 cells in a line and butts you back a cell
 	Peacock, // the "hundred-eyed beast": light and fast; its scream wakes the floor
+	// Floor 15 (slice 4 step 28; champion.odin).
+	Champion, // learns as he fights; yields at a quarter of his health, never dies
+	Champion_Seated, // the champion after he yields: peaceful; bumping him, he talks and leaves
 }
 
 Tenant_Info :: struct {
@@ -87,6 +90,8 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Lizard  = {name = "Dragon", a = "a lizard called Dragon", gfx = .Lizard, color = 6, health = 32, hit = 60, dmin = 3, dmax = 10, defence = 15, speed = 10, xp = 18, trophy = .Name_Tag, chance = 50, first = 13, verb = "bites", line = "A very large lizard. Its name tag says Dragon."},
 	.Goat    = {name = "demon", a = "His Lordship's demon", gfx = .Goat, color = COLOR_LIGHT, health = 22, hit = 65, dmin = 2, dmax = 8, defence = 10, speed = 10, xp = 12, trophy = .Goat_Horn, chance = 50, first = 13, verb = "butts", line = "His Lordship's demon, the town says. A goat with opinions."},
 	.Peacock = {name = "hundred-eyed beast", a = "the hundred-eyed beast", gfx = .Peacock, color = 10, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 20, xp = 8, light = true, rare = true, trophy = .Peacock_Feather, chance = 50, first = 13, verb = "pecks", line = "A hundred eyes, the town says. Painted on."},
+	.Champion = {name = "champion", a = "His Lordship's champion", gfx = .Champion, color = COLOR_YELLOW, health = 60, hit = CHAMPION_HIT, dmin = 3, dmax = 11, defence = 25, speed = 10, xp = 60, first = 99, verb = "swings at", line = "His Lordship's champion. Undefeated, nineteen years."},
+	.Champion_Seated = {name = "champion", a = "His Lordship's champion", gfx = .Champion, color = COLOR_YELLOW, health = 60, defence = 25, speed = 10, peaceful = true, first = 99, line = "He has sat down. He looks lighter."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -338,6 +343,9 @@ tenant_act :: proc(g: ^Game, id: int) {
 		}
 		return
 	}
+	if t.kind == .Champion && !t.awake {
+		return // he stands guard, very straight
+	}
 	if !t.awake || (info.erratic && rng_int(&g.rng, 3) == 0) {
 		if rng_int(&g.rng, 2) == 0 {
 			tenant_step(g, id, DIRECTIONS[rng_int(&g.rng, 8)])
@@ -385,9 +393,16 @@ tenant_step :: proc(g: ^Game, id: int, d: [2]int) {
 tenant_attack :: proc(g: ^Game, id: int) {
 	t := &g.tenants[id]
 	info := TENANT[t.kind]
-	chance := clamp(info.hit - 4 * armour_worn(g) - DEX_DODGE * (g.attr[.Dexterity] - ATTR_BASE), 5, 95)
-	if rng_int(&g.rng, 100) >= chance {
+	hit := t.kind == .Champion ? champion_hit(g) : info.hit
+	chance := clamp(hit - 4 * armour_worn(g) - DEX_DODGE * (g.attr[.Dexterity] - ATTR_BASE), 5, 95)
+	missed := rng_int(&g.rng, 100) >= chance
+	if missed {
 		say(g, "The ", info.name, " misses.")
+	}
+	if t.kind == .Champion {
+		champion_learns(g) // every turn he fights, hit or miss
+	}
+	if missed {
 		return
 	}
 	if t.kind == .Bailiff {
@@ -499,7 +514,9 @@ player_attack :: proc(g: ^Game, id: int) {
 	} else {
 		dmg := max(1, rng_range(&g.rng, dmin, dmax) + damage_bonus(g))
 		t.health -= i16(dmg)
-		if t.health <= 0 {
+		if t.kind == .Champion && int(t.health) <= CHAMPION_YIELD {
+			champion_yields(g, id)
+		} else if t.health <= 0 {
 			kill_tenant(g, id)
 		} else {
 			say(g, "You hit the ", info.name, ".")
@@ -512,6 +529,10 @@ player_attack :: proc(g: ^Game, id: int) {
 }
 
 kill_tenant :: proc(g: ^Game, id: int) {
+	if g.tenants[id].kind == .Champion {
+		champion_yields(g, id) // he never dies
+		return
+	}
 	t := g.tenants[id]
 	info := TENANT[t.kind]
 	g.tenants[id] = {}

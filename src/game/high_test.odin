@@ -40,21 +40,21 @@ test_the_door_on_floor_twelve_opens_on_floor_thirteen :: proc(t: ^testing.T) {
 	testing.expect_value(t, f.w, 64)
 	testing.expect_value(t, f.h, 44)
 	testing.expect_value(t, g.gust_in, 6)
-	// Up to floor 14, then scaffolding above it.
+	// Up to floor 14, then on to floor 15.
 	teleport(g, f.up)
 	command(g, .Confirm)
 	testing.expect_value(t, floor_of(g).number, 14)
 	testing.expect_value(t, message(&g.last_said), "You climb to floor 14. The wind is stronger.")
 	testing.expect_value(t, g.gust_in, 5)
-	teleport(g, floor_of(g).up)
+	teleport(g, floor_of(g).up) // floor 15, the champion's (step 28)
 	command(g, .Confirm)
-	testing.expect_value(t, floor_of(g).number, 14)
-	testing.expect(t, strings.has_prefix(message(&g.last_said), "Above: scaffolding, and a sign. \"Floor 15."))
+	testing.expect_value(t, floor_of(g).number, 15)
+	testing.expect(t, strings.has_prefix(message(&g.last_said), "A sign by the door: \"Undefeated."))
 	// And back down to floor 12, onto its stairs up.
-	teleport(g, floor_of(g).down)
-	command(g, .Confirm)
-	teleport(g, floor_of(g).down)
-	command(g, .Confirm)
+	for _ in 0 ..< 3 {
+		teleport(g, floor_of(g).down)
+		command(g, .Confirm)
+	}
 	testing.expect_value(t, g.current, GIANT_INDEX)
 	testing.expect_value(t, [2]int{g.x, g.y}, floor_of(g).up)
 }

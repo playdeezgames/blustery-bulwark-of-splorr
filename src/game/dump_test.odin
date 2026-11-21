@@ -728,3 +728,57 @@ test_dump_high :: proc(t: ^testing.T) {
 		write_ppm(DUMP_HIGH + "-camp.ppm", fr)
 	}
 }
+
+// Floor 15 by eye (-define:DUMP_CHAMPION=<prefix>): <prefix>-guard.ppm (the hall as you come in,
+// the champion before the stairs up), <prefix>-yield.ppm (he has sat down and given up the key) and
+// <prefix>-tavern.ppm (with the mentor, after).
+DUMP_CHAMPION :: #config(DUMP_CHAMPION, "")
+
+@(test)
+test_dump_champion :: proc(t: ^testing.T) {
+	when DUMP_CHAMPION != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		enter_floor(g, CHAMPION_INDEX - 1, .Stairs_Down)
+		teleport(g, floor_of(g).up)
+		command(g, .Confirm)
+		id := 0
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind == .Champion {
+				id = i
+			}
+		}
+		teleport(g, {int(g.tenants[id].x) - 8, int(g.tenants[id].y) - 2}) // near the trophy cabinet
+		g.gust_in = 99
+		refresh_view(g)
+		shot(g, fr, DUMP_CHAMPION + "-guard.ppm")
+		g.level, g.xp = 30, xp_for_level(30)
+		teleport(g, {int(g.tenants[id].x) - 1, int(g.tenants[id].y)})
+		g.tenants[id].awake = true
+		g.tenants[id].health = 18
+		spell_hit(g, id, 6, "magic bolt")
+		refresh_view(g)
+		shot(g, fr, DUMP_CHAMPION + "-yield.ppm")
+		enter_town(g, .Gate)
+		teleport(g, door_of(.Tavern))
+		command(g, .Confirm)
+		g.menu_row = 2
+		r: [MAX_ROWS]Row
+		n := shop_rows(g, &r)
+		for i in 0 ..< n {
+			if r[i].act == .Talk && r[i].arg == 1 {
+				g.menu_row = i
+			}
+		}
+		command(g, .Confirm)
+		shot(g, fr, DUMP_CHAMPION + "-tavern.ppm")
+	}
+}

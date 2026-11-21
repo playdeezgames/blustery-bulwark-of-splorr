@@ -110,6 +110,8 @@ PICKS = [
     ('Long_Sword',  26, 6),   # a long broad blade (slice 4 step 26)
     ('Plate_Armour', 26, 11), # the heaviest-looking of the mail
     ('Anchor',      19, 40),  # a ship's anchor (painted grey)
+    ('Champion',   151, 0),   # a figure with a blade (slice 4 step 28; painted gold)
+    ('Cabinet',     13, 36),  # a glass-fronted cabinet (the champion's trophy cabinet)
 ]
 
 def tile(col, row):

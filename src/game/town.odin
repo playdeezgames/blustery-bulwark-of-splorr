@@ -268,6 +268,7 @@ enter_town :: proc(g: ^Game, how: Town_Arrival) {
 	if g.current >= 0 {
 		g.floors[g.current].left_turn = max(g.turn, 1) // restocking counts from here
 	}
+	champion_leaves(g) // once he has yielded, he is in the tavern before you
 	g.current = TOWN
 	at := how == .Temple ? g.town.down : g.town.up + {0, 1}
 	g.x, g.y = at.x, at.y
@@ -292,6 +293,9 @@ proclaim :: proc(g: ^Game) {
 	}
 	medal, certificate := false, false
 	switch {
+	case g.champion_yielded && !g.champion_told:
+		add(text[:], &n, "His Lordship has crushed the treacherous champion, as foretold.")
+		g.champion_told = true
 	case g.giant_dead && !g.giant_told:
 		add(text[:], &n, "His Lordship has felled a giant, as foretold.")
 		g.giant_told = true
@@ -475,7 +479,7 @@ repair_price :: proc(g: ^Game, id: int) -> int {
 // Things carried that a shop could take: not worn, not coins, not a container with anything in it.
 sellable :: proc(g: ^Game, id: int) -> bool {
 	it := &g.items[id]
-	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.kind != .Key_Nine && it.kind != .Key_Thirteen && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
+	return it.kind != .None && it.kind != .Jools && it.kind != .Key && it.kind != .Key_Nine && it.kind != .Key_Thirteen && it.kind != .Key_Sixteen && it.place == .Inside && is_carried(g, id) && !(is_container(it.kind) && contents_count(g, id) > 0)
 }
 
 shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
@@ -598,6 +602,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 	case .Tavern:
 		add_row(rows, &n, .Meal, 0, MEAL_PRICE, "A hot meal")
 		add_row(rows, &n, .Talk, 0, 0, "Talk to the mentor")
+		if g.champion_yielded {
+			add_row(rows, &n, .Talk, 1, 0, "Talk to the champion")
+		}
 		if !g.trained {
 			add_row(rows, &n, .Train, 0, TRAIN_PRICE * g.level, "Train with the mentor")
 		}
@@ -631,6 +638,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		}
 		if g.deepest >= GIANT_INDEX + 1 {
 			add_row(rows, &n, .Chute, GIANT_INDEX, 0, "Ride the windchute to floor 12")
+		}
+		if g.deepest >= CHAMPION_INDEX + 1 {
+			add_row(rows, &n, .Chute, CHAMPION_INDEX, 0, "Ride the windchute to floor 15")
 		}
 	}
 	add_row(rows, &n, .Leave, 0, 0, "Leave")
@@ -783,6 +793,10 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 	case .Talk:
 		switch g.shop {
 		case .Tavern:
+			if r.arg == 1 {
+				say(g, "The champion: ", CHAMPION_LINES[g.talk % len(CHAMPION_LINES)])
+				break
+			}
 			// Once you have talked to the hermit, the mentor has one more line (the user's choice).
 			count := len(MENTOR_LINES) + (g.met_hermit ? 1 : 0)
 			if i := g.talk % count; i < len(MENTOR_LINES) {

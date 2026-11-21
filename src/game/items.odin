@@ -97,6 +97,9 @@ Item_Kind :: enum u8 {
 	Plate_Armour,
 	Anchor_Weight, // weighs 8 kg and does nothing else, which is the point
 	Wind_Cloak, // a gust pushes you a cell less
+	// Floor 15 (slice 4 step 28; champion.odin).
+	Key_Sixteen, // the champion's key to floor 16 (the door was never locked)
+	Trophy_Cabinet, // fixed: the champion's, empty
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -222,6 +225,8 @@ KIND := [Item_Kind]Kind_Info {
 	.Long_Sword    = {name = "Long sword", gfx = .Long_Sword, color = COLOR_LIGHT, weight = 2500, bulk = 4000, slot = .Weapon, dmin = 3, dmax = 11, durability = 90},
 	.Plate_Armour  = {name = "Plate armour", gfx = .Plate_Armour, color = COLOR_LIGHT, weight = 22000, bulk = 16000, slot = .Armour, armour = 7, durability = 140},
 	.Anchor_Weight = {name = "Anchor-weight", gfx = .Anchor, color = COLOR_MID, weight = 8000, bulk = 2500},
+	.Key_Sixteen   = {name = "Key to floor 16", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
+	.Trophy_Cabinet = {name = "Trophy cabinet", gfx = .Cabinet, color = COLOR_BROWN, weight = 50000, bulk = 50000, fixed = true},
 	.Wind_Cloak    = {name = "Wind cloak", gfx = .Cloak, color = COLOR_CYAN, weight = 1500, bulk = 3000, slot = .Cloak, armour = 1, durability = 60},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},

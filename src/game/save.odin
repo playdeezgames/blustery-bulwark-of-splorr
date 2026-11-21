@@ -137,6 +137,8 @@ restore_cells :: proc(g: ^Game) {
 			army_cells(f)
 		} else if i == GIANT_INDEX {
 			giant_cells(f)
+		} else if i == CHAMPION_INDEX {
+			champion_cells(f)
 		} else {
 			generate_floor(tmp, floor_seed(g.seed, i + 1), i + 1)
 			f.cells = tmp.cells

@@ -581,6 +581,9 @@ cast_gale :: proc(g: ^Game, d: [2]int, tempest := false) {
 			tip_crate(g, id, d, false)
 			continue
 		}
+		if t.kind == .Champion_Seated {
+			continue // he has yielded; the blast goes round him
+		}
 		if disguised(t) {
 			say(g, "The pack was a mimic!")
 		} else if !hostile(t) {
@@ -660,6 +663,10 @@ spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 		seal_draught(g, id)
 		return
 	}
+	if t.kind == .Champion_Seated {
+		say(g, "The ", what, " ruffles the champion's hair. He has already yielded.")
+		return
+	}
 	if disguised(t) {
 		say(g, "The pack was a mimic!")
 	} else if !hostile(t) {
@@ -672,7 +679,9 @@ spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 		tip_crate(g, id, {clamp(int(t.x) - g.x, -1, 1), clamp(int(t.y) - g.y, -1, 1)}, false)
 	}
 	t.health -= i16(max(1, dmg))
-	if t.health <= 0 {
+	if t.kind == .Champion && int(t.health) <= CHAMPION_YIELD {
+		champion_yields(g, id)
+	} else if t.health <= 0 {
 		kill_tenant(g, id)
 	} else {
 		say(g, "The ", what, " hits the ", info.name, ".")

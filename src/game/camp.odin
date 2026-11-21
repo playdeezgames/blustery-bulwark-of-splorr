@@ -84,6 +84,8 @@ fixed_line :: proc(k: Item_Kind) -> string {
 		return "A cold campfire. Someone camped here, long ago."
 	case .Bedroll:
 		return "Someone's bedroll, rolled tight. It stays where it is."
+	case .Trophy_Cabinet:
+		return "A trophy cabinet, dusted daily. Nothing in it."
 	}
 	return "It stays where it is."
 }

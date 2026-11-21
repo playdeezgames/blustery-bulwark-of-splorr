@@ -134,6 +134,8 @@ Gfx :: enum {
 	Long_Sword, // slice 4 step 26
 	Plate_Armour,
 	Anchor,
+	Champion, // slice 4 step 28
+	Cabinet,
 }
 
 cls :: proc(f: ^Frame, c: u8) {
