@@ -357,6 +357,8 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Changes from the plan, Claude's for review: he hands you the key rather than dropping it (so it does not lie under him); the XP lines come before his speech, and the key and departure lines were cut to one log line each, so all of it stays in the four-line log.
     - 192 native tests (`champion_test.odin`; `DUMP_CHAMPION` draws the hall, his yielding and the tavern). Checked in the browser: the build loads, showing "Slice 4, step 28", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 (step 33 takes it to the top).
+
+    **Reviewed November 21, 2026:** kept as built: his learning (30 rising 5 a turn to 75, remembered for the whole climb), the key handed over, the log order and shortened lines, every new line and the pictures. The game is unchanged by the review.
 29. **Floor 16, the top and the lord** (item 7).
 30. **The ending** (item 8).
 31. **Two rings** for the second ring slot (item 11).
