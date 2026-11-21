@@ -58,7 +58,7 @@ SPELL := [Spell]Spell_Info {
 	.Sense_Things  = {"Sense Things", 3, false, true, "show items, 30 turns"},
 	.Blink         = {"Blink", 4, true, true, "jump 4; wind bends it"},
 	.Uncurse       = {"Uncurse", 6, false, true, "free what you wear"},
-	.Find_Stairs   = {"Find the Stairs", 2, false, true, "show the way up"},
+	.Find_Stairs   = {"Find Stairs", 2, false, true, "show the way up"},
 	.Teleport      = {"Teleport", 7, false, true, "far across the floor"},
 	.Squall        = {"Squall", 8, true, true, "big blast, spares you"},
 	.Heal          = {"Heal", 8, false, true, "half yer health back"},
@@ -376,7 +376,7 @@ uncurse_worn :: proc(g: ^Game) -> bool {
 }
 
 // Marks a box of a floor as seen: every open cell in it, and the walls round them (the
-// cartographer's maps, and each cell on the way Find the Stairs draws).
+// cartographer's maps, and each cell on the way Find Stairs draws).
 reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
 	for y in max(0, y0) ..= min(FLOOR_H - 1, y1) {
 		for x in max(0, x0) ..= min(FLOOR_W - 1, x1) {
@@ -394,8 +394,9 @@ reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
 	}
 }
 
-// Find the Stairs (the step 21 review, November 19, 2026, in place of Clairvoyance, since the
-// cartographer sells maps): the shortest way to the floor's stairs up, over every open cell seen or
+// Find Stairs (the step 21 review, November 19, 2026, in place of Clairvoyance, since the
+// cartographer sells maps; "Find the Stairs" until the step 27 review, November 21, 2026, when the
+// name was found running into the cost column): the shortest way to the floor's stairs up, over every open cell seen or
 // not, is drawn on yer map with the stairs at its end. Tenants do not block it; walls do.
 find_stairs :: proc(g: ^Game) {
 	f := floor_of(g)

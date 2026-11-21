@@ -341,9 +341,11 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Shelter** (6): for 40 turns no gust pushes you ("The wind slides off you."; at a gust, "A gust batters at you. Yer shelter holds."); a gust still snuffs yer light, and an Anchor cast meanwhile waits for the first gust after the shelter ends. "Yer shelter gives way. The wind has you again." It shows on the panel as "Shelter 40" and ends when you die. It does not stop a demon's butt or a draught's shove, which are not gusts.
     - **Tempest** (10, aimed): a gale's line, 6 cells, straight ("A tempest tears out of yer hands."). Every tenant on it takes 3 to 9 (plus the Intelligence bonus) and is shoved 2 cells, with the wind or against it; one stopped by a wall or a tenant takes 1 to 3 more. Like a gale it topples propped bones, seals a draught and knocks the giant off its crate.
     - Claude's picks for review: the Intelligence bonus on Heal and Tempest; Tempest's slam; the lines; the choosing screen's notes ("half yer health back", "no pushing, 40 turns", "hurt and shove a line").
-    - Seen in the spell list frame dump: "Find the Stairs" (renamed at the step 21 review) runs into its cost column ("Find the Stair8"). Not changed here; raised at this step's review.
+    - Seen in the spell list frame dump: "Find the Stairs" (renamed at the step 21 review) runs into its cost column ("Find the Stair8"). Not changed here; raised at this step's review (now Find Stairs).
     - 185 native tests (`high_spell_test.odin`; `DUMP_HIGH` now also draws a tempest under Shelter, and `DUMP_SPELL_LIST` all 21 spells). Checked in the browser: the build loads, showing "Slice 4, step 27", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit. The bot reaches level 32 to 34 and learns the three after the older eighteen, but casts none of them until step 33.
+
+    **Reviewed November 21, 2026:** kept as built: the Intelligence bonus on Heal and Tempest, Tempest's slam, Shelter stopping gusts only, the lines and the notes. At the user's word Find the Stairs is now **Find Stairs**, which fits before its cost; a new test keeps every spell's name clear of the cost column. 186 native tests.
 28. **Floor 15, the champion** (item 6), and the tavern after.
 29. **Floor 16, the top and the lord** (item 7).
 30. **The ending** (item 8).

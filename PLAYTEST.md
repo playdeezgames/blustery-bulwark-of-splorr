@@ -577,3 +577,7 @@ Step 26 is kept as built: the gear's numbers, the wind cloak stacking with a hea
 ## Step 27: Heal, Shelter and Tempest (November 21, 2026)
 
 50 climbs a build: the same figures as round 6 to the last digit. The bot learns the three new spells once it has the older eighteen, but casts none of them until step 33.
+
+### Decided with the user (November 21, 2026)
+
+Step 27 is kept as built. Find the Stairs is renamed Find Stairs so it no longer runs into its cost in the spell list; the bot does not cast it, so no figure moves.

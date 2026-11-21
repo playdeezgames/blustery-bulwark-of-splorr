@@ -118,3 +118,11 @@ test_a_tempest_hurts_and_shoves_every_tenant_on_its_line :: proc(t: ^testing.T) 
 	testing.expect_value(t, int(g.tenants[w].x), FLOOR_W - 2)
 	testing.expect(t, TENANT[.Lizard].health - int(g.tenants[w].health) >= TEMPEST_DMIN + 1)
 }
+
+// Every spell's name ends before its cost (the step 27 review found "Find the Stairs" running into it).
+@(test)
+test_every_spell_name_fits_before_its_cost :: proc(t: ^testing.T) {
+	for s in Spell {
+		testing.expectf(t, 12 + len(SPELL[s].name) * GLYPH_W < MENU_COST_X, "%v is too long", SPELL[s].name)
+	}
+}
