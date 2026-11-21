@@ -399,6 +399,10 @@ reveal :: proc(f: ^Floor, x0, y0, x1, y1: int) {
 // name was found running into the cost column): the shortest way to the floor's stairs up, over every open cell seen or
 // not, is drawn on yer map with the stairs at its end. Tenants do not block it; walls do.
 find_stairs :: proc(g: ^Game) {
+	if g.current == LORD_INDEX {
+		say(g, "The spell finds no way up from here.") // the top: nothing is above
+		return
+	}
 	f := floor_of(g)
 	goal := f.up
 	from: [FLOOR_H][FLOOR_W][2]i16
@@ -581,8 +585,8 @@ cast_gale :: proc(g: ^Game, d: [2]int, tempest := false) {
 			tip_crate(g, id, d, false)
 			continue
 		}
-		if t.kind == .Champion_Seated {
-			continue // he has yielded; the blast goes round him
+		if t.kind == .Champion_Seated || t.kind == .Lord {
+			continue // the blast goes round him
 		}
 		if disguised(t) {
 			say(g, "The pack was a mimic!")
@@ -665,6 +669,10 @@ spell_hit :: proc(g: ^Game, id: int, dmg: int, what: string) {
 	}
 	if t.kind == .Champion_Seated {
 		say(g, "The ", what, " ruffles the champion's hair. He has already yielded.")
+		return
+	}
+	if t.kind == .Lord {
+		say(g, "You cannot bring yerself to.")
 		return
 	}
 	if disguised(t) {

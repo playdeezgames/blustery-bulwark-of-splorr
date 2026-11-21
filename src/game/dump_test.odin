@@ -782,3 +782,47 @@ test_dump_champion :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_CHAMPION + "-tavern.ppm")
 	}
 }
+
+// The roof by eye (-define:DUMP_TOP=<prefix>): <prefix>-roof.ppm (out onto the roof, the wind
+// just backed round, guards about) and <prefix>-lord.ppm (meeting His Lordship: the notice).
+DUMP_TOP :: #config(DUMP_TOP, "")
+
+@(test)
+test_dump_top :: proc(t: ^testing.T) {
+	when DUMP_TOP != "" {
+		g := new_game()
+		defer free(g)
+		g.no_tenants = false
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		enter_floor(g, CHAMPION_INDEX, .Stairs_Down)
+		teleport(g, floor_of(g).up)
+		command(g, .Confirm)
+		teleport(g, floor_of(g).down + {12, 0})
+		for i in 1 ..< MAX_TENANTS {
+			g.tenants[i].awake = false
+		}
+		g.lit = false
+		g.gust_in = 1
+		end_turn(g)
+		g.lit = true
+		refresh_view(g)
+		shot(g, fr, DUMP_TOP + "-roof.ppm")
+		lord := 0
+		for i in 1 ..< MAX_TENANTS {
+			if g.tenants[i].kind == .Lord {
+				lord = i
+			}
+		}
+		teleport(g, {int(g.tenants[lord].x) - 1, int(g.tenants[lord].y)})
+		g.gust_in = 99
+		refresh_view(g)
+		command(g, .East)
+		shot(g, fr, DUMP_TOP + "-lord.ppm")
+	}
+}

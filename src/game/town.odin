@@ -143,6 +143,7 @@ VALUE := #partial [Item_Kind]int {
 	.Plate_Armour    = 160,
 	.Anchor_Weight   = 25,
 	.Wind_Cloak      = 150,
+	.Contract        = 6,
 }
 
 GENERAL_STOCK := [?]Item_Kind{.Bread, .Cheese, .Jerky, .Torch, .Sack, .Big_Pack, .Wind_Charm}

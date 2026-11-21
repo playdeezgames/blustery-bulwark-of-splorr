@@ -136,6 +136,8 @@ Gfx :: enum {
 	Anchor,
 	Champion, // slice 4 step 28
 	Cabinet,
+	Guard, // slice 4 step 29
+	Lord,
 }
 
 cls :: proc(f: ^Frame, c: u8) {

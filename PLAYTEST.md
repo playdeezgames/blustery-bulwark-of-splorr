@@ -589,3 +589,7 @@ Step 27 is kept as built. Find the Stairs is renamed Find Stairs so it no longer
 ### Decided with the user (November 21, 2026)
 
 Step 28 is kept as built: the champion's learning, the key handed over, the lines and the pictures. The game is unchanged by the review.
+
+## Step 29: floor 16, the top (November 21, 2026)
+
+50 climbs a build: the same figures as round 6 to the last digit. The bot does not climb past the key to floor 13 until step 33.

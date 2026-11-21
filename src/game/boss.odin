@@ -163,6 +163,10 @@ door_to_floor_five :: proc(g: ^Game) {
 NOTICE_Y :: 40
 
 draw_notice :: proc(f: ^Frame, g: ^Game) {
+	if g.notice == .Lord {
+		draw_lord_notice(f)
+		return
+	}
 	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 84, COLOR_BLACK)
 	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 1, COLOR_YELLOW)
 	fill_rect(f, 14, NOTICE_Y + 75, VIEW_W * TILE - 28, 1, COLOR_YELLOW)

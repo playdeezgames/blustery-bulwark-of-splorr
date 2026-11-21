@@ -144,12 +144,17 @@ champion_leaves :: proc(g: ^Game) {
 	}
 }
 
-// The stairs up on floor 15: the door to floor 16. It opens with the key or without it; it was never
-// locked, and nothing says so. Floor 16 is still scaffolding until step 29.
+// The stairs up on floor 15: the door to floor 16, the roof. It opens with the key or without it;
+// it was never locked, and nothing says so.
 door_to_floor_sixteen :: proc(g: ^Game) {
+	opened := ""
 	if CHAMPION_INDEX not_in g.unlocked {
 		g.unlocked += {CHAMPION_INDEX}
-		say(g, has_kind(g, .Key_Sixteen) ? "The key turns." : "The door opens.")
+		opened = has_kind(g, .Key_Sixteen) ? "The key turns." : "The door opens."
 	}
-	say(g, "Above: scaffolding, and a sign. \"Floor 16. Coming soon, by order of His Lordship.\"")
+	enter_floor(g, LORD_INDEX, .Stairs_Down)
+	if opened != "" {
+		say(g, opened)
+	}
+	say(g, "You climb out onto the roof. The wind is strongest here.")
 }

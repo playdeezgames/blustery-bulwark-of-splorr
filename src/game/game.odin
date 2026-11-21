@@ -41,7 +41,13 @@ DIRECTION := [Command][2]int {
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
-BUILT_FLOORS :: 15 // floors that exist so far (slice 4 step 28): floor 16 is still being built
+BUILT_FLOORS :: 16 // every floor of the bulwark (slice 4 step 29): floor 16 is the top
+
+// Which notice the Notice mode shows.
+Notice_Kind :: enum u8 {
+	Stretch, // the end of the third stretch (the key to floor 13)
+	Lord, // meeting His Lordship (slice 4 step 29)
+}
 
 Mode :: enum u8 {
 	Play,
@@ -157,6 +163,8 @@ Game :: struct {
 	champion_fights:  int, // turns the champion has fought (champion.odin): his aim improves with each
 	champion_yielded: bool, // he sat down and gave up the key to floor 16
 	champion_told:    bool, // the herald has proclaimed it
+	lord_met:         bool, // you have bumped into His Lordship (top.odin)
+	notice:           Notice_Kind, // which notice is showing
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -220,6 +228,8 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 		build_giant_floor(g)
 	} else if !f.made && i == CHAMPION_INDEX {
 		build_champion_floor(g)
+	} else if !f.made && i == LORD_INDEX {
+		build_lord_floor(g)
 	} else if !f.made {
 		generate_floor(f, floor_seed(g.seed, i + 1), i + 1)
 		populate_floor(g, i)
@@ -229,7 +239,7 @@ enter_floor :: proc(g: ^Game, i: int, arrive: Cell) {
 			populate_tenants(g, i, &r)
 		}
 	}
-	if i != BOSS_INDEX && i != ARMY_INDEX && i != GIANT_INDEX && i != CHAMPION_INDEX {
+	if i != BOSS_INDEX && i != ARMY_INDEX && i != GIANT_INDEX && i != CHAMPION_INDEX && i != LORD_INDEX {
 		restock(g, i)
 	}
 	if i != CHAMPION_INDEX {
@@ -370,6 +380,10 @@ step_player :: proc(g: ^Game, d: [2]int) -> bool {
 		if !hostile(&g.tenants[id]) && g.tenants[id].kind == .Hermit {
 			g.shop_tenant = id
 			open_shop(g, .Hermit)
+			return false
+		}
+		if g.tenants[id].kind == .Lord {
+			meet_lord(g)
 			return false
 		}
 		if g.tenants[id].kind == .Champion_Seated {

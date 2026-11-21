@@ -100,6 +100,7 @@ Item_Kind :: enum u8 {
 	// Floor 15 (slice 4 step 28; champion.odin).
 	Key_Sixteen, // the champion's key to floor 16 (the door was never locked)
 	Trophy_Cabinet, // fixed: the champion's, empty
+	Contract, // a hired guard's trophy (slice 4 step 29)
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -227,6 +228,7 @@ KIND := [Item_Kind]Kind_Info {
 	.Anchor_Weight = {name = "Anchor-weight", gfx = .Anchor, color = COLOR_MID, weight = 8000, bulk = 2500},
 	.Key_Sixteen   = {name = "Key to floor 16", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
 	.Trophy_Cabinet = {name = "Trophy cabinet", gfx = .Cabinet, color = COLOR_BROWN, weight = 50000, bulk = 50000, fixed = true},
+	.Contract      = {name = "Contract", gfx = .Note, color = COLOR_YELLOW, weight = 10, bulk = 20, trophy = true},
 	.Wind_Cloak    = {name = "Wind cloak", gfx = .Cloak, color = COLOR_CYAN, weight = 1500, bulk = 3000, slot = .Cloak, armour = 1, durability = 60},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
 	.Sack          = {name = "Sack", gfx = .Sack, color = COLOR_BROWN, weight = 200, bulk = 500, cap_weight = 5000, cap_bulk = 15000},
@@ -643,6 +645,7 @@ pick_up :: proc(g: ^Game, id: int) {
 		say(g, "You pick up the ", name, ".")
 		if !g.stretch3_done {
 			g.stretch3_done = true
+			g.notice = .Stretch
 			g.mode = .Notice
 		}
 	} else if g.items[id].place == .Worn {

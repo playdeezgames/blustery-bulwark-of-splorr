@@ -112,6 +112,8 @@ PICKS = [
     ('Anchor',      19, 40),  # a ship's anchor (painted grey)
     ('Champion',   151, 0),   # a figure with a blade (slice 4 step 28; painted gold)
     ('Cabinet',     13, 36),  # a glass-fronted cabinet (the champion's trophy cabinet)
+    ('Guard',      136, 0),   # a figure with a pole-axe (slice 4 step 29: the hired guards)
+    ('Lord',       141, 0),   # a stooped old man with a cane (His Lordship; painted white)
 ]
 
 def tile(col, row):

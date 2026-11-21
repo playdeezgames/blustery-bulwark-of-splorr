@@ -103,7 +103,8 @@ test_a_heavy_load_on_floor_thirteen_holds_rarely_and_drags_two :: proc(t: ^testi
 	testing.expect_value(t, held + dragged, 300)
 }
 
-// Floors 13 and 14 are generated like the others, crowded but in bounds, and survive a save.
+// Floors 13 and 14 are generated like the others, crowded but in bounds, and survive a save. With all
+// sixteen floors entered (step 29) every tenant still fits.
 @(test)
 test_floors_thirteen_and_fourteen_fit_with_all_their_tenants :: proc(t: ^testing.T) {
 	for seed in ([?]u64{1, 7, 12345}) {
@@ -118,7 +119,7 @@ test_floors_thirteen_and_fourteen_fit_with_all_their_tenants :: proc(t: ^testing
 				tenants += 1
 			}
 		}
-		testing.expectf(t, tenants < MAX_TENANTS * 9 / 10, "seed %v: %v tenants", seed, tenants)
+		testing.expectf(t, tenants < MAX_TENANTS - 1, "seed %v: %v tenants", seed, tenants) // all 16 floors fit (308 at most over 60 seeds)
 		testing.expect(t, count_tenants(g, GIANT_INDEX + 1) >= 4 + 2 * 13)
 		testing.expect(t, count_tenants(g, GIANT_INDEX + 2) >= 4 + 2 * 14)
 		before := g.floors[GIANT_INDEX + 2].cells

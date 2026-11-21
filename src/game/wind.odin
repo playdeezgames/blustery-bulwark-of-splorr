@@ -130,6 +130,10 @@ end_turn :: proc(g: ^Game) {
 	if g.gust_in <= 0 {
 		gust(g)
 		g.gust_in = gust_period(f.number)
+		if g.current == LORD_INDEX && g.mode != .Dead {
+			wind_backs(f)
+			say(g, "The wind backs round.")
+		}
 	}
 	refresh_view(g)
 }

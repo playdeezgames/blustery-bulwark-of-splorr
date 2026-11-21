@@ -359,7 +359,17 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 (step 33 takes it to the top).
 
     **Reviewed November 21, 2026:** kept as built: his learning (30 rising 5 a turn to 75, remembered for the whole climb), the key handed over, the log order and shortened lines, every new line and the pictures. The game is unchanged by the review.
-29. **Floor 16, the top and the lord** (item 7).
+29. **Done November 21, 2026.** **Floor 16, the top and the lord** (item 7):
+    - **The door:** floor 15's stairs up now open onto the roof: "The key turns." or "The door opens.", then "You climb out onto the roof. The wind is strongest here."
+    - **The roof:** hand-built, 44 by 15 inside a parapet, open but for six chimneys (2 by 2) to hide behind. A gust every 4 turns, pushing 3. After every gust the wind backs a quarter round, west to south to east to north ("The wind backs round."), so the warning names the new side and no chimney shelters you for long. No stairs up: Find Stairs says "The spell finds no way up from here." No restocking.
+    - **Six hired guards** (health 20, 2 to 7, to hit 60, defence 15, 10 XP), spread across the roof, ordinary tenants otherwise: "Hired by the herald. Paid by the hour, in advance." A contract (6) half the time.
+    - **His Lordship,** at the far east end: a very old man who never moves ("A very old man in a chair, with a cup of tea."; "His Lordship." in front once you have met him). Bumping him: "He looks up, nods, and goes back to his tea." and, the first time, a notice: "His Lordship. He has never said a word." No turn passes. A spell reaching him: "You cannot bring yerself to."; a gale or tempest goes round him.
+    - **Room for everyone:** with all sixteen floors stocked the tenant table runs close to full (308 of 319 at most over 60 seeds), so the champion and His Lordship, if the table is ever full, take the slot of an ordinary tenant on another floor. The table's size is unchanged, so saves keep their shape.
+    - **Pictures** from Urizen: a figure with a pole-axe for the guards, painted blue, and a stooped old man with a cane for His Lordship, painted white. There is no chair or cup to see.
+    - Claude's picks for review: the roof's layout and chimneys; the turn order of the wind; the door line; the inspect lines; the guards' colour.
+    - Raised for review: the end-of-stretch notice for the key to floor 13 still says "The rest of the bulwark is still being built." (decided in step 22), which is no longer so.
+    - 197 native tests (`top_test.odin`; `DUMP_TOP` draws the roof just after the wind backs round, and the notice). Checked in the browser: the build loads, showing "Slice 4, step 29", with no console errors.
+    - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33.
 30. **The ending** (item 8).
 31. **Two rings** for the second ring slot (item 11).
 32. **Sound** (item 10).

@@ -39,6 +39,9 @@ Tenant_Kind :: enum u8 {
 	// Floor 15 (slice 4 step 28; champion.odin).
 	Champion, // learns as he fights; yields at a quarter of his health, never dies
 	Champion_Seated, // the champion after he yields: peaceful; bumping him, he talks and leaves
+	// Floor 16, the top (slice 4 step 29; top.odin).
+	Guard, // hired by the herald
+	Lord, // His Lordship: never speaks, cannot be harmed
 }
 
 Tenant_Info :: struct {
@@ -92,6 +95,8 @@ TENANT := [Tenant_Kind]Tenant_Info {
 	.Peacock = {name = "hundred-eyed beast", a = "the hundred-eyed beast", gfx = .Peacock, color = 10, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 20, xp = 8, light = true, rare = true, trophy = .Peacock_Feather, chance = 50, first = 13, verb = "pecks", line = "A hundred eyes, the town says. Painted on."},
 	.Champion = {name = "champion", a = "His Lordship's champion", gfx = .Champion, color = COLOR_YELLOW, health = 60, hit = CHAMPION_HIT, dmin = 3, dmax = 11, defence = 25, speed = 10, xp = 60, first = 99, verb = "swings at", line = "His Lordship's champion. Undefeated, nineteen years."},
 	.Champion_Seated = {name = "champion", a = "His Lordship's champion", gfx = .Champion, color = COLOR_YELLOW, health = 60, defence = 25, speed = 10, peaceful = true, first = 99, line = "He has sat down. He looks lighter."},
+	.Guard = {name = "hired guard", a = "a hired guard", gfx = .Guard, color = 9, health = 20, hit = 60, dmin = 2, dmax = 7, defence = 15, speed = 10, xp = 10, trophy = .Contract, chance = 50, first = 99, verb = "jabs", line = "Hired by the herald. Paid by the hour, in advance."},
+	.Lord  = {name = "old man", a = "His Lordship", gfx = .Lord, color = COLOR_WHITE, health = 1, speed = 10, peaceful = true, first = 99, line = "A very old man in a chair, with a cup of tea."},
 	.Carny  = {name = "carny", a = "a carny", gfx = .Carny, color = COLOR_YELLOW, health = 10, hit = 55, dmin = 1, dmax = 4, defence = 10, speed = 10, xp = 3, peaceful = true, first = 3, verb = "cuffs", line = "\"See the Undead Horde, upstairs! Two Jools!\""},
 }
 
@@ -126,6 +131,18 @@ new_tenant :: proc(g: ^Game, kind: Tenant_Kind, floor, x, y: int) -> int {
 		if g.tenants[i].kind == .None {
 			g.tenants[i] = Tenant{kind = kind, floor = i8(floor), x = i16(x), y = i16(y), health = i16(TENANT[kind].health)}
 			return i
+		}
+	}
+	// With every floor stocked the table runs close to full (slice 4 step 29: 308 of 319 at most over
+	// 60 seeds). The champion and His Lordship must always be there, so they take the slot of an
+	// ordinary tenant on another floor, which simply moves out.
+	if kind == .Champion || kind == .Lord {
+		for i in 1 ..< MAX_TENANTS {
+			o := g.tenants[i]
+			if int(o.floor) != floor && TENANT[o.kind].first < 99 && o.kind != .Carny {
+				g.tenants[i] = Tenant{kind = kind, floor = i8(floor), x = i16(x), y = i16(y), health = i16(TENANT[kind].health)}
+				return i
+			}
 		}
 	}
 	return 0
@@ -653,6 +670,10 @@ inspect_tenant :: proc(g: ^Game, id: int) {
 	info := TENANT[t.kind]
 	if disguised(t) {
 		say(g, "A pack. Somebody left it here.")
+		return
+	}
+	if t.kind == .Lord {
+		say(g, g.lord_met ? "His Lordship. " : "", info.line)
 		return
 	}
 	hurt := int(t.health) * 2 < info.health
