@@ -856,3 +856,48 @@ test_dump_end :: proc(t: ^testing.T) {
 		write_ppm(DUMP_END + "-end.ppm", fr)
 	}
 }
+
+// The rings by eye (-define:DUMP_RINGS=<prefix>): <prefix>-store.ppm (the general store after the
+// giant, with both rings) and <prefix>-inv.ppm (a ring on each hand, one known, one not).
+DUMP_RINGS :: #config(DUMP_RINGS, "")
+
+@(test)
+test_dump_rings :: proc(t: ^testing.T) {
+	when DUMP_RINGS != "" {
+		g := new_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		shot :: proc(g: ^Game, fr: ^Frame, name: string) {
+			draw_game(fr, g)
+			resolve(fr)
+			write_ppm(name, fr)
+		}
+		g.giant_dead = true
+		receive_jools(g, 300)
+		enter_town(g, .Gate)
+		g.mode = .Play
+		teleport(g, door_of(.General))
+		command(g, .Confirm)
+		r: [MAX_ROWS]Row
+		n := shop_rows(g, &r)
+		for i in 0 ..< n {
+			if r[i].act == .Buy && r[i].arg == int(Item_Kind.Ring_Steady) {
+				g.menu_row = i
+			}
+		}
+		command(g, .Confirm)
+		shot(g, fr, DUMP_RINGS + "-store.ppm")
+		leave_shop(g)
+		for i in 1 ..< MAX_ITEMS {
+			if g.items[i].kind == .Ring_Steady {
+				wear(g, i, .Ring_Left)
+			}
+		}
+		lamp := new_item(g, .Ring_Lamp)
+		put_in(g, lamp, worn(g, .Pack))
+		wear(g, lamp, .Ring_Right)
+		open_inventory(g)
+		shot(g, fr, DUMP_RINGS + "-inv.ppm")
+	}
+}

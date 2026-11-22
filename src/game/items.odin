@@ -101,6 +101,9 @@ Item_Kind :: enum u8 {
 	Key_Sixteen, // the champion's key to floor 16 (the door was never locked)
 	Trophy_Cabinet, // fixed: the champion's, empty
 	Contract, // a hired guard's trophy (slice 4 step 29)
+	// The second ring slot (slice 4 step 31): found from floor 9, sold after the giant.
+	Ring_Steady, // a gust pushes you a cell less
+	Ring_Lamp, // gusts snuff yer light half as often
 }
 
 // Kinds that go by a look until identified; the looks are shuffled per character.
@@ -228,6 +231,8 @@ KIND := [Item_Kind]Kind_Info {
 	.Anchor_Weight = {name = "Anchor-weight", gfx = .Anchor, color = COLOR_MID, weight = 8000, bulk = 2500},
 	.Key_Sixteen   = {name = "Key to floor 16", gfx = .Key, color = COLOR_YELLOW, weight = 50, bulk = 30},
 	.Trophy_Cabinet = {name = "Trophy cabinet", gfx = .Cabinet, color = COLOR_BROWN, weight = 50000, bulk = 50000, fixed = true},
+	.Ring_Steady   = {name = "Steady ring", gfx = .Ring, color = COLOR_YELLOW, weight = 10, bulk = 5, slot = .Ring_Left, group = .Ring},
+	.Ring_Lamp     = {name = "Lamp ring", gfx = .Ring, color = COLOR_YELLOW, weight = 10, bulk = 5, slot = .Ring_Left, group = .Ring},
 	.Contract      = {name = "Contract", gfx = .Note, color = COLOR_YELLOW, weight = 10, bulk = 20, trophy = true},
 	.Wind_Cloak    = {name = "Wind cloak", gfx = .Cloak, color = COLOR_CYAN, weight = 1500, bulk = 3000, slot = .Cloak, armour = 1, durability = 60},
 	.Pack_Holding  = {name = "Pack of holding", gfx = .Pack, color = COLOR_CYAN, weight = 1000, bulk = 5000, slot = .Pack, cap_weight = 20000, cap_bulk = 30000},
@@ -673,6 +678,9 @@ stow :: proc(g: ^Game, id: int) -> bool {
 	if s := KIND[g.items[id].kind].slot; s != .None && worn(g, s) == 0 {
 		wear(g, id, s)
 		return true
+	} else if s == .Ring_Left && worn(g, .Ring_Right) == 0 {
+		wear(g, id, .Ring_Right) // the left hand is taken: the right (step 31)
+		return true
 	}
 	return false
 }
@@ -709,6 +717,10 @@ populate_floor :: proc(g: ^Game, index: int) {
 	}
 	place(g, f, &r, index, Item_Kind(int(Item_Kind.Scroll_Return) + rng_int(&r, 4)), 1)
 	place(g, f, &r, index, Item_Kind(int(Item_Kind.Ring_Guard) + rng_int(&r, 4)), 1)
+	if f.number >= RING_FLOOR {
+		// Step 31: one of the two new rings as well, from floor 9.
+		place(g, f, &r, index, rng_int(&r, 2) == 0 ? .Ring_Steady : .Ring_Lamp, 1)
+	}
 	if f.number == 3 {
 		place(g, f, &r, index, .Spellbook, 1)
 	}

@@ -605,3 +605,16 @@ Step 29 is kept as built. The end-of-stretch notice for the key to floor 13 is d
 ### Decided with the user (November 22, 2026)
 
 Step 30 is kept as built. The game is unchanged by the review.
+
+## Step 31: the Steady and Lamp rings (November 22, 2026)
+
+50 climbs a build. The figures move for the first time since round 6: floors 9 and up now hold one of the new rings and lay out their finds differently.
+
+| Build | Key to floor 13 | Deaths a climb | Runs with a death |
+|---|---|---|---|
+| even | 98 % (was 96) | 5.74 (was 5.60) | 100 % |
+| fighter | 100 % (was 98) | 2.20 (was 2.12) | 92 % |
+| nimble | 100 % (was 100) | 2.62 (was 2.62) | 98 % (was 100) |
+| caster | 100 % (was 98) | 2.26 (was 2.02) | 88 % (was 86) |
+
+The shifts are the noise of different floor layouts, not the rings: the bot buys none and wears only what stow puts on. The climb still ends with the key to floor 13 until step 33.

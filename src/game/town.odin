@@ -143,6 +143,8 @@ VALUE := #partial [Item_Kind]int {
 	.Plate_Armour    = 160,
 	.Anchor_Weight   = 25,
 	.Wind_Cloak      = 150,
+	.Ring_Steady     = 120,
+	.Ring_Lamp       = 90,
 	.Contract        = 6,
 }
 
@@ -151,6 +153,7 @@ SMITH_STOCK := [?]Item_Kind{.Dagger, .Club, .Short_Sword, .Leather_Cap, .Boots, 
 // Once the Horde is destroyed the shops stock more (slice 2 step 13; Castle of the Winds' "time
 // changes shop stock").
 GENERAL_LATER := [?]Item_Kind{.Lantern, .Oil_Flask, .Tinderbox}
+GENERAL_GIANT := [?]Item_Kind{.Ring_Steady, .Ring_Lamp} // after the giant (step 31)
 SMITH_LATER := [?]Item_Kind{.Mace, .Leather_Armour, .Cloak}
 // Once the army is routed the smith stocks more again (slice 3 step 20), and the general store sells
 // gust insurance (DESIGN.md beat 2: "shops sell gust insurance"): 120 Jools for 1000 turns, paying 2
@@ -503,6 +506,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 		}
 		if g.giant_dead {
 			add_row(rows, &n, .Buy, int(Item_Kind.Anchor_Weight), VALUE[.Anchor_Weight], "Buy an Anchor-weight")
+			for k in GENERAL_GIANT {
+				add_row(rows, &n, .Buy, int(k), VALUE[k], "Buy a ", KIND[k].name)
+			}
 		}
 		if g.army_dead {
 			if left := g.insured_to - g.turn; left > 0 {
@@ -722,6 +728,12 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 				say(g, "You buy the Wind cloak. \"The wind gets a little less of you.\"")
 			} else if k == .Anchor_Weight {
 				say(g, "You buy an Anchor-weight. \"Holds you down. Also down.\"")
+			} else if k == .Ring_Steady {
+				g.ident += {k} // bought by name
+				say(g, "You buy a Steady ring. \"Feet on the floor, mostly.\"")
+			} else if k == .Ring_Lamp {
+				g.ident += {k}
+				say(g, "You buy a Lamp ring. \"Keeps yer light in. Most of it.\"")
 			} else {
 				say(g, "You buy a ", KIND[k].name, ".")
 			}

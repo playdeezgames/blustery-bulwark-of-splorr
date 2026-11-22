@@ -24,7 +24,21 @@ Look :: struct {
 
 POTION_LOOKS := [4]Look{{"Murky potion", 6}, {"Fizzy potion", 10}, {"Amber potion", COLOR_ORANGE}, {"Ruddy potion", COLOR_RED}}
 SCROLL_LOOKS := [4]Look{{"WHEREAS scroll", COLOR_LIGHT}, {"HEREBY scroll", COLOR_LIGHT}, {"NOTICE scroll", COLOR_LIGHT}, {"DECREE scroll", COLOR_LIGHT}}
-RING_LOOKS := [2]Look{{"Brass ring", COLOR_YELLOW}, {"Bone ring", COLOR_LIGHT}}
+RING_LOOKS := [4]Look{{"Brass ring", COLOR_YELLOW}, {"Bone ring", COLOR_LIGHT}, {"Iron ring", COLOR_MID}, {"Jade ring", 5}}
+RING_FLOOR :: 9 // the Steady and Lamp rings are found from this floor (step 31)
+STEADY_CELLS :: 1 // a worn Steady ring: a gust pushes you this many cells less
+LAMP_SNUFF :: 2 // a worn Lamp ring: gusts snuff yer light this many times less often
+
+// How many of a ring kind you wear (one on each hand at most).
+rings_worn :: proc(g: ^Game, k: Item_Kind) -> int {
+	n := 0
+	for s in ([2]Slot{.Ring_Left, .Ring_Right}) {
+		if id := worn(g, s); id != 0 && g.items[id].kind == k {
+			n += 1
+		}
+	}
+	return n
+}
 AMULET_LOOKS := [2]Look{{"Tin amulet", COLOR_MID}, {"Glass amulet", 10}}
 
 // Which look each kind wears for this character: a shuffle within each group, from the seed.

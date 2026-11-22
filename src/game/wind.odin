@@ -166,6 +166,7 @@ gust :: proc(g: ^Game) {
 		if g.items[worn(g, .Cloak)].kind == .Wind_Cloak {
 			cells = max(1, cells - 1) // the wind cloak: a cell less, never none
 		}
+		cells = max(1, cells - STEADY_CELLS * rings_worn(g, .Ring_Steady)) // step 31: stacks, never none
 		reach_before := hostile_in_reach(g)
 		// Pushed cell by cell; a wall or a tenant in the way stops you, and "costs a little"
 		// (DESIGN.md).
@@ -215,6 +216,9 @@ gust :: proc(g: ^Game) {
 	chance := snuff_chance(f.number)
 	if g.items[worn(g, .Light)].kind == .Lantern {
 		chance /= LANTERN_SNUFF
+	}
+	for _ in 0 ..< rings_worn(g, .Ring_Lamp) {
+		chance /= LAMP_SNUFF // step 31: stacks with the lantern
 	}
 	if g.lit && .Snuff not_in g.wind_off && rng_int(&g.rng, 100) < chance {
 		g.lit = false

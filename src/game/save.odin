@@ -118,6 +118,10 @@ load_game :: proc(g: ^Game, data: []u8) -> bool {
 			i += 1
 		}
 	}
+	if g.look[int(Item_Kind.Ring_Steady)] == g.look[int(Item_Kind.Ring_Lamp)] {
+		// A save from before step 31 shuffled only two ring looks: the new rings take the other two.
+		g.look[int(Item_Kind.Ring_Steady)], g.look[int(Item_Kind.Ring_Lamp)] = 2, 3
+	}
 	restore_cells(g)
 	return true
 }

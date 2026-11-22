@@ -380,6 +380,14 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33, which makes the end screen its goal.
 
     **Reviewed November 22, 2026:** kept as built: the line telling the herald, the end screen with "or click", and the row offered once. The game is unchanged by the review.
-31. **Two rings** for the second ring slot (item 11).
+31. **Done November 22, 2026.** **Two rings** for the second ring slot (item 11):
+    - **Steady ring:** a gust pushes you a cell less. It stacks with the wind cloak, and two Steady rings take two cells off; never below 1, so on floors 1 to 4 it changes nothing.
+    - **Lamp ring:** gusts snuff yer light half as often. It stacks with the lantern (a third, then a half), and two Lamp rings halve it twice.
+    - **Found** from floor 9: each generated floor from 9 up holds one of the two (even odds) besides its usual ring or amulet. **Sold** by the general store after the giant: Steady ring 120, Lamp ring 90 ("Feet on the floor, mostly." and "Keeps yer light in. Most of it."). A bought ring is known by name; a found one goes by its look, like the Guard ring, until identified.
+    - **Looks:** the rings now shuffle four looks (Brass, Bone, and new Iron and Jade). A save from before this step keeps its two looks and gives the new rings Iron and Jade.
+    - **Picking up:** a ring that has to be worn (nothing carried holds it) goes on the right hand when the left is taken.
+    - Claude's picks for review: the prices and keeper's lines, one ring a floor from 9, two of a kind stacking, the new looks, found rings staying unknown when worn.
+    - 207 native tests (`ring_test.odin`; `DUMP_RINGS` draws the store and a ring on each hand). Checked in the browser: the build loads, showing "Slice 4, step 31", with no console errors.
+    - **Bot round:** The figures moved for the first time since round 6, because floors 9 and up now hold an extra ring and lay out their finds differently. The key to floor 13 at 98/100/100/100 % (was 96/98/100/98) and deaths a climb 5.74/2.20/2.62/2.26 (was 5.60/2.12/2.62/2.02); the bot wears what it picks up but buys no rings, and its climb still ends with the key to floor 13 until step 33.
 32. **Sound** (item 10).
 33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.
