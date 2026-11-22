@@ -367,9 +367,11 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Room for everyone:** with all sixteen floors stocked the tenant table runs close to full (308 of 319 at most over 60 seeds), so the champion and His Lordship, if the table is ever full, take the slot of an ordinary tenant on another floor. The table's size is unchanged, so saves keep their shape.
     - **Pictures** from Urizen: a figure with a pole-axe for the guards, painted blue, and a stooped old man with a cane for His Lordship, painted white. There is no chair or cup to see.
     - Claude's picks for review: the roof's layout and chimneys; the turn order of the wind; the door line; the inspect lines; the guards' colour.
-    - Raised for review: the end-of-stretch notice for the key to floor 13 still says "The rest of the bulwark is still being built." (decided in step 22), which is no longer so.
+    - Raised for review: the end-of-stretch notice for the key to floor 13 still says "The rest of the bulwark is still being built." (decided in step 22), which is no longer so (dropped at the review).
     - 197 native tests (`top_test.odin`; `DUMP_TOP` draws the roof just after the wind backs round, and the notice). Checked in the browser: the build loads, showing "Slice 4, step 29", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33.
+
+    **Reviewed November 22, 2026:** kept as built: the roof, the wind backing west to south to east to north, the new lines and the pictures. At the user's word the end-of-stretch notice for the key to floor 13 is **dropped**: picking up the key now only says so, and meeting His Lordship is the only notice in the game. (Its flag stays in the save, unused.) The bot round after the change: the same figures as round 6. 197 native tests.
 30. **The ending** (item 8).
 31. **Two rings** for the second ring slot (item 11).
 32. **Sound** (item 10).

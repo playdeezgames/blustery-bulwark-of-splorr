@@ -642,12 +642,9 @@ pick_up :: proc(g: ^Game, id: int) {
 		// No notice since step 17: the end of the stretch moved to the key to floor 13 (step 22).
 		say(g, "You pick up the ", name, ".")
 	} else if g.items[id].kind == .Key_Thirteen {
+		// No notice since the step 29 review (November 22, 2026): the rest of the bulwark is built, and
+		// meeting His Lordship is the only notice left.
 		say(g, "You pick up the ", name, ".")
-		if !g.stretch3_done {
-			g.stretch3_done = true
-			g.notice = .Stretch
-			g.mode = .Notice
-		}
 	} else if g.items[id].place == .Worn {
 		say(g, "You pick up ", name, " and wear it.")
 	} else {

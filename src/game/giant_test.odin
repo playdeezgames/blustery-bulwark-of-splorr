@@ -232,12 +232,9 @@ test_the_giant_drops_the_key_and_the_stretch_ends :: proc(t: ^testing.T) {
 	command(g, .Confirm)
 	testing.expect(t, strings.has_prefix(message(&g.last_said), "The door to floor 13 is locked."))
 	teleport(g, at)
+	g.learns, g.mode = 0, .Play // the levels from the giant owe spell choices; not this test's business
 	pick_up(g, key)
-	testing.expect_value(t, g.mode, Mode.Notice)
-	command(g, .Confirm)
-	testing.expect_value(t, g.mode, Mode.Play)
-	pick_up(g, key) // only once
-	testing.expect_value(t, g.mode, Mode.Play)
+	testing.expect_value(t, g.mode, Mode.Play) // no notice since the step 29 review
 	teleport(g, floor_of(g).up)
 	command(g, .Confirm)
 	testing.expect(t, GIANT_INDEX in g.unlocked)

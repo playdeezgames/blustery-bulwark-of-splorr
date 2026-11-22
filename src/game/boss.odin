@@ -158,24 +158,13 @@ door_to_floor_five :: proc(g: ^Game) {
 	}
 }
 
-// The end of the stretch: shown once, the first time the key to floor 13 is picked up (it was the
-// key to floor 5 in slice 1 and the key to floor 9 in slice 2).
+// The notice box (Notice mode). Since the step 29 review (November 22, 2026) the only notice is
+// meeting His Lordship (top.odin); the end-of-stretch notices for the keys to floors 5, 9 and 13 are
+// gone.
 NOTICE_Y :: 40
 
 draw_notice :: proc(f: ^Frame, g: ^Game) {
-	if g.notice == .Lord {
-		draw_lord_notice(f)
-		return
-	}
-	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 84, COLOR_BLACK)
-	fill_rect(f, 14, NOTICE_Y - 8, VIEW_W * TILE - 28, 1, COLOR_YELLOW)
-	fill_rect(f, 14, NOTICE_Y + 75, VIEW_W * TILE - 28, 1, COLOR_YELLOW)
-	print(f, "The key to floor 13.", 24, NOTICE_Y, COLOR_YELLOW)
-	print(f, "Here ends the third stretch.", 24, NOTICE_Y + 14, COLOR_LIGHT)
-	print(f, "The rest of the bulwark is", 24, NOTICE_Y + 24, COLOR_LIGHT)
-	print(f, "still being built.", 24, NOTICE_Y + 34, COLOR_LIGHT)
-	print(f, "Thank you for climbing.", 24, NOTICE_Y + 48, COLOR_MID)
-	print(f, "Enter/OK or click to go on.", 24, NOTICE_Y + 62, COLOR_YELLOW)
+	draw_lord_notice(f)
 }
 
 // The town gate, once floor 4 has been reached: climb, or ride the windchute up.

@@ -45,7 +45,7 @@ BUILT_FLOORS :: 16 // every floor of the bulwark (slice 4 step 29): floor 16 is 
 
 // Which notice the Notice mode shows.
 Notice_Kind :: enum u8 {
-	Stretch, // the end of the third stretch (the key to floor 13)
+	Stretch, // the end of the third stretch (the key to floor 13); no longer shown since the step 29 review
 	Lord, // meeting His Lordship (slice 4 step 29)
 }
 
@@ -157,7 +157,7 @@ Game :: struct {
 	giant_up:    bool, // the giant stands on its crate
 	giant_dead:  bool,
 	giant_told:  bool, // the herald has proclaimed it (and handed over the Certificate)
-	stretch3_done: bool, // the end-of-stretch notice for the key to floor 13 has been shown
+	stretch3_done: bool, // the end-of-stretch notice for the key to floor 13 has been shown (unused since the step 29 review; kept so saves keep their shape)
 	sage_cloak:    bool, // bought the sage's one wind cloak (slice 4 step 26)
 	shelter_turns: int, // Shelter: gusts never push you (slice 4 step 27)
 	champion_fights:  int, // turns the champion has fought (champion.odin): his aim improves with each

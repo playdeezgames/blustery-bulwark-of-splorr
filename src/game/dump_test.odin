@@ -217,7 +217,7 @@ test_dump_town :: proc(t: ^testing.T) {
 }
 
 // Floor 4 by eye (-define:DUMP_BOSS=<prefix>): <prefix>-door.ppm (arriving, the carny at the
-// door), <prefix>-hall.ppm (the Horde, one toppled) and <prefix>-notice.ppm.
+// door) and <prefix>-hall.ppm (the Horde, one toppled).
 DUMP_BOSS :: #config(DUMP_BOSS, "")
 
 @(test)
@@ -242,8 +242,6 @@ test_dump_boss :: proc(t: ^testing.T) {
 		command(g, .North)
 		topple(g, find_kind(g, .Bones), true)
 		shot(g, fr, DUMP_BOSS + "-hall.ppm")
-		g.mode = .Notice
-		shot(g, fr, DUMP_BOSS + "-notice.ppm")
 	}
 }
 
@@ -429,8 +427,8 @@ test_dump_spells :: proc(t: ^testing.T) {
 }
 
 // Floor 8 by eye (-define:DUMP_ARMY=<prefix>): <prefix>-door.ppm (arriving, the carny at the door),
-// <prefix>-hall.ppm (inside, the rats and the sergeant), <prefix>-rout.ppm (the sergeant fallen, the
-// rats gone) and <prefix>-notice.ppm.
+// <prefix>-hall.ppm (inside, the rats and the sergeant) and <prefix>-rout.ppm (the sergeant fallen,
+// the rats gone).
 DUMP_ARMY :: #config(DUMP_ARMY, "")
 
 @(test)
@@ -459,8 +457,6 @@ test_dump_army :: proc(t: ^testing.T) {
 		g.mode = .Play
 		teleport(g, {int(s.x) - 1, int(s.y)})
 		shot(g, fr, DUMP_ARMY + "-rout.ppm")
-		g.mode = .Notice
-		shot(g, fr, DUMP_ARMY + "-notice.ppm")
 	}
 }
 
@@ -599,7 +595,7 @@ test_dump_spell_list :: proc(t: ^testing.T) {
 
 // Floor 12 by eye (-define:DUMP_GIANT=<prefix>): <prefix>-up.ppm (the giant on its crate, two cells
 // off), <prefix>-off.ppm (after a gale: the giant at ogre height, the crate blown east) and
-// <prefix>-notice.ppm (the end of the third stretch).
+// <prefix>-key.ppm (the giant fallen, the key to floor 13 picked up).
 DUMP_GIANT :: #config(DUMP_GIANT, "")
 
 @(test)
@@ -644,7 +640,7 @@ test_dump_giant :: proc(t: ^testing.T) {
 		}
 		draw_game(fr, g)
 		resolve(fr)
-		write_ppm(DUMP_GIANT + "-notice.ppm", fr)
+		write_ppm(DUMP_GIANT + "-key.ppm", fr)
 	}
 }
 
