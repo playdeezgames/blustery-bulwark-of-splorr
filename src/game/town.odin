@@ -432,6 +432,7 @@ Act :: enum u8 {
 	Restore, // arg: an Attr the cave bear drained
 	Map, // arg: a floor index (the cartographer)
 	Insure, // gust insurance (the general store, after the army)
+	Tell, // tell the herald what is at the top (ending.odin)
 }
 
 Row :: struct {
@@ -614,6 +615,9 @@ shop_rows :: proc(g: ^Game, rows: ^[MAX_ROWS]Row) -> int {
 			add_row(rows, &n, .Hear, 0, 0, "Hear the proclamation again")
 		}
 		add_row(rows, &n, .Ask, 0, 0, "Ask about His Lordship")
+		if g.lord_met && !g.ended {
+			add_row(rows, &n, .Tell, 0, 0, "Tell him what is at the top")
+		}
 	case .Carny:
 		add_row(rows, &n, .Toss, 0, RING_TOSS, "Ring toss (win a prize)")
 		add_row(rows, &n, .Buy, int(Item_Kind.Wind_Charm), VALUE[.Wind_Charm], "Buy a Wind charm")
@@ -829,6 +833,9 @@ shop_act :: proc(g: ^Game, r: ^Row) {
 	case .Ask:
 		say(g, "The herald: ", HERALD_LINES[g.talk % len(HERALD_LINES)])
 		g.talk += 1
+	case .Tell:
+		tell_herald(g)
+		return
 	case .Toss:
 		if pay(g, r.price) {
 			if rng_int(&g.rng, RING_TOSS_ODDS) == 0 {

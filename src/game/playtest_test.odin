@@ -412,7 +412,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		command(g, .Confirm)
 		shop_town(g, s)
 		return true
-	case .Notice:
+	case .Notice, .End: // the end screen counts as done from step 33
 		command(g, .Confirm)
 		return true
 	case .Shop:

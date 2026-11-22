@@ -822,3 +822,37 @@ test_dump_top :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_TOP + "-lord.ppm")
 	}
 }
+
+// The ending by eye (-define:DUMP_END=<prefix>): <prefix>-herald.ppm (the herald's stall with the new
+// row) and <prefix>-end.ppm (the end screen, his answer in the log).
+DUMP_END :: #config(DUMP_END, "")
+
+@(test)
+test_dump_end :: proc(t: ^testing.T) {
+	when DUMP_END != "" {
+		g := new_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		g.lord_met = true
+		g.turn, g.deaths, g.level, g.kills = 31415, 4, 34, 262
+		enter_town(g, .Gate)
+		g.mode = .Play
+		teleport(g, door_of(.Herald))
+		command(g, .Confirm)
+		r: [MAX_ROWS]Row
+		n := shop_rows(g, &r)
+		for i in 0 ..< n {
+			if r[i].act == .Tell {
+				g.menu_row = i
+			}
+		}
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_END + "-herald.ppm", fr)
+		command(g, .Confirm)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_END + "-end.ppm", fr)
+	}
+}

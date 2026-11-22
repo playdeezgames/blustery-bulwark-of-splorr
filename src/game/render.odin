@@ -27,6 +27,8 @@ draw_game :: proc(f: ^Frame, g: ^Game) {
 	case .Notice:
 		draw_map(f, g)
 		draw_notice(f, g)
+	case .End:
+		draw_end(f, g)
 	}
 	draw_log(f, g)
 	draw_panel(f, g)
@@ -300,7 +302,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
 	}
-	print(f, "Slice 4, step 29", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 4, step 30", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

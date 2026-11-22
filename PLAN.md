@@ -372,7 +372,12 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33.
 
     **Reviewed November 22, 2026:** kept as built: the roof, the wind backing west to south to east to north, the new lines and the pictures. At the user's word the end-of-stretch notice for the key to floor 13 is **dropped**: picking up the key now only says so, and meeting His Lordship is the only notice in the game. (Its flag stays in the save, unused.) The bot round after the change: the same figures as round 6. 197 native tests.
-30. **The ending** (item 8).
+30. **Done November 22, 2026.** **The ending** (item 8):
+    - **The herald's new row:** once you have met His Lordship, the herald's stall offers "Tell him what is at the top". Chosen: "You tell the herald: an old man, a cup of tea, six guards." and "The herald: \"Then who blows the wind? His Lordship, surely. Who else could?\"" He believes every word he wrote. The row is offered once.
+    - **The end screen** fills the map: "The end." / "The bulwark sits on the windiest crag in the land." / "The wind is only wind." (in white), then the climb's turns, deaths, level and kills, and "Enter/OK or click to play on." You are back in the town, and the herald proclaims as ever.
+    - Claude's picks for review: the line telling the herald; "or click" added to the plan's "Enter/OK to play on." (as on every other screen); the layout.
+    - 200 native tests (`ending_test.odin`, including the climb from floor 15 to the end screen; `DUMP_END` draws the herald's row and the end screen). Checked in the browser: the build loads, showing "Slice 4, step 30", with no console errors.
+    - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33, which makes the end screen its goal.
 31. **Two rings** for the second ring slot (item 11).
 32. **Sound** (item 10).
 33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.

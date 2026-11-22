@@ -59,7 +59,8 @@ Mode :: enum u8 {
 	Cast, // the list of known spells
 	Aim, // a direction for an aimed spell
 	Shop, // inside a town shop (or at a carny's stall)
-	Notice, // the end of the stretch (the key to floor 13), once
+	Notice, // meeting His Lordship, once (the key to floor 13's notice until the step 29 review)
+	End, // the end screen, after telling the herald what is at the top (ending.odin)
 }
 
 LOG_CAP :: 64 // characters per remembered message
@@ -165,6 +166,7 @@ Game :: struct {
 	champion_told:    bool, // the herald has proclaimed it
 	lord_met:         bool, // you have bumped into His Lordship (top.odin)
 	notice:           Notice_Kind, // which notice is showing
+	ended:            bool, // you told the herald what is at the top and saw the end (ending.odin)
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -471,7 +473,7 @@ command :: proc(g: ^Game, c: Command) {
 	case .Shop:
 		shop_command(g, c)
 		return
-	case .Notice:
+	case .Notice, .End:
 		if c == .Confirm || c == .Cancel {
 			g.mode = .Play
 		}
@@ -595,7 +597,7 @@ pointer :: proc(g: ^Game, sx, sy: int, kind: Pointer) {
 	case .Shop:
 		shop_pointer(g, sx, sy)
 		return
-	case .Notice:
+	case .Notice, .End:
 		g.mode = .Play
 		return
 	case .Play, .Automap:
