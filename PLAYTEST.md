@@ -652,3 +652,7 @@ None stuck. Walked home down the stairs rather than by Return: 4, 10, 4 and 0 cl
 - The ending works for every build: no climb wedged anywhere from floor 13 to the herald.
 - Floors 13 and 14 are the wall, and the wind is most of it. The champion and the roof come after, and by then the bot is level 55 to 59, so the champion yields within about 60 turns and the guards barely matter. A player who climbs faster will meet them weaker.
 - All numbers are Claude's to review; nothing was tuned in this round.
+
+### Decided with the user (November 22, 2026)
+
+Round 7 and step 33 are kept as built: floors 13 and 14 stay hard, the champion is unchanged, the bot's climb and cap stay, and all twelve screenshots stay. Nothing was tuned.
