@@ -618,3 +618,7 @@ Step 30 is kept as built. The game is unchanged by the review.
 | caster | 100 % (was 98) | 2.26 (was 2.02) | 88 % (was 86) |
 
 The shifts are the noise of different floor layouts, not the rings: the bot buys none and wears only what stow puts on. The climb still ends with the key to floor 13 until step 33.
+
+### Decided with the user (November 22, 2026)
+
+Step 31 is kept as built. The game is unchanged by the review.

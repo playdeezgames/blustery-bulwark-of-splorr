@@ -389,5 +389,7 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Claude's picks for review: the prices and keeper's lines, one ring a floor from 9, two of a kind stacking, the new looks, found rings staying unknown when worn.
     - 207 native tests (`ring_test.odin`; `DUMP_RINGS` draws the store and a ring on each hand). Checked in the browser: the build loads, showing "Slice 4, step 31", with no console errors.
     - **Bot round:** The figures moved for the first time since round 6, because floors 9 and up now hold an extra ring and lay out their finds differently. The key to floor 13 at 98/100/100/100 % (was 96/98/100/98) and deaths a climb 5.74/2.20/2.62/2.26 (was 5.60/2.12/2.62/2.02); the bot wears what it picks up but buys no rings, and its climb still ends with the key to floor 13 until step 33.
+
+    **Reviewed November 22, 2026:** kept as built: the prices and keeper's lines, one ring a floor from 9, two of a kind stacking, the Iron and Jade looks, and found rings staying unknown when worn. The game is unchanged by the review.
 32. **Sound** (item 10).
 33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.
