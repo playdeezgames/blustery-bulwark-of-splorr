@@ -50,7 +50,7 @@
 </div>
 <footer>
 	Blustery Bulwark of SPLORR!! by TheGrumpyGameDev. Code made by an AI agent (Claude Code) at the author's direction.
-	Tiles: Urizen by vurmux (CC0). Font: DINOBYTE by mby (CC BY 4.0). Feedback by LootLocker.
+	Tiles: Urizen by vurmux (CC0). Font: DINOBYTE by mby (CC BY 4.0). Sounds made with jsfxr. Feedback by LootLocker.
 	<a href="#" id="feedback-link">Send feedback (F)</a> · <a href="#" id="restart-link">Start over</a> · <a href="https://thegrumpygamedev.itch.io/">itch.io</a> · <a href="https://playdeezgames.github.io/oeuvre-of-splorr/">more games</a>
 </footer>
 <script src="odin.js"></script>
@@ -111,19 +111,53 @@
 		store(() => localStorage.removeItem(SAVE_KEY));
 		location.reload();
 	});
+	// Sound (src/game/sound.odin): the rules queue game.Sound values; each frame the page plays them.
+	// SOUND_FILES follows game.Sound after None. The AudioContext waits for a first key, click or
+	// tap (browsers allow sound only after one); turning sound off is the rules' job (they queue none).
+	const SOUND_FILES = ["warning", "gust", "slam", "hit", "miss", "hurt", "pick_up", "spell", "level", "key", "fanfare"];
+	let audio = null;
+	const buffers = [];
+	function unlock() {
+		if (audio) { if (audio.state === "suspended") audio.resume(); return; }
+		const AC = window.AudioContext || window.webkitAudioContext;
+		if (!AC) return;
+		audio = new AC();
+		SOUND_FILES.forEach((name, i) => {
+			fetch("sounds/" + name + ".wav").then((r) => r.arrayBuffer()).then((b) => audio.decodeAudioData(b))
+				.then((buf) => { buffers[i + 1] = buf; }).catch(() => {});
+		});
+	}
+	function playSounds() {
+		const n = ex.platform_sound_count();
+		if (n <= 0) return;
+		for (let i = 0; i < n; i++) {
+			const buf = buffers[ex.platform_sound(i)];
+			if (!audio || !buf || audio.state !== "running") continue;
+			const src = audio.createBufferSource(), gain = audio.createGain();
+			src.buffer = buf;
+			src.playbackRate.value = 0.92 + Math.random() * 0.16; // never quite the same twice
+			gain.gain.value = 0.6;
+			src.connect(gain).connect(audio.destination);
+			src.start();
+		}
+		ex.platform_sounds_done();
+	}
+	window.addEventListener("keydown", unlock);
+	window.addEventListener("pointerdown", unlock);
+	window.addEventListener("touchstart", unlock, { passive: true });
 	const command = (c) => { ex.platform_command(c); saveSoon(); };
 	const pointer = (x, y, k) => { ex.platform_pointer(x, y, k); saveSoon(); };
 
 	// game.Command order (src/game/game.odin): North South West East NorthWest NorthEast SouthWest SouthEast
-	// Wait Confirm Cancel Map Inventory Cast.
-	const C = { N: 0, S: 1, W: 2, E: 3, NW: 4, NE: 5, SW: 6, SE: 7, WAIT: 8, CONFIRM: 9, CANCEL: 10, MAP: 11, INVENTORY: 12, CAST: 13 };
+	// Wait Confirm Cancel Map Inventory Cast Sound.
+	const C = { N: 0, S: 1, W: 2, E: 3, NW: 4, NE: 5, SW: 6, SE: 7, WAIT: 8, CONFIRM: 9, CANCEL: 10, MAP: 11, INVENTORY: 12, CAST: 13, SOUND: 14 };
 	const KEYS = {
 		ArrowUp: C.N, ArrowDown: C.S, ArrowLeft: C.W, ArrowRight: C.E,
 		Numpad8: C.N, Numpad2: C.S, Numpad4: C.W, Numpad6: C.E,
 		Numpad7: C.NW, Numpad9: C.NE, Numpad1: C.SW, Numpad3: C.SE,
 		Home: C.NW, PageUp: C.NE, End: C.SW, PageDown: C.SE,
 		Numpad5: C.WAIT, Period: C.WAIT, Space: C.WAIT,
-		Enter: C.CONFIRM, NumpadEnter: C.CONFIRM, Escape: C.CANCEL, KeyM: C.MAP, Tab: C.MAP, KeyI: C.INVENTORY, KeyC: C.CAST,
+		Enter: C.CONFIRM, NumpadEnter: C.CONFIRM, Escape: C.CANCEL, KeyM: C.MAP, Tab: C.MAP, KeyI: C.INVENTORY, KeyC: C.CAST, KeyS: C.SOUND,
 	};
 	window.addEventListener("keydown", (e) => {
 		if (e.code === "KeyF" && !e.repeat) { e.preventDefault(); feedback.open(); return; }
@@ -174,7 +208,7 @@
 	});
 
 	// Gamepad (standard mapping): d-pad or left stick to move (diagonals from the stick), A confirm, B cancel,
-	// X wait, Y map, Start inventory, either shoulder button casts. Held directions repeat after 12 frames, then every 6.
+	// X wait, Y map, Start inventory, either shoulder button casts, Back/Select toggles sound. Held directions repeat after 12 frames, then every 6.
 	const pad = { held: -1, frames: 0, buttons: [] };
 	function stickCommand(gp) {
 		const b = (i) => gp.buttons[i] && gp.buttons[i].pressed;
@@ -195,9 +229,9 @@
 		const d = stickCommand(gp);
 		if (d !== pad.held) { pad.held = d; pad.frames = 0; if (d >= 0) command(d); }
 		else if (d >= 0 && ++pad.frames >= 12) { pad.frames = 6; command(d); }
-		[[0, C.CONFIRM], [1, C.CANCEL], [2, C.WAIT], [3, C.MAP], [9, C.INVENTORY], [4, C.CAST], [5, C.CAST]].forEach(([i, c]) => {
+		[[0, C.CONFIRM], [1, C.CANCEL], [2, C.WAIT], [3, C.MAP], [9, C.INVENTORY], [4, C.CAST], [5, C.CAST], [8, C.SOUND]].forEach(([i, c]) => {
 			const now = !!(gp.buttons[i] && gp.buttons[i].pressed);
-			if (now && !pad.buttons[i]) command(c);
+			if (now && !pad.buttons[i]) { unlock(); command(c); }
 			pad.buttons[i] = now;
 		});
 	}
@@ -206,6 +240,7 @@
 	const image = ctx.createImageData(W, H);
 	function frame() {
 		pollPad();
+		playSounds();
 		if (ex.platform_frame_ready()) {
 			// Read the buffer after the call: wasm memory may have grown.
 			image.data.set(new Uint8Array(memory.memory.buffer, ex.platform_frame_ptr(), W * H * 4));
