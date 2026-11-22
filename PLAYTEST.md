@@ -626,3 +626,7 @@ Step 31 is kept as built. The game is unchanged by the review.
 ## Step 32: sound (November 22, 2026)
 
 50 climbs a build: the same figures as step 31 to the last digit. Sound changes no rule. The bot does not climb past the key to floor 13 until step 33.
+
+### Decided with the user (November 22, 2026)
+
+Step 32 is kept as built. The game is unchanged by the review.

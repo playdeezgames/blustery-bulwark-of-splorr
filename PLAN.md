@@ -398,4 +398,6 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Claude's picks for review: S as the key and starting on, which events have a sound and how each sounds, the volume, the hint's place on the panel.
     - 215 native tests (`sound_test.odin`, including a check that every sound has its file and the page lists them in order; `DUMP_SOUND` draws the panel with sound off). Checked in the browser: the build loads, showing "Slice 4, step 32", the sounds are served, going down to town played the herald's fanfare, S toggled the hint and log line, the choice survived a reload, and no console errors.
     - **Bot round:** the same figures as step 31 to the last digit (sound changes no rule); the climb still ends with the key to floor 13 until step 33.
+
+    **Reviewed November 22, 2026:** kept as built: S as the key with sound starting on, the eleven effects as they sound, the volume, and the hint's row on the panel. The game is unchanged by the review.
 33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.
