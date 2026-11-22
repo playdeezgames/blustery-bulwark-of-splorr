@@ -630,3 +630,25 @@ Step 31 is kept as built. The game is unchanged by the review.
 ### Decided with the user (November 22, 2026)
 
 Step 32 is kept as built. The game is unchanged by the review.
+
+## Round 7: the whole game (step 33, November 22, 2026)
+
+50 climbs a build, each to the end screen or 40,000 turns. The bot now fights the champion, fights the guards it can see on the roof, walks into His Lordship, goes home (Return, or the stairs) and tells the herald.
+
+| Build | Key to floor 13 | Reached floor 15 | Champion yielded | Met His Lordship | Saw the end (avg turn) | Ran out of turns | Deaths a climb | End level |
+|---|---|---|---|---|---|---|---|---|
+| even | 100 % | 88 % | 88 % | 88 % | 88 % (27,254) | 6 | 10.02 | 58.8 |
+| fighter | 100 % | 98 % | 98 % | 98 % | 98 % (24,567) | 1 | 5.70 | 57.4 |
+| nimble | 100 % | 94 % | 94 % | 94 % | 94 % (25,800) | 3 | 6.10 | 58.0 |
+| caster | 100 % | 98 % | 98 % | 96 % | 96 % (24,214) | 2 | 4.44 | 55.0 |
+
+None stuck. Walked home down the stairs rather than by Return: 4, 10, 4 and 0 climbs.
+
+**Deaths by floor** (13, 14, 15, 16, over 50 climbs): even 100, 84, 12, 7; fighter 92, 74, 0, 5; nimble 96, 68, 4, 3; caster 64, 36, 1, 8. Floors 13 and 14 hold more than half of every build's deaths, and the bot spends about 4,000 turns on each (twice floors 9 to 11).
+
+**Causes on the way up:** the wind is the biggest single killer (105, 132, 107 and 15 deaths; the 3-cell push starts at floor 13), then the floor 13 tenants (the "Dragon" 34, 16, 19 and 36; the demon 15, 6, 15 and 13). The champion brought the bot down 12, 0, 1 and 1 times; the guards 7, 5, 3 and 8. Hunger killed 45, 28, 30 and 6 times: the long floors outlast the food the bot carries.
+
+**What it says:**
+- The ending works for every build: no climb wedged anywhere from floor 13 to the herald.
+- Floors 13 and 14 are the wall, and the wind is most of it. The champion and the roof come after, and by then the bot is level 55 to 59, so the champion yields within about 60 turns and the guards barely matter. A player who climbs faster will meet them weaker.
+- All numbers are Claude's to review; nothing was tuned in this round.

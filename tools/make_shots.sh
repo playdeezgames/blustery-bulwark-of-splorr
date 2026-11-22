@@ -18,6 +18,9 @@ dump test_dump_supplies -define:DUMP_SUPPLIES="$D/supplies"
 dump test_dump_boss -define:DUMP_BOSS="$D/boss"
 dump test_dump_army -define:DUMP_ARMY="$D/army"
 dump test_dump_giant -define:DUMP_GIANT="$D/giant"
+dump test_dump_champion -define:DUMP_CHAMPION="$D/champion"
+dump test_dump_top -define:DUMP_TOP="$D/top"
+dump test_dump_end -define:DUMP_END="$D/end"
 python3 -I - "$D" <<'PY'
 import os, sys
 from PIL import Image
@@ -32,6 +35,9 @@ shots = [
     ("07-horde.png", "boss-hall.ppm"),
     ("08-army.png", "army-hall.ppm"),
     ("09-giant.png", "giant-up.ppm"),
+    ("10-champion.png", "champion-yield.ppm"),
+    ("11-roof.png", "top-roof.ppm"),
+    ("12-end.png", "end-end.ppm"),
 ]
 
 # Pillow 12.1.1 here cannot enlarge with resize (Gotchas, November 15, 2026): scale by whole

@@ -303,7 +303,7 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		}
 		print(f, sound_hint(g), PANEL_X + 2, SOUND_HINT_Y, COLOR_MID)
 	}
-	print(f, "Slice 4, step 32", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 4, step 33", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.

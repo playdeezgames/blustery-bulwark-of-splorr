@@ -17,7 +17,7 @@ _ :: fmt
 
 PLAYTEST :: #config(PLAYTEST, false)
 PLAYTEST_RUNS :: #config(PLAYTEST_RUNS, 200)
-PLAYTEST_TURNS :: 24000 // give up after this many turns (16000 in slice 2)
+PLAYTEST_TURNS :: 40000 // give up after this many turns (16000 in slice 2, 24000 in slice 3)
 TRIP_GAP :: 600 // turns between the bot's trips back to town
 TRIP_MONEY :: 40 // Jools (carried, or in trophies) worth a trip
 BOT_DEBUG :: #config(BOT_DEBUG, false)
@@ -30,8 +30,14 @@ BOT_WIND :: #config(BOT_WIND, true) // the bot minds the wind (step 17 review); 
 BOT_LOAD :: #config(BOT_LOAD, 90) // the bot stops picking things up at this share of its load limit
 
 Bot_Stats :: struct {
-	won:             bool, // took the key to floor 13, the top of slice 3 (step 23)
+	won:             bool, // saw the end screen (slice 4 step 33)
 	turn_won:        int,
+	key13_turn:      int, // when the key to floor 13 was picked up (0: never); the goal until step 33
+	champion_turn:   int, // when floor 15 was reached
+	yield_turn:      int, // when the champion yielded
+	roof_turn:       int, // when floor 16 was reached
+	lord_turn:       int, // when the bot met His Lordship
+	walked_home:     bool, // went back down by the stairs, not Return
 	key9_turn:       int, // when the key to floor 9 was picked up (0: never)
 	key_turn:        int, // when the key to floor 5 was picked up (0: never)
 	turns:           int,
@@ -93,6 +99,8 @@ Goal :: enum u8 {
 	Stairs_Up,
 	Spot, // a cell the bot has picked for itself (floor 12: out of the giant's reach)
 	Crate, // the giant's crate, loose
+	Lord, // His Lordship, to bump into (floor 16)
+	Stairs_Down, // the way home after meeting him, without Return
 }
 
 // What the bot knows about the floor this turn, built once per decision.
@@ -122,6 +130,9 @@ look_around :: proc(g: ^Game) {
 		if hostile(t) {
 			v.goal[t.y][t.x] += {.Hostile}
 		}
+		if t.kind == .Lord {
+			v.goal[t.y][t.x] += {.Lord}
+		}
 		if (i == g.ticket && !g.admitted) || (i == g.army_ticket && !g.army_admitted) || (i == g.giant_ticket && !g.giant_admitted) {
 			v.goal[t.y][t.x] += {.Ticket}
 		}
@@ -131,7 +142,7 @@ look_around :: proc(g: ^Game) {
 		if it.place != .Ground || int(it.floor) != g.current {
 			continue
 		}
-		if it.kind == .Key || it.kind == .Key_Nine || it.kind == .Key_Thirteen {
+		if bot_key(it.kind) {
 			v.goal[it.y][it.x] += {.Key}
 		}
 		if it.kind == .Crate {
@@ -150,6 +161,9 @@ look_around :: proc(g: ^Game) {
 			if f.cells[y][x] == .Stairs_Up {
 				v.goal[y][x] += {.Stairs_Up}
 			}
+			if f.cells[y][x] == .Stairs_Down {
+				v.goal[y][x] += {.Stairs_Down}
+			}
 			for d in DIRECTIONS {
 				nx, ny := x + d.x, y + d.y
 				if nx >= 0 && ny >= 0 && nx < FLOOR_W && ny < FLOOR_H && !f.seen[ny][nx] {
@@ -163,6 +177,11 @@ look_around :: proc(g: ^Game) {
 
 // Breadth-first search over seen, passable cells (tenants block, except a goal) to the nearest
 // cell marked with `want`. Returns the first step.
+// The keys the bot goes for and never drops.
+bot_key :: proc(k: Item_Kind) -> bool {
+	return k == .Key || k == .Key_Nine || k == .Key_Thirteen || k == .Key_Sixteen
+}
+
 @(private = "file")
 bfs :: proc(g: ^Game, want: Goal) -> Plan {
 	v := &bot_view
@@ -193,7 +212,7 @@ bfs :: proc(g: ^Game, want: Goal) -> Plan {
 			}
 			// A tenant blocks the way, unless it is what we are after (never a frontier or an item
 			// under a peaceful one: that only had the bot waiting beside the hermit for ever).
-			if v.tenant[n.y][n.x] != 0 && !((want == .Hostile || want == .Ticket) && want in v.goal[n.y][n.x]) {
+			if v.tenant[n.y][n.x] != 0 && !((want == .Hostile || want == .Ticket || want == .Lord) && want in v.goal[n.y][n.x]) {
 				continue
 			}
 			v.done[n.y][n.x] = true
@@ -447,6 +466,8 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			command(g, .Confirm)
 		} else if g.shop == .Carny {
 			choose_row(g, .Leave)
+		} else if g.shop == .Herald {
+			choose_row(g, .Tell) // tell him what is at the top (or leave)
 		} else {
 			command(g, .Cancel)
 		}
@@ -458,6 +479,11 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	if in_town(g) {
 		shop_town(g, s)
+		if g.lord_met && !g.ended {
+			teleport(g, door_of(.Herald))
+			command(g, .Confirm)
+			return true
+		}
 		teleport(g, g.town.up)
 		command(g, .Confirm)
 		return true
@@ -541,6 +567,31 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	if overloaded(g) && drop_one(g) {
 		return true
 	}
+	// Floor 16 (step 33): meet His Lordship once the guards in sight are dealt with, then go home
+	// to tell the herald, by Return if it can, else down the stairs.
+	if g.current == LORD_INDEX && !g.lord_met && !hostile_in_view(g) {
+		if plan := bfs(g, .Lord); plan.ok {
+			command(g, step_dir(plan.dir))
+			return true
+		}
+	}
+	if g.lord_met && !g.ended {
+		if .Return in g.known && g.mana >= SPELL[.Return].cost && !hostile_in_view(g) {
+			cast_spell(g, .Return, {0, 0})
+			return true
+		}
+		if !hostile_in_view(g) {
+			if cell_at(g, g.x, g.y) == .Stairs_Down {
+				s.walked_home = true
+				command(g, .Confirm)
+				return true
+			}
+			if plan := bfs(g, .Stairs_Down); plan.ok {
+				command(g, step_dir(plan.dir))
+				return true
+			}
+		}
+	}
 	// Pick up what is underfoot: the key first, else something worth taking (not just the top of
 	// the pile, which may not fit; a player would use the inventory's ground pane).
 	if .Item in bot_view.goal[g.y][g.x] || .Key in bot_view.goal[g.y][g.x] {
@@ -550,7 +601,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 			if it.place != .Ground || int(it.floor) != g.current || int(it.x) != g.x || int(it.y) != g.y {
 				continue
 			}
-			if it.kind == .Key || it.kind == .Key_Nine || it.kind == .Key_Thirteen {
+			if bot_key(it.kind) {
 				pick = i
 				break
 			}
@@ -560,7 +611,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 		}
 		if pick != 0 {
 			pick_up(g, pick)
-			if (g.items[pick].kind == .Key || g.items[pick].kind == .Key_Nine || g.items[pick].kind == .Key_Thirteen) && g.items[pick].place == .Ground {
+			if bot_key(g.items[pick].kind) && g.items[pick].place == .Ground {
 				drop_one(g) // no room for the key: make some
 			}
 			best_weapon(g)
@@ -570,7 +621,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	// Go somewhere: the key, a hostile in view, things, the unexplored, then the stairs up.
 	plan := bfs(g, .Key)
 	// On floor 8 the sergeant has the key: hunt it, seen or not.
-	if !plan.ok && (hostile_in_view(g) || (g.current == ARMY_INDEX && !g.army_dead) || (g.current == GIANT_INDEX && !g.giant_dead && s.giant_seen)) {
+	if !plan.ok && (hostile_in_view(g) || (g.current == ARMY_INDEX && !g.army_dead) || (g.current == GIANT_INDEX && !g.giant_dead && s.giant_seen) || (g.current == CHAMPION_INDEX && !g.champion_yielded) || g.current == LORD_INDEX) {
 		plan = bfs(g, .Hostile)
 	}
 	if !plan.ok {
@@ -603,12 +654,16 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 				}
 				return false
 			}
-			if g.current == GIANT_INDEX && !has_kind(g, .Key_Thirteen) {
+			if g.current == GIANT_INDEX && !has_kind(g, .Key_Thirteen) && GIANT_INDEX not_in g.unlocked {
 				s.stuck = true // explored floor 12 without the key
 				when BOT_DEBUG {
 					fmt.printfln("NOKEY floor 12 seed %d turn %d giant_dead %v", g.seed, g.turn, g.giant_dead)
 				}
 				return false
+			}
+			if g.current == CHAMPION_INDEX && !g.champion_yielded {
+				command(g, .Wait) // the bot fights the champion before going up (step 33)
+				return true
 			}
 			command(g, .Confirm)
 			return true
@@ -621,7 +676,7 @@ bot_step :: proc(g: ^Game, s: ^Bot_Stats) -> bool {
 	}
 	// Never walk into a peaceful tenant (that opens a stall or knocks bones over): wait instead.
 	nx, ny := g.x + plan.dir.x, g.y + plan.dir.y
-	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) && !(id == g.army_ticket && !g.army_admitted) && !(id == g.giant_ticket && !g.giant_admitted) {
+	if id := tenant_at(g, nx, ny); id != 0 && !hostile(&g.tenants[id]) && !(id == g.ticket && !g.admitted) && !(id == g.army_ticket && !g.army_admitted) && !(id == g.giant_ticket && !g.giant_admitted) && g.tenants[id].kind != .Lord {
 		command(g, .Wait)
 		return true
 	}
@@ -635,7 +690,7 @@ drop_one :: proc(g: ^Game) -> bool {
 	heaviest, trophy := 0, false
 	for i in 1 ..< MAX_ITEMS {
 		k := g.items[i].kind
-		if k == .None || k == .Key || k == .Key_Nine || k == .Key_Thirteen || (k == .Crate && !g.giant_dead) || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
+		if k == .None || bot_key(k) || (k == .Crate && !g.giant_dead) || !is_carried(g, i) || g.items[i].place == .Worn || is_container(k) {
 			continue
 		}
 		t := KIND[k].trophy
@@ -757,8 +812,23 @@ play_one :: proc(seed: u64, attrs: [Attr]int) -> Bot_Stats {
 		if s.giant_turn == 0 && g.current == GIANT_INDEX {
 			s.giant_turn = g.turn
 		}
-		if has_kind(g, .Key_Thirteen) {
-			s.won = true // the key to floor 13: the top of slice 3
+		if s.key13_turn == 0 && has_kind(g, .Key_Thirteen) {
+			s.key13_turn = g.turn
+		}
+		if s.champion_turn == 0 && g.current == CHAMPION_INDEX {
+			s.champion_turn = g.turn
+		}
+		if s.yield_turn == 0 && g.champion_yielded {
+			s.yield_turn = g.turn
+		}
+		if s.roof_turn == 0 && g.current == LORD_INDEX {
+			s.roof_turn = g.turn
+		}
+		if s.lord_turn == 0 && g.lord_met {
+			s.lord_turn = g.turn
+		}
+		if g.ended {
+			s.won = true // the end screen (step 33)
 			s.turn_won = g.turn
 			break
 		}
@@ -865,6 +935,9 @@ test_playtest :: proc(t: ^testing.T) {
 			keys, key_turns, keys9, key9_turns := 0, 0, 0, 0
 			dodges, wwaits, seals := 0, 0, 0
 			giants, giant_turns, knocks, gwaits, crates, holdings := 0, 0, 0, 0, 0, 0
+			// The climb past floor 12 (step 33): count and total turn of each milestone.
+			key13, champ, yielded, roof, lord := [2]int{}, [2]int{}, [2]int{}, [2]int{}, [2]int{}
+			walked := 0
 			armies, army_turns, trips, lanterns := 0, 0, 0, 0
 			casts: [Spell]int
 			wind: [10]int
@@ -906,6 +979,16 @@ test_playtest :: proc(t: ^testing.T) {
 					giants += 1
 					giant_turns += s.giant_turn
 				}
+				for m in ([?]struct {
+						c: ^[2]int,
+						t: int,
+					}{{&key13, s.key13_turn}, {&champ, s.champion_turn}, {&yielded, s.yield_turn}, {&roof, s.roof_turn}, {&lord, s.lord_turn}}) {
+					if m.t > 0 {
+						m.c[0] += 1
+						m.c[1] += m.t
+					}
+				}
+				walked += s.walked_home ? 1 : 0
 				knocks += s.giant_knocks
 				gwaits += s.giant_waits
 				crates += s.crates
@@ -951,7 +1034,15 @@ test_playtest :: proc(t: ^testing.T) {
 			fmt.printfln("reached floor 8: %d%% (avg turn %d)", armies * 100 / runs, armies > 0 ? army_turns / armies : 0)
 			fmt.printfln("took the key to floor 9: %d%% (avg turn %d)", keys9 * 100 / runs, keys9 > 0 ? key9_turns / keys9 : 0)
 			fmt.printfln("reached floor 12: %d%% (avg turn %d)", giants * 100 / runs, giants > 0 ? giant_turns / giants : 0)
-			fmt.printfln("took the key to floor 13: %d%% (avg turn %d); stuck %d; ran out of turns %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck)
+			milestone :: proc(what: string, m: [2]int, runs: int) {
+				fmt.printfln("%s: %d%% (avg turn %d)", what, m[0] * 100 / runs, m[0] > 0 ? m[1] / m[0] : 0)
+			}
+			milestone("took the key to floor 13", key13, runs)
+			milestone("reached floor 15", champ, runs)
+			milestone("the champion yielded", yielded, runs)
+			milestone("reached floor 16", roof, runs)
+			milestone("met His Lordship", lord, runs)
+			fmt.printfln("saw the end: %d%% (avg turn %d); stuck %d; ran out of turns %d; walked home %d", won * 100 / runs, won > 0 ? turns_won / won : 0, stuck, runs - won - stuck, walked)
 			fmt.printfln("the giant a climb: knocked off by a spell %.1f, waited for a gust %.1f, crate taken %.1f; wore a pack of holding at the end %d%%", f64(knocks) / f64(runs), f64(gwaits) / f64(runs), f64(crates) / f64(runs), holdings * 100 / runs)
 			fmt.printfln("minding the wind a climb: stepped aside %d, waited %d", dodges / runs, wwaits / runs)
 			fmt.printfln("draughts sealed a climb: %.1f", f64(seals) / f64(runs))
