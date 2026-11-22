@@ -378,6 +378,8 @@ Proposed by Claude and decided by the user item by item on November 20, 2026: it
     - Claude's picks for review: the line telling the herald; "or click" added to the plan's "Enter/OK to play on." (as on every other screen); the layout.
     - 200 native tests (`ending_test.odin`, including the climb from floor 15 to the end screen; `DUMP_END` draws the herald's row and the end screen). Checked in the browser: the build loads, showing "Slice 4, step 30", with no console errors.
     - **Bot round:** the same figures as round 6 to the last digit; the bot's climb still ends with the key to floor 13 until step 33, which makes the end screen its goal.
+
+    **Reviewed November 22, 2026:** kept as built: the line telling the herald, the end screen with "or click", and the row offered once. The game is unchanged by the review.
 31. **Two rings** for the second ring slot (item 11).
 32. **Sound** (item 10).
 33. **The bot and playtest round 7** (item 9), with screenshots. Slice 4, and the game, complete.

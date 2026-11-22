@@ -601,3 +601,7 @@ Step 29 is kept as built. The end-of-stretch notice for the key to floor 13 is d
 ## Step 30: the ending (November 22, 2026)
 
 50 climbs a build: the same figures as round 6 to the last digit. The bot does not climb past the key to floor 13 until step 33.
+
+### Decided with the user (November 22, 2026)
+
+Step 30 is kept as built. The game is unchanged by the review.
