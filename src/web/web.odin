@@ -135,3 +135,27 @@ platform_screen_w :: proc "c" () -> i32 {
 platform_screen_h :: proc "c" () -> i32 {
 	return game.SCREEN_H
 }
+
+// Sounds the rules queued since the last frame (game.Sound values), for the page to play; it calls
+// platform_sounds_done when it has them.
+@(export)
+platform_sound_count :: proc "c" () -> i32 {
+	context = runtime.default_context()
+	return i32(len(game.queued_sounds(&state.rules)))
+}
+
+@(export)
+platform_sound :: proc "c" (i: i32) -> i32 {
+	context = runtime.default_context()
+	q := game.queued_sounds(&state.rules)
+	if i < 0 || int(i) >= len(q) {
+		return 0
+	}
+	return i32(q[i])
+}
+
+@(export)
+platform_sounds_done :: proc "c" () {
+	context = runtime.default_context()
+	game.clear_sounds(&state.rules)
+}

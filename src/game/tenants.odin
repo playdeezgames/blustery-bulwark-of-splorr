@@ -528,7 +528,9 @@ player_attack :: proc(g: ^Game, id: int) {
 	chance := clamp(PLAYER_HIT + DEX_AIM * (g.attr[.Dexterity] - ATTR_BASE) - info.defence, 5, 95)
 	if rng_int(&g.rng, 100) >= chance {
 		say(g, "You miss the ", info.name, ".")
+		play_sound(g, .Miss)
 	} else {
+		play_sound(g, .Hit)
 		dmg := max(1, rng_range(&g.rng, dmin, dmax) + damage_bonus(g))
 		t.health -= i16(dmg)
 		if t.kind == .Champion && int(t.health) <= CHAMPION_YIELD {
@@ -693,6 +695,7 @@ draught_shoves :: proc(g: ^Game, id: int) {
 	stop_travel(g)
 	if !passable(cell_at(g, nx, ny)) {
 		say(g, "A draught slams you into the wall.")
+		play_sound(g, .Slam)
 		hurt(g, 1, "a draught")
 		return
 	}

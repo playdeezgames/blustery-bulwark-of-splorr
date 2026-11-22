@@ -126,6 +126,7 @@ end_turn :: proc(g: ^Game) {
 	g.gust_in -= 1
 	if g.gust_in == GUST_WARNING {
 		say(g, "The wind picks up from the ", COMPASS[f.wind_from], ".")
+		play_sound(g, .Warning)
 	}
 	if g.gust_in <= 0 {
 		gust(g)
@@ -143,6 +144,7 @@ gust :: proc(g: ^Game) {
 	stop_travel(g)
 	d := wind_blow(f)
 	g.wind_seen.gusts += 1
+	play_sound(g, .Gust)
 	if .Blow not_in g.wind_off {
 		g.wind_seen.things_moved += i32(blow_items(g))
 		g.wind_seen.tenants_moved += i32(blow_tenants(g))
@@ -198,6 +200,7 @@ gust :: proc(g: ^Game) {
 		if blocked != "" {
 			g.wind_seen.slams += 1
 			say(g, moved > 0 ? "A gust shoves you along and slams you into " : "A gust slams you into ", blocked, ".")
+			play_sound(g, .Slam)
 			hurt(g, 1, "the wind")
 			if g.mode == .Dead {
 				return

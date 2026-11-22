@@ -139,7 +139,7 @@ inventory_command :: proc(g: ^Game, c: Command) {
 		}
 	case .Inventory, .Map:
 		close_inventory(g)
-	case .Wait, .North_West, .North_East, .South_West, .South_East, .Cast:
+	case .Wait, .North_West, .North_East, .South_West, .South_East, .Cast, .Sound:
 	}
 	keep_cursor_in_view(g)
 }

@@ -21,6 +21,7 @@ Command :: enum i32 {
 	Map,
 	Inventory,
 	Cast,
+	Sound, // toggles sound (slice 4 step 32)
 }
 
 DIRECTION := [Command][2]int {
@@ -38,6 +39,7 @@ DIRECTION := [Command][2]int {
 	.Map        = {0, 0},
 	.Inventory  = {0, 0},
 	.Cast       = {0, 0},
+	.Sound      = {0, 0},
 }
 
 FLOOR_COUNT :: 16 // the whole bulwark (decided November 13, 2026); room for every floor in the save
@@ -167,6 +169,10 @@ Game :: struct {
 	lord_met:         bool, // you have bumped into His Lordship (top.odin)
 	notice:           Notice_Kind, // which notice is showing
 	ended:            bool, // you told the herald what is at the top and saw the end (ending.odin)
+	// Sound (slice 4 step 32; sound.odin).
+	sound_off:        bool, // S toggles; zero means on, so an older save starts with sound
+	sound_n:          u8, // sounds queued since the page last drained them
+	sounds:           [SOUND_QUEUE]Sound,
 }
 
 // The wind's parts, to study what each adds (November 15, 2026, at the user's request).
@@ -442,6 +448,10 @@ describe_arrival :: proc(g: ^Game) {
 }
 
 command :: proc(g: ^Game, c: Command) {
+	if c == .Sound {
+		toggle_sound(g) // anywhere, and it takes no turn
+		return
+	}
 	stop_travel(g)
 	g.fx_len, g.fx_blast = 0, false
 	if g.mode == .Automap {
@@ -498,6 +508,7 @@ command :: proc(g: ^Game, c: Command) {
 		open_inventory(g)
 	case .Cast:
 		open_cast(g)
+	case .Sound: // handled at the top of command
 	}
 }
 

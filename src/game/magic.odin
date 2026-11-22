@@ -141,6 +141,7 @@ check_level :: proc(g: ^Game) {
 		g.mana += LEVEL_MANA
 		g.learns += 1
 		say(g, "You reach level ", itoa(buf[:], g.level), ".")
+		play_sound(g, .Level)
 	}
 }
 
@@ -286,6 +287,7 @@ aim_pointer :: proc(g: ^Game, sx, sy: int) {
 
 cast_spell :: proc(g: ^Game, s: Spell, d: [2]int) {
 	info := SPELL[s]
+	play_sound(g, .Spell)
 	// Short of mana, the spell goes off anyway and each missing point costs a point of health
 	// (the user's choice, November 10, 2026; Castle of the Winds risked Constitution).
 	short := max(0, info.cost - g.mana)

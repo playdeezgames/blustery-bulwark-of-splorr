@@ -641,7 +641,10 @@ pick_up :: proc(g: ^Game, id: int) {
 	name := string(name_buf[:n])
 	if !stow(g, id) {
 		say(g, "No room to carry ", name, ".")
-	} else if g.items[id].kind == .Key {
+		return
+	}
+	play_sound(g, .Pick_Up)
+	if g.items[id].kind == .Key {
 		say(g, "You pick up the ", name, ".")
 	} else if g.items[id].kind == .Key_Nine {
 		// No notice since step 17: the end of the stretch moved to the key to floor 13 (step 22).

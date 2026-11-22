@@ -325,6 +325,7 @@ proclaim :: proc(g: ^Game) {
 	g.proclamation_n = copy(g.proclamation[:], text[:n])
 	say(g, "The herald reads: \"", string(g.proclamation[:g.proclamation_n]), "\"")
 	say(g, "The town cheers the lord.")
+	play_sound(g, .Fanfare)
 	if medal {
 		give_medal(g)
 	}

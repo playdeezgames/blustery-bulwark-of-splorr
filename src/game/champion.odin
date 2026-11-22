@@ -151,6 +151,7 @@ door_to_floor_sixteen :: proc(g: ^Game) {
 	if CHAMPION_INDEX not_in g.unlocked {
 		g.unlocked += {CHAMPION_INDEX}
 		opened = has_kind(g, .Key_Sixteen) ? "The key turns." : "The door opens."
+		play_sound(g, .Key)
 	}
 	enter_floor(g, LORD_INDEX, .Stairs_Down)
 	if opened != "" {

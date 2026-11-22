@@ -8,4 +8,5 @@ mkdir -p build/web
 odin build src/web -collection:tggd=src -target:js_wasm32 -out:build/web/game.wasm $OPT
 cp "$(odin root)/core/sys/wasm/js/odin.js" build/web/
 cp web/index.html web/lootlocker.js build/web/
+rm -rf build/web/sounds && cp -r web/sounds build/web/ # made by tools/make_sounds.js
 ls -l build/web

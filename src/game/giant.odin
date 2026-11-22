@@ -209,6 +209,7 @@ door_to_floor_thirteen :: proc(g: ^Game) {
 		g.unlocked += {GIANT_INDEX}
 		enter_floor(g, GIANT_INDEX + 1, .Stairs_Down)
 		say(g, "The key turns. The door stays open.")
+		play_sound(g, .Key)
 		say(g, "You climb to floor 13. The wind is stronger.")
 	} else {
 		say(g, "The door to floor 13 is locked. The giant has the key, they say.")

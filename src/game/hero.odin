@@ -188,6 +188,7 @@ killed_by :: proc(g: ^Game) -> string {
 
 hurt :: proc(g: ^Game, amount: int, by: string) {
 	g.health -= amount
+	play_sound(g, .Hurt)
 	if g.health <= 0 {
 		die(g, by)
 	}

@@ -901,3 +901,21 @@ test_dump_rings :: proc(t: ^testing.T) {
 		shot(g, fr, DUMP_RINGS + "-inv.ppm")
 	}
 }
+
+// Sound by eye (-define:DUMP_SOUND=<prefix>): <prefix>-off.ppm (floor 1 with sound turned off: the
+// panel's hint and the log line).
+DUMP_SOUND :: #config(DUMP_SOUND, "")
+
+@(test)
+test_dump_sound :: proc(t: ^testing.T) {
+	when DUMP_SOUND != "" {
+		g := new_game()
+		defer free(g)
+		fr := new(Frame)
+		defer free(fr)
+		command(g, .Sound)
+		draw_game(fr, g)
+		resolve(fr)
+		write_ppm(DUMP_SOUND + "-off.ppm", fr)
+	}
+}

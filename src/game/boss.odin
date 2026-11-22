@@ -153,6 +153,7 @@ door_to_floor_five :: proc(g: ^Game) {
 		g.unlocked += {BOSS_INDEX}
 		enter_floor(g, BOSS_INDEX + 1, .Stairs_Down)
 		say(g, "The key turns. The door stays open. You climb to floor 5. The wind is stronger.")
+		play_sound(g, .Key)
 	} else {
 		say(g, "The door to floor 5 is locked. The Horde has the key, they say.")
 	}

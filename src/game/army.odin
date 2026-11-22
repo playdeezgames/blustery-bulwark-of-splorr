@@ -130,6 +130,7 @@ door_to_floor_nine :: proc(g: ^Game) {
 		g.unlocked += {ARMY_INDEX}
 		enter_floor(g, ARMY_INDEX + 1, .Stairs_Down)
 		say(g, "The key turns. The door stays open.")
+		play_sound(g, .Key)
 		say(g, "You climb to floor 9. The wind is stronger.")
 	} else {
 		say(g, "The door to floor 9 is locked. The army has the key, they say.")

@@ -27,10 +27,10 @@ One night a gale flattens yer farm. Next morning the herald reads a proclamation
 
 Every screen works with the keyboard, the mouse, a gamepad and touch (turn yer phone sideways).
 
-- **Keyboard:** arrow keys or the number pad to move (Home, Page Up, End and Page Down go diagonally); walk into a tenant to fight it. Enter to take stairs, pick things up, go into a shop or choose a row; Space or . to wait; Esc to go back; I for yer pack, M or Tab for the map, C to cast; F to send feedback.
-- **Mouse:** click a cell to walk there; click yerself to use what is underfoot; right-click to look at something. Click the hints in the side panel (map, pack, cast). In yer pack, click a thing to hold it and click where it goes, or drag it.
-- **Gamepad:** d-pad or left stick to move; A to choose, B to go back, X to wait, Y for the map, Start for yer pack, either shoulder button to cast.
-- **Touch:** the pads beside the screen move you and give OK, Back, Map, Pack and Cast; tap a cell to look at it; tap rows on any list.
+- **Keyboard:** arrow keys or the number pad to move (Home, Page Up, End and Page Down go diagonally); walk into a tenant to fight it. Enter to take stairs, pick things up, go into a shop or choose a row; Space or . to wait; Esc to go back; I for yer pack, M or Tab for the map, C to cast; S to turn sound off and on; F to send feedback.
+- **Mouse:** click a cell to walk there; click yerself to use what is underfoot; right-click to look at something. Click the hints in the side panel (map, pack, cast, sound). In yer pack, click a thing to hold it and click where it goes, or drag it.
+- **Gamepad:** d-pad or left stick to move; A to choose, B to go back, X to wait, Y for the map, Start for yer pack, either shoulder button to cast, Back/Select to turn sound off and on.
+- **Touch:** the pads beside the screen move you and give OK, Back, Map, Pack and Cast; tap a cell to look at it; tap rows on any list; tap the panel's sound hint to turn sound off and on.
 
 In yer pack, choose a thing to hold it, then choose a slot to wear it, the floor to drop it, a container to put it in, or **Use** to eat, drink or read it (or choose it a second time).
 

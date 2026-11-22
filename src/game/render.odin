@@ -301,8 +301,9 @@ draw_panel :: proc(f: ^Frame, g: ^Game) {
 		for h in PANEL_HINTS {
 			print(f, h.text, PANEL_X + 2 + h.x, PANEL_HINT_Y, COLOR_MID)
 		}
+		print(f, sound_hint(g), PANEL_X + 2, SOUND_HINT_Y, COLOR_MID)
 	}
-	print(f, "Slice 4, step 31", x, SCREEN_H - 12, COLOR_DARK)
+	print(f, "Slice 4, step 32", x, SCREEN_H - 12, COLOR_DARK)
 }
 
 // The panel's key hints, which a click or tap also uses.
@@ -315,7 +316,17 @@ Panel_Hint :: struct {
 PANEL_HINT_Y :: SCREEN_H - 30
 PANEL_HINTS := [?]Panel_Hint{{"M map", 0, .Map}, {"I pack", 6 * GLYPH_W, .Inventory}, {"C cast", 13 * GLYPH_W, .Cast}}
 
+// The sound toggle's hint, a row above the others (slice 4 step 32).
+SOUND_HINT_Y :: PANEL_HINT_Y - 10
+
+sound_hint :: proc(g: ^Game) -> string {
+	return g.sound_off ? "S sound: off" : "S sound: on"
+}
+
 panel_hint_at :: proc(sx, sy: int) -> (Command, bool) {
+	if sy >= SOUND_HINT_Y - 1 && sy < SOUND_HINT_Y + GLYPH_H - 1 && sx >= PANEL_X && sx < PANEL_X + 2 + text_width("S sound: off") + 2 {
+		return .Sound, true
+	}
 	if sy < PANEL_HINT_Y - 3 || sy >= PANEL_HINT_Y + GLYPH_H + 3 {
 		return .Wait, false
 	}
